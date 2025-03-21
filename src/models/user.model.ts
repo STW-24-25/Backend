@@ -1,17 +1,30 @@
 import mongoose, {Schema, Document} from 'mongoose';
 
-interface userDocument extends Document {
-    name: string;
+enum UserRole {
+    SMALL_FARMER = 'Agricultor pequeño',
+    MEDIUM_FARMER = 'Agricultor mediano',
+    BIG_FARMER = 'Agricultor grande',
+    COOP_PRESIDENT = 'Presidente de cooperativa',
+    WHOLESALER = 'Mayorista',
+    EXPERT = 'Experto'
+};
+
+interface IUser extends Document {
+    userID: string;
+    username: string;
     email: string;
-    createdAt: Date;
-}
+    passwordHash: string,
+    profilePicture?: string,
+    role: UserRole,
+    communityResidence: string,
+    isAdmin: boolean,
+    createdAt: Date,
+};
 
 const userSchema: Schema = new Schema({
-    name: {type: String, required: true},
-    email: {type: String, required: true},
-    createdAt: {type: Date, required: true},
+    // todo
 });
 
-const UserModel = mongoose.model<userDocument>('UserModel', userSchema);
+const UserModel = mongoose.model<IUser>('User', userSchema);
 
 export default UserModel;
