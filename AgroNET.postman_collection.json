@@ -1,31 +1,14 @@
 {
 	"info": {
-		"_postman_id": "c84c794c-0294-4576-90fe-963b017f8b77",
+		"_postman_id": "acbabac4-6f99-4e43-aeab-51427073f60c",
 		"name": "AgroNET",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "32453971"
+		"_exporter_id": "43258282"
 	},
 	"item": [
 		{
 			"name": "User",
 			"item": [
-				{
-					"name": "Get user",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{url}}/users",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"users"
-							]
-						}
-					},
-					"response": []
-				},
 				{
 					"name": "Create user",
 					"request": {
@@ -40,6 +23,23 @@
 								}
 							}
 						},
+						"url": {
+							"raw": "{{url}}/users",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get all users",
+					"request": {
+						"method": "GET",
+						"header": [],
 						"url": {
 							"raw": "{{url}}/users",
 							"host": [
@@ -69,6 +69,9 @@
 			"response": []
 		}
 	],
+	"auth": {
+		"type": "bearer"
+	},
 	"event": [
 		{
 			"listen": "prerequest",
@@ -94,7 +97,7 @@
 	"variable": [
 		{
 			"key": "url",
-			"value": "http://localhost:3000",
+			"value": "http://localhost:5000",
 			"type": "string"
 		}
 	]

@@ -6,7 +6,7 @@
 
 - /users
   - `POST` : Create a new user
-  - `UPDATE` : Edit a user
+  - `PUT` : Edit a user
   - `DELETE` : Delete a user
 - /users/login
   - `POST` : Login a user. Returns the token and user data if not blocked, otherwise blocked status.
@@ -23,7 +23,7 @@
 - /users/block
   - `POST` : Block a user
 - /users/unblock
-  - `PUT` : Unblock a user
+  - `POST` : Unblock a user
 
 ## Forums
 
