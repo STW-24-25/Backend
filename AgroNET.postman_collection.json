@@ -16,7 +16,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Jorge\"\n}",
+							"raw": "{\n  \"username\": \"test2\",\n  \"email\": \"test@test.test\",\n  \"password\": \"UnaBuenaClave\",\n  \"role\": \"Agricultor pequeño\",\n  \"autonomousCommunity\": \"Aragón\",\n  \"isAdmin\": false\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -51,22 +51,52 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Edit user",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/users",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login user",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"usernameOrEmail\": \"test@test.test\",\n    \"password\": \"UnaBuenaClave\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/users/login",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"users",
+								"login"
+							]
+						}
+					},
+					"response": []
 				}
 			]
-		},
-		{
-			"name": "Hello world",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{url}}",
-					"host": [
-						"{{url}}"
-					]
-				}
-			},
-			"response": []
 		}
 	],
 	"auth": {
