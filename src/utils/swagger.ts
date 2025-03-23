@@ -20,5 +20,10 @@ export const swaggerOptions: swaggerJSDoc.Options = {
     security: [{ bearerAuth: [] }],
 
   },
-  apis: ['src/routes/*.ts', 'src/controllers/*.ts', 'src/models/*.ts'],
+  apis: [
+    'src/routes/*.ts',
+    'src/controllers/*.ts',
+    'src/middleware/validator/*.ts',
+    'src/models/*.ts',
+  ],
 };
