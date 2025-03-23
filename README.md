@@ -1,7 +1,8 @@
 # Backend
 
+REST API documentation is in `/api/docs`.
 
-# Librerias utilizadas
+## Some homemade libraries used
 
 - **agro-precios** = https://github.com/carloss4dv/agro-precios
 - **nasa-power-for-agriculture-spain** = https://github.com/carloss4dv/nasa-power-for-agriculture-spain 
