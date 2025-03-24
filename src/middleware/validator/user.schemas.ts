@@ -31,8 +31,6 @@ import { AutonomousComunity, UserRole } from '../../models/user.model';
  *          $ref: '#/components/schemas/UserRole'
  *        autonomousCommunity:
  *          $ref: '#/components/schemas/AutonomousCommunity'
- *        isAdmin:
- *          type: boolean
  */
 export const newUserSchema = z.object({
   body: z.object({
@@ -42,7 +40,6 @@ export const newUserSchema = z.object({
     profilePicture: z.string().optional(),
     role: z.nativeEnum(UserRole),
     autonomousCommunity: z.nativeEnum(AutonomousComunity),
-    isAdmin: z.boolean(),
   }),
 });
 

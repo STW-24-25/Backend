@@ -21,7 +21,7 @@ export const createUser = async (req: Request, res: Response) => {
       profilePicture: req.body.profilePicture,
       role: req.body.role,
       autonomousCommunity: req.body.autonomousCommunity,
-      isAdmin: req.body.isAdmin,
+      isAdmin: false,
     });
 
     await newUser.save();

@@ -24,6 +24,8 @@
   - `POST` : Block a user
 - /users/unblock
   - `POST` : Unblock a user
+- /users/promote
+  - `POST` : Promote a user to admin
 
 ## Forums
 
