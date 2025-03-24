@@ -88,7 +88,7 @@ interface IUser extends Document {
   passwordHash: string,
   profilePicture?: string,
   role: UserRole,
-  autonomousCommunity: string,
+  autonomousCommunity: AutonomousComunity,
   isAdmin: boolean,
   createdAt: Date,
 };
