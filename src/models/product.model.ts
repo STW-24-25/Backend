@@ -44,6 +44,7 @@ interface IProduct extends Document {
     date: Date,
     price: number,
   }[];
+  image: string,
 }
 
 /**
@@ -72,6 +73,8 @@ interface IProduct extends Document {
  *              price:
  *                type: number
  *                format: float
+ *        image:
+ *          type: string
  */
 const productSchema: Schema = new Schema({
   name: { type: String, required: true },
@@ -80,6 +83,7 @@ const productSchema: Schema = new Schema({
     date: { type: Date, required: true },
     price: { type: Number, required: true },
   }],
+  image: { type: String, required: false },
 });
 
 const ProductModel = mongoose.model<IProduct>('Products', productSchema);
