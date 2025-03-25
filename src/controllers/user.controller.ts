@@ -1,9 +1,8 @@
 import { Request, Response } from 'express';
-import UserModel, { AutonomousComunity, UserRole } from '../models/user.model'
+import UserModel from '../models/user.model'
 import bcrypt from 'bcrypt';
 import logger from '../utils/logger';
 import { genJWT } from '../middleware/auth';
-import { assert } from 'console';
 
 
 /**
@@ -27,10 +26,10 @@ export const createUser = async (req: Request, res: Response) => {
     await newUser.save();
 
     res.status(201).json({ message: 'User created' });
-    logger.info(`User created: ${req.body.username}`)
+    logger.info(`User created: ${req.body.username}`);
   } catch (err) {
-    res.status(500).json({ message: 'Error creating user', err })
-    logger.error('Error creating user', err)
+    res.status(500).json({ message: 'Error creating user', err });
+    logger.error('Error creating user', err);
   }
 }
 
@@ -42,7 +41,7 @@ export const createUser = async (req: Request, res: Response) => {
  * @returns void
  */
 export const updateUser = async (req: Request, res: Response) => {
-  logger.warn('updateUser endpoint not implemented yet')
+  logger.warn('updateUser endpoint not implemented yet');
   res.status(501).json('updateUser endpoint not implemented yet');
 };
 
@@ -74,14 +73,14 @@ export const login = async (req: Request, res: Response) => {
 
     if (!user) {
       res.status(401).json({ message: 'Invalid credentials' });
-      return
+      return;
     }
 
     const passwordsMatch = await bcrypt.compare(password, user.passwordHash);
 
     if (!passwordsMatch) {
       res.status(401).json({ message: 'Invalid credentials' });
-      return
+      return;
     }
 
     const payload = {
@@ -99,7 +98,7 @@ export const login = async (req: Request, res: Response) => {
     logger.info(`User ${user.username} logged in`);
   } catch (err) {
     logger.error('Login error', err);
-    res.status(500).json({ message: 'Login failed', err })
+    res.status(500).json({ message: 'Login failed', err });
   }
 };
 

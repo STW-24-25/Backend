@@ -56,7 +56,6 @@ export enum UserRole {
  *      - La Rioja
  *      - Ciudad Autónoma de Ceuta
  *      - Ciudad Autónoma de Melilla
- *      
  */
 export enum AutonomousComunity {
   ANDALUCIA = 'Andalucía',
@@ -103,11 +102,13 @@ interface IUser extends Document {
  *    User:
  *      type: object
  *      required:
- *        - username
- *        - email
- *        - password
- *        - role
- *        - isAdmin
+ *      - username
+ *      - email
+ *      - passwordHash
+ *      - role
+ *      - autonomousCommunity
+ *      - isAdmin
+ *      - createdAt
  *      properties:
  *        username:
  *          type: string
@@ -142,8 +143,6 @@ const userSchema: Schema = new Schema({
   createdAt: { type: Date, default: Date.now() },
 });
 
-
 const UserModel = mongoose.model<IUser>('User', userSchema);
-
 
 export default UserModel;
