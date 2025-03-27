@@ -28,6 +28,7 @@
   },
   "homepage": "https://github.com/STW-24-25/Backend#readme",
   "dependencies": {
+    "@types/express": "^5.0.1",
     "@types/node-cron": "^3.0.11",
     "agro-precios": "^1.0.3",
     "ajv": "^8.17.1",
@@ -41,8 +42,11 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.12.1",
     "node-cron": "^3.0.3",
+    "sigpac-client": "^1.0.9",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2",
     "winston": "^3.17.0",
     "zod": "^3.24.2"
   },
@@ -57,10 +61,11 @@
     "@types/babel__traverse": "^7.20.7",
     "@types/bcrypt": "^5.0.2",
     "@types/cors": "^2.8.17",
-    "@types/express": "^5.0.1",
+    "@types/dotenv": "^6.1.1",
     "@types/express-jwt": "^6.0.4",
     "@types/jest": "^29.5.14",
     "@types/jsonwebtoken": "^9.0.9",
+    "@types/mongoose": "^5.11.96",
     "@types/node": "^22.13.10",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
@@ -77,9 +82,7 @@
     "mongodb-memory-server": "^8.12.0",
     "nodemon": "^3.1.9",
     "prettier": "^3.2.5",
-    "ts-jest": "^29.1.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.8.2"
+    "ts-jest": "^29.1.0"
   },
   "lint-staged": {
     "*.ts": [
