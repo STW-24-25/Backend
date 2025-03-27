@@ -35,9 +35,7 @@ jobs:
           node-version: '18'
           cache: 'npm'
       - name: Install libcrypto for MongoDB Memory Server
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ca-certificates libssl1.1 || wget -q https://raw.githubusercontent.com/mongodb-js/libmongocrypt/master/install-dependencies/install-libssl-1-1.sh -O /tmp/install-libssl.sh && sudo chmod +x /tmp/install-libssl.sh && sudo /tmp/install-libssl.sh
+        run: npm install mongodb-memory-server@latest --save-dev
       - name: Install dependencies
         run: npm ci
       - name: Run tests with coverag
