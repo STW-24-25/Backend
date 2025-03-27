@@ -30,8 +30,8 @@ jobs:
           cache: 'npm'
       - name: Install libcrypto for MongoDB Memory Server
         run: |
-          curl -O http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.22_amd64.deb
-          sudo dpkg -i libssl1.1_1.1.1f-1ubuntu2.22_amd64.deb || sudo apt-get -f install -y
+          sudo apt-get update
+          sudo apt-get install -y ca-certificates libssl1.1 || wget -q https://raw.githubusercontent.com/mongodb-js/libmongocrypt/master/install-dependencies/install-libssl-1-1.sh -O /tmp/install-libssl.sh && sudo chmod +x /tmp/install-libssl.sh && sudo /tmp/install-libssl.sh
       - name: Install dependencies
         run: npm ci
       - name: Build
@@ -75,8 +75,8 @@ jobs:
           cache: 'npm'
       - name: Install libcrypto for MongoDB Memory Server
         run: |
-          curl -O http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.22_amd64.deb
-          sudo dpkg -i libssl1.1_1.1.1f-1ubuntu2.22_amd64.deb || sudo apt-get -f install -y
+          sudo apt-get update
+          sudo apt-get install -y ca-certificates libssl1.1 || wget -q https://raw.githubusercontent.com/mongodb-js/libmongocrypt/master/install-dependencies/install-libssl-1-1.sh -O /tmp/install-libssl.sh && sudo chmod +x /tmp/install-libssl.sh && sudo /tmp/install-libssl.sh
       - name: Install dependencies
         run: npm ci
       - name: Build
