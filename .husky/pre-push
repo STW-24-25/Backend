@@ -1,0 +1,25 @@
+#!/bin/sh
+# Run all tests (unit and integration) before pushing to remote repository
+npm run test -- --passWithNoTests
+
+# Check code coverage
+npm run test:coverage -- --passWithNoTests
+
+# Git Flow branch validation
+BRANCH_NAME=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
+if [ -z "$BRANCH_NAME" ]; then
+  echo "Warning: Could not determine branch name, skipping branch validation"
+  exit 0
+fi
+
+# Check if branch name follows Git Flow convention
+if echo "$BRANCH_NAME" | grep -qE "^(master|main|develop)$" ||
+   echo "$BRANCH_NAME" | grep -qE "^release/[0-9]+\.[0-9]+\.[0-9]+" ||
+   echo "$BRANCH_NAME" | grep -qE "^(hotfix|feature|bugfix)/[a-zA-Z0-9._-]+" ; then
+  # Branch name follows convention
+  echo "Branch '$BRANCH_NAME' follows Git Flow conventions ✓"
+else
+  echo "Error: Branch name '$BRANCH_NAME' doesn't follow Git Flow conventions"
+  echo "Valid branch names: main, develop, feature/name, release/x.y.z, hotfix/name, bugfix/name"
+  exit 1
+fi 

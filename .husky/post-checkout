@@ -1,0 +1,31 @@
+#!/bin/sh
+# Check if we're checking out a new branch
+if [ "$3" = "1" ]; then
+  BRANCH_NAME=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
+  if [ -z "$BRANCH_NAME" ]; then
+    exit 0
+  fi
+  
+  # Provide Git Flow guidance based on branch type
+  if echo "$BRANCH_NAME" | grep -q "^feature/"; then
+    echo "📝 Git Flow: You're on a feature branch. Remember to:"
+    echo "- Branch from: develop"
+    echo "- Merge back into: develop"
+    echo "- Naming convention: feature/*"
+  elif echo "$BRANCH_NAME" | grep -q "^release/"; then
+    echo "🚀 Git Flow: You're on a release branch. Remember to:"
+    echo "- Branch from: develop"
+    echo "- Merge back into: main/master AND develop"
+    echo "- Naming convention: release/x.y.z"
+  elif echo "$BRANCH_NAME" | grep -q "^hotfix/"; then
+    echo "🔥 Git Flow: You're on a hotfix branch. Remember to:"
+    echo "- Branch from: main/master"
+    echo "- Merge back into: main/master AND develop"
+    echo "- Naming convention: hotfix/*"
+  elif echo "$BRANCH_NAME" | grep -q "^bugfix/"; then
+    echo "🐛 Git Flow: You're on a bugfix branch. Remember to:"
+    echo "- Branch from: develop"
+    echo "- Merge back into: develop"
+    echo "- Naming convention: bugfix/*"
+  fi
+fi 

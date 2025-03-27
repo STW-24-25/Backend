@@ -1,1 +1,3 @@
- 
+#!/bin/sh
+# Validate commit messages follow the defined convention
+npx --no -- commitlint --edit ${1} 

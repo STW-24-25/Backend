@@ -1,4 +1,9 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
+#!/bin/sh
+# Run lint-staged to check and fix staged files
 npx lint-staged
+
+# Only run tests if there are any in src/ directory
+if [ -d "src" ] && [ "$(find src -name "*.test.*" -o -name "*.spec.*" | wc -l)" -gt 0 ]; then
+  npm run test 
+  npm run test:coverage
+fi 

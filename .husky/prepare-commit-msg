@@ -1,0 +1,38 @@
+#!/bin/sh
+# Auto-prefix commit messages for Git Flow branches
+
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+
+# Skip for merge commits, amended commits, or commits with message templates
+if [ "$COMMIT_SOURCE" = "merge" ] || [ "$COMMIT_SOURCE" = "template" ] || [ "$COMMIT_SOURCE" = "message" ]; then
+  exit 0
+fi
+
+# Read the first line of the commit message
+FIRST_LINE=$(head -n 1 "$COMMIT_MSG_FILE")
+
+# Skip if the message already follows conventional commits pattern
+if echo "$FIRST_LINE" | grep -qE "^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\([a-z0-9._-]+\))?: .+$"; then
+  exit 0
+fi
+
+BRANCH_NAME=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
+if [ -z "$BRANCH_NAME" ]; then
+  exit 0
+fi
+
+# Add prefix based on branch type
+if echo "$BRANCH_NAME" | grep -qE "^feature/"; then
+  FEATURE_NAME=$(echo "$BRANCH_NAME" | sed "s/^feature\///")
+  TEMP_MSG=$(cat "$COMMIT_MSG_FILE")
+  echo "feat($(echo "$FEATURE_NAME" | tr '[:upper:]' '[:lower:]')): $TEMP_MSG" > "$COMMIT_MSG_FILE"
+elif echo "$BRANCH_NAME" | grep -qE "^bugfix/"; then
+  BUGFIX_NAME=$(echo "$BRANCH_NAME" | sed "s/^bugfix\///")
+  TEMP_MSG=$(cat "$COMMIT_MSG_FILE")
+  echo "fix($(echo "$BUGFIX_NAME" | tr '[:upper:]' '[:lower:]')): $TEMP_MSG" > "$COMMIT_MSG_FILE"
+elif echo "$BRANCH_NAME" | grep -qE "^hotfix/"; then
+  HOTFIX_NAME=$(echo "$BRANCH_NAME" | sed "s/^hotfix\///")
+  TEMP_MSG=$(cat "$COMMIT_MSG_FILE")
+  echo "fix($(echo "$HOTFIX_NAME" | tr '[:upper:]' '[:lower:]')): $TEMP_MSG" > "$COMMIT_MSG_FILE"
+fi 
