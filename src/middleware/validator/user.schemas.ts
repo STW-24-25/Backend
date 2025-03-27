@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { AutonomousComunity, UserRole } from '../../models/user.model';
 
-
 // Zod validation schemas and their corresponsing swagger docs (referenced
 // by the endpoints that use them).
 
@@ -64,4 +63,3 @@ export const loginSchema = z.object({
     password: z.string().min(6),
   }),
 });
-

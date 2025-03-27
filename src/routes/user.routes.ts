@@ -3,7 +3,7 @@ import * as userCont from '../controllers/user.controller';
 import { validateSchema } from '../middleware/validator';
 import { loginSchema, newUserSchema } from '../middleware/validator/user.schemas';
 
-const router = Router()
+const router = Router();
 
 // ##### PUBLIC #####
 

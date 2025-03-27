@@ -1,3 +1,4 @@
-import { Request, Response } from 'express';
+// Eliminar las importaciones no utilizadas
+// import { Request, Response } from 'express';
 
 // todo

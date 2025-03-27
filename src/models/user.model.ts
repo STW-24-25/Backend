@@ -1,6 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-
 // Possible user roles
 
 /**
@@ -9,14 +8,14 @@ import mongoose, { Schema, Document } from 'mongoose';
  *  schemas:
  *    UserRole:
  *      type: string
- *      enum:  
+ *      enum:
  *      - Agricultor pequeño
  *      - Agricultor mediano
  *      - Agricultor grande
  *      - Presidente de cooperativa
  *      - Mayorista
  *      - Experto
- *      
+ *
  */
 export enum UserRole {
   SMALL_FARMER = 'Agricultor pequeño',
@@ -24,9 +23,8 @@ export enum UserRole {
   BIG_FARMER = 'Agricultor grande',
   COOP_PRESIDENT = 'Presidente de cooperativa',
   WHOLESALER = 'Mayorista',
-  EXPERT = 'Experto'
-};
-
+  EXPERT = 'Experto',
+}
 
 // Possible autonomous communities in Spain
 
@@ -36,7 +34,7 @@ export enum UserRole {
  *  schemas:
  *    AutonomousCommunity:
  *      type: string
- *      enum:  
+ *      enum:
  *      - Andalucía
  *      - Aragón
  *      - Principado de Asturias
@@ -79,19 +77,17 @@ export enum AutonomousComunity {
   MELILLA = 'Ciudad Autónoma de Melilla',
 }
 
-
 // User interface
 interface IUser extends Document {
   username: string;
   email: string;
-  passwordHash: string,
-  profilePicture?: string,
-  role: UserRole,
-  autonomousCommunity: AutonomousComunity,
-  isAdmin: boolean,
-  createdAt: Date,
-};
-
+  passwordHash: string;
+  profilePicture?: string;
+  role: UserRole;
+  autonomousCommunity: AutonomousComunity;
+  isAdmin: boolean;
+  createdAt: Date;
+}
 
 // Swagger schema doc for User
 
@@ -130,7 +126,6 @@ interface IUser extends Document {
  *          format: date
  */
 
-
 // User scheema for mongoose
 const userSchema: Schema = new Schema({
   username: { type: String, required: true, unique: true },
@@ -138,7 +133,11 @@ const userSchema: Schema = new Schema({
   passwordHash: { type: String, required: true },
   profilePicture: { type: String },
   role: { type: String, enum: UserRole, default: UserRole.SMALL_FARMER, required: true },
-  autonomousCommunity: { type: String, enum: AutonomousComunity, default: AutonomousComunity.ARAGON },
+  autonomousCommunity: {
+    type: String,
+    enum: AutonomousComunity,
+    default: AutonomousComunity.ARAGON,
+  },
   isAdmin: { type: Boolean, default: false, required: true },
   createdAt: { type: Date, default: Date.now() },
 });

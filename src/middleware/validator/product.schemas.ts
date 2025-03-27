@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-
 /**
  * @swagger
  * components:
@@ -34,11 +33,17 @@ import { z } from 'zod';
 export const getAllProductsSchema = z.object({
   query: z.object({
     name: z.string().optional(),
-    page: z.string().optional().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
-      message: "Page must be a positive number",
-    }),
-    size: z.string().optional().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
-      message: "Size must be a positive number",
-    }),
+    page: z
+      .string()
+      .optional()
+      .refine(val => !isNaN(Number(val)) && Number(val) > 0, {
+        message: 'Page must be a positive number',
+      }),
+    size: z
+      .string()
+      .optional()
+      .refine(val => !isNaN(Number(val)) && Number(val) > 0, {
+        message: 'Size must be a positive number',
+      }),
   }),
 });

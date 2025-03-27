@@ -1,6 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-
 /**
  * @swagger
  * components:
@@ -21,7 +20,7 @@ import mongoose, { Schema, Document } from 'mongoose';
  *      - AVES, HUEVOS, CAZA
  *      - LÁCTEOS
  */
-enum ProductSector {
+export enum ProductSector {
   CEREALS = 'CEREALES',
   RICE = 'ARROZ',
   OIL_OLIVES = 'ACEITES VEGETALES Y ACEITUNA DE MESA',
@@ -29,22 +28,22 @@ enum ProductSector {
   OILSEEDS_PROTEINS_RESIDUALS = 'SEMILLAS OLEAGINOSAS, PROTEICOS Y TORTAS',
   FRUITS = 'FRUTAS',
   VEGETABLES = 'HORTALIZAS',
-  BOVINE = 'BOVINO', // Consider a shorter name
+  BOVINE = 'BOVINO',
   OVINE = 'OVINO',
   PORCINE = 'PORCINO',
-  BIRDS_EGGS_HUNT = 'AVES, HUEVOS, CAZA', // Consider a shorter name
+  BIRDS_EGGS_HUNT = 'AVES, HUEVOS, CAZA',
   DAIRY = 'LÁCTEOS',
-};
+}
 
 // Product interface
 interface IProduct extends Document {
   name: string;
   sector: ProductSector;
   prices: {
-    date: Date,
-    price: number,
+    date: Date;
+    price: number;
   }[];
-  image: string,
+  image: string;
 }
 
 /**
@@ -79,10 +78,12 @@ interface IProduct extends Document {
 const productSchema: Schema = new Schema({
   name: { type: String, required: true },
   sector: { type: String, enum: ProductSector, required: true },
-  prices: [{
-    date: { type: Date, required: true },
-    price: { type: Number, required: true },
-  }],
+  prices: [
+    {
+      date: { type: Date, required: true },
+      price: { type: Number, required: true },
+    },
+  ],
   image: { type: String, required: false },
 });
 

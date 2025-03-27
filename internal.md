@@ -1,17 +1,35 @@
-# Internal guidelines
+# Internal Guidelines
 
-This document contains guidelines for coding and documentation in the project.
+This document contains guidelines for coding, documentation, and continuous integration in the project.
 
-## Project workflow
+## Project Workflow
 
 ### General
 
 - Use git flow for branching and merging.
 - Use pull requests for code reviews.
-- Use github projects for tracking issues and features, keep it updated.
-- Use github actions for CI/CD.
+- Use GitHub projects for tracking issues and features, keep it updated.
+- Use GitHub Actions for CI/CD.
 
-## General coding guidelines
+### CI/CD Best Practices
+
+- All pull requests must pass automated tests before merging.
+- Each feature branch should include appropriate unit and integration tests.
+- Code coverage should not decrease with new changes.
+- Static code analysis tools must be run before merging.
+- Deployments to production should only happen from the main branch.
+- Use proper versioning with semantic versioning (semver).
+- Maintain a detailed changelog for all releases.
+
+### Testing Strategy
+
+- Unit tests should cover at least 80% of the codebase.
+- Integration tests must be run in an isolated environment.
+- Mock external dependencies in tests.
+- Test database interactions using MongoDB Memory Server.
+- Tests should not depend on each other and must clean up after themselves.
+
+## General Coding Guidelines
 
 ### General
 
@@ -26,6 +44,22 @@ This document contains guidelines for coding and documentation in the project.
 - Use `interface` for defining types, `type` for defining unions and intersections.
 - Use the logger from `common/utils/logger` to log messages __only__, no `console.log`.
 
+### Commit Conventions
+
+- Use conventional commits format: `<type>(<scope>): <description>`
+- Types: feat, fix, docs, style, refactor, test, chore, perf, ci, build, revert
+- Scope is optional and should be the module or area affected (e.g. users, products, db)
+- Descriptions should be concise and in present tense
+- Begin descriptions with lowercase
+- No period at the end of the description
+- Keep commits atomic and focused on a single change
+- Include issue number in description if applicable (e.g. `fix(auth): resolve login error #123`)
+- Examples:
+  - `feat(products): add price history endpoint`
+  - `fix(users): correct password reset validation`
+  - `docs(readme): update installation instructions`
+  - `test(auth): add tests for token refresh`
+
 ### Formatting
 
 - Use prettier for formatting.
@@ -37,10 +71,10 @@ This document contains guidelines for coding and documentation in the project.
 - Use camelCase for variables and functions.
 - Use PascalCase for classes, types and interfaces.
 - Use UPPERCASE for constants.
-- Keep line lengh under 100 characters when possible.
-- Keep 2 likes between top level declarations.
+- Keep line length under 100 characters when possible.
+- Keep 2 lines between top level declarations.
 
-## Documentation guidelines
+## Documentation Guidelines
 
 ### General
 
@@ -52,3 +86,20 @@ This document contains guidelines for coding and documentation in the project.
 - Define request schemas in middleware/validator files, with their corresponding zod object.
 - Define endpoints in routes files.
 - Follow Swagger OpenAPI 3.0 specification.
+
+## Continuous Integration Workflows
+
+- **PR Validation**: All PRs must go through automated code validation.
+- **Main Protection**: The main branch is protected and requires passing CI checks before merging.
+- **Automated Testing**: Tests run automatically on pull requests and merges to main.
+- **Code Quality**: Static code analysis runs on all PRs to ensure code quality.
+- **Deployment**: Automatic deployment to staging environments on merges to development branch.
+- **Security Scanning**: Dependency and security scanning is performed on a schedule.
+
+## Release Process
+
+1. Update version number in package.json according to semver.
+2. Update changelog with details of the release.
+3. Create a release PR from development to main.
+4. Once approved and merged, tag the release in Git.
+5. The CI/CD pipeline will automatically deploy to production.

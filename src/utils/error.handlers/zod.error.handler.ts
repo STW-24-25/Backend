@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from "express";
-import { ZodError } from "zod";
-import logger from "../logger";
+import { Request, Response, NextFunction } from 'express';
+import { ZodError } from 'zod';
+import logger from '../logger';
 
 /**
  * Handler for zod validation errors.
@@ -9,12 +9,7 @@ import logger from "../logger";
  * @param res Response object.
  * @param next Next function to call.
  */
-const zodErorrHandler = async (
-  err: any,
-  _req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+const zodErorrHandler = async (err: any, _req: Request, res: Response, next: NextFunction) => {
   logger.error(err);
 
   if (!(err instanceof ZodError)) {
@@ -22,7 +17,6 @@ const zodErorrHandler = async (
   }
 
   res.status(400).json({ message: 'Validation error', errors: err.errors });
-}
+};
 
 export default zodErorrHandler;
-

@@ -6,16 +6,16 @@ import { swaggerOptions } from './utils/swagger';
 import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import zodErorrHandler from './utils/error.handlers/zod.error.handler';
-
+import { configurarJobs } from './jobs/jobs.config';
 
 const app = express();
 
 const swaggerSpec = swaggerJSDoc(swaggerOptions);
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.get('/api/docs.json', (_req, res): void => {
-  res.setHeader('Content-Type', 'application/json')
-  res.send(swaggerSpec)
-})
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
 
 app.use(cors());
 app.use(express.json());
@@ -23,6 +23,8 @@ app.use(express.json());
 app.use('/api/users', userRouter);
 app.use('/api/products', productRouter);
 
+// Configurar jobs programados
+configurarJobs();
 
 app.use(zodErorrHandler);
 

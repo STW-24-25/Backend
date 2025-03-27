@@ -1,6 +1,5 @@
 import { Router } from 'express';
-import * as productCont from '../controllers/product.controller';
-import { validateSchema } from '../middleware/validator';
+import * as productController from '../controllers/product.controller';
 
 const router = Router();
 
@@ -51,9 +50,9 @@ const router = Router();
  *      500:
  *        description: Error processing request
  */
-router.get('/', productCont.getAllProducts);
+router.get('/', productController.getAllProducts);
 
 // todo swagger
-router.get('/{id}', productCont.getProduct);
+router.get('/:productId', productController.getProduct);
 
 export default router;
