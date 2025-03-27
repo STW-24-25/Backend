@@ -5,6 +5,10 @@ import userService from '../services/user.service';
 import User, { UserRole, AutonomousComunity } from '../models/user.model';
 import { genJWT } from '../middleware/auth';
 import { Types } from 'mongoose';
+import dotenv from 'dotenv';
+
+// Cargar variables de entorno
+dotenv.config();
 
 // Mock del middleware de autenticación
 jest.mock('../middleware/auth', () => ({

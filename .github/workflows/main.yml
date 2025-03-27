@@ -36,12 +36,14 @@ jobs:
           cache: 'npm'
       - name: Install libcrypto for MongoDB Memory Server
         run: |
-          wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libcrypto1.1_1.1.1f-1ubuntu2_amd64.deb
-          sudo dpkg -i libcrypto1.1_1.1.1f-1ubuntu2_amd64.deb
+          wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.20_amd64.deb
+          sudo dpkg -i libssl1.1_1.1.1f-1ubuntu2.20_amd64.deb
       - name: Install dependencies
         run: npm ci
       - name: Run tests with coverage
         run: npm run test:coverage
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
