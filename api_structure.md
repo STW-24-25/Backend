@@ -84,3 +84,19 @@ Comments are considered as posts, and saved in an array of child posts in the pa
     - Number of total users per autonomous community
     - Number of users per role.
     - Number of logins per month and hour.
+
+## Parcels
+
+### Public
+
+- /api/parcels
+  - `POST` : Create a new parcel
+  - `GET` : Get all parcels
+- /api/parcels/:id
+  - `GET` : Get a specific parcel by id
+
+### Admin only
+
+- /api/parcels/:id
+  - `PUT` : Update a specific parcel by id
+  - `DELETE` : Delete a specific parcel by id
