@@ -14,6 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Security scanning workflow
 - Automated deployment to staging and production
 - Code quality checks in CI pipeline
+- Complete implementation of agricultural parcels module:
+  - Parcel model with geospatial information
+  - Parcel management service with SIGPAC integration
+  - AEMET weather API integration for climate data
+  - Endpoint to retrieve parcels by geographic coordinates
+  - Support for different crop types and parcel sizes
+  - Automatic mapping of provinces to Autonomous Communities
 
 ### Changed
 
@@ -27,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Corregidos los errores de tipado en el controlador de usuario
 - Mejorado el manejo de errores en los controladores
+- Fixed province to Autonomous Community mapping in parcel service
 
 ## [1.0.0] - YYYY-MM-DD
 

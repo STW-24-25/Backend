@@ -30,6 +30,7 @@
   "dependencies": {
     "@types/express": "^5.0.1",
     "@types/node-cron": "^3.0.11",
+    "aemet-api": "^1.0.0",
     "agro-precios": "^1.0.3",
     "ajv": "^8.17.1",
     "axios": "^1.8.4",

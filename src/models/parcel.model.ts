@@ -55,12 +55,22 @@ interface IParcel extends Document {
   size: ParcelSize;
   crop: CropType;
   location: {
-    lat: number;
-    lng: number;
+    type: string;
+    coordinates: number[];
   };
   autonomousCommunity: AutonomousComunity;
-  geoJSON: object;
+  geoJSON: any;
+  sigpacData: {
+    provincia: string;
+    municipio: string;
+    poligono: string;
+    parcela: string;
+    area: number;
+    perimetro: number;
+    declarationInfo: any;
+  };
   createdAt: Date;
+  updatedAt: Date;
 }
 
 // Swagger schema doc for Parcel
@@ -89,10 +99,10 @@ interface IParcel extends Document {
  *        location:
  *          type: object
  *          properties:
- *            lat:
- *              type: number
- *            lng:
- *              type: number
+ *            type:
+ *              type: string
+ *            coordinates:
+ *              type: array
  *        autonomousCommunity:
  *          $ref: '#/components/schemas/AutonomousCommunity'
  *        geoJSON:
@@ -104,40 +114,57 @@ interface IParcel extends Document {
  */
 
 // Parcel schema for mongoose
-const parcelSchema: Schema = new Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
+const parcelSchema: Schema = new Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    size: {
+      type: String,
+      enum: ParcelSize,
+      required: true,
+    },
+    crop: {
+      type: String,
+      enum: CropType,
+      required: true,
+    },
+    location: {
+      type: {
+        type: String,
+        enum: ['Point'],
+        required: true,
+      },
+      coordinates: {
+        type: [Number],
+        required: true,
+      },
+    },
+    autonomousCommunity: {
+      type: String,
+      enum: AutonomousComunity,
+      required: true,
+    },
+    geoJSON: {
+      type: mongoose.Schema.Types.Mixed,
+      required: true,
+    },
+    sigpacData: {
+      provincia: String,
+      municipio: String,
+      poligono: String,
+      parcela: String,
+      area: Number,
+      perimetro: Number,
+      declarationInfo: mongoose.Schema.Types.Mixed,
+    },
   },
-  size: {
-    type: String,
-    enum: ParcelSize,
-    required: true,
+  {
+    timestamps: true,
   },
-  crop: {
-    type: String,
-    enum: CropType,
-    required: true,
-  },
-  location: {
-    lat: { type: Number, required: true },
-    lng: { type: Number, required: true },
-  },
-  autonomousCommunity: {
-    type: String,
-    enum: AutonomousComunity,
-    required: true,
-  },
-  geoJSON: {
-    type: Object,
-    required: true,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+);
 
 // Crear índice geoespacial para consultas de ubicación
 parcelSchema.index({ location: '2dsphere' });
