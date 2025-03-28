@@ -4,7 +4,6 @@ import bcrypt from 'bcrypt';
 import * as userController from '../controllers/user.controller';
 import User, { UserRole, AutonomousComunity } from '../models/user.model';
 import { genJWT } from '../middleware/auth';
-import { Types } from 'mongoose';
 import dotenv from 'dotenv';
 import { Request, Response } from 'express';
 
@@ -71,7 +70,13 @@ jest.mock('../services/user.service', () => ({
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) return null;
 
-    const token = 'mocked-jwt-token';
+    const token = genJWT({
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      isAdmin: user.isAdmin,
+    });
     return { user, token };
   }),
   findAllUsers: jest.fn().mockImplementation(async (limit, skip) => {
@@ -224,14 +229,7 @@ describe('UserController', () => {
     isAdmin: false,
   };
 
-  const adminUserData = {
-    username: 'adminuser',
-    email: 'admin@example.com',
-    password: 'AdminPass123',
-    role: UserRole.EXPERT,
-    autonomousCommunity: AutonomousComunity.MADRID,
-    isAdmin: true,
-  };
+  // adminUserData está definido pero no usado en este archivo
 
   // Helper para crear un usuario directamente en la BD
   async function createTestUser(userData = testUserData): Promise<UserDocument> {

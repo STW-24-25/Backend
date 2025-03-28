@@ -1,0 +1,257 @@
+import mongoose from 'mongoose';
+import { MongoMemoryServer } from 'mongodb-memory-server';
+import * as parcelController from '../controllers/parcel.controller';
+import parcelService from '../services/parcel.service';
+import { Request, Response } from 'express';
+
+// Mock auth interface
+interface AuthRequest extends Request {
+  user?: {
+    id: string;
+    username?: string;
+    email?: string;
+    role?: string;
+    isAdmin?: boolean;
+  };
+}
+
+// Mock the parcel service
+jest.mock('../services/parcel.service', () => ({
+  getParcelByCoordinates: jest.fn(),
+  createParcel: jest.fn(),
+  default: {
+    getParcelByCoordinates: jest.fn(),
+    createParcel: jest.fn(),
+  },
+}));
+
+// Mock the logger to avoid logs during tests
+jest.mock('../utils/logger', () => ({
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+  debug: jest.fn(),
+}));
+
+describe('ParcelController', () => {
+  // Mock data for testing
+  const userId = new mongoose.Types.ObjectId().toString();
+  const mockCoordinates = {
+    lng: -1.8054282,
+    lat: 38.9598049,
+  };
+
+  const mockParcel = {
+    _id: new mongoose.Types.ObjectId().toString(),
+    user: userId,
+    size: 'Mediana',
+    crop: 'Cereales',
+    location: {
+      lat: mockCoordinates.lat,
+      lng: mockCoordinates.lng,
+    },
+    autonomousCommunity: 'Castilla-La Mancha',
+    geoJSON: {
+      type: 'Polygon',
+      coordinates: [[]],
+    },
+    createdAt: new Date(),
+  };
+
+  const mockWeatherData = {
+    temperature: 25.2,
+    humidity: 45,
+    windSpeed: 2.1,
+    description: 'clear sky',
+    icon: '01d',
+  };
+
+  // Create mock request and response objects
+  const mockRequest = (data: any = {}): Request | AuthRequest => {
+    const req: Partial<Request> = {};
+    req.body = data.body || {};
+    req.params = data.params || {};
+    req.query = data.query || {};
+
+    if (data.user) {
+      (req as Partial<AuthRequest>).user = data.user;
+      return req as AuthRequest;
+    }
+
+    return req as Request;
+  };
+
+  const mockResponse = () => {
+    const res: Partial<Response> = {};
+    res.status = jest.fn().mockReturnValue(res);
+    res.json = jest.fn().mockReturnValue(res);
+    return res as Response;
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('getParcel', () => {
+    it('should return 401 if user is not authenticated', async () => {
+      const req = mockRequest() as AuthRequest;
+      const res = mockResponse();
+
+      await parcelController.getParcel(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({ message: 'Authentication required' });
+    });
+
+    it('should return 400 if coordinates are invalid', async () => {
+      const req = mockRequest({
+        user: { id: userId },
+        query: { lng: 'invalid', lat: 'invalid' },
+      }) as AuthRequest;
+      const res = mockResponse();
+
+      await parcelController.getParcel(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Valid longitude and latitude coordinates are required',
+      });
+    });
+
+    it('should return parcel data if coordinates are valid', async () => {
+      const req = mockRequest({
+        user: { id: userId },
+        query: { lng: mockCoordinates.lng.toString(), lat: mockCoordinates.lat.toString() },
+      }) as AuthRequest;
+      const res = mockResponse();
+
+      // Mock the service response
+      const mockServiceResponse = {
+        parcel: mockParcel,
+        weather: mockWeatherData,
+      };
+      (parcelService.getParcelByCoordinates as jest.Mock).mockResolvedValue(mockServiceResponse);
+
+      await parcelController.getParcel(req, res);
+
+      expect(parcelService.getParcelByCoordinates).toHaveBeenCalledWith(
+        userId,
+        mockCoordinates.lng,
+        mockCoordinates.lat,
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(mockServiceResponse);
+    });
+
+    it('should return 404 if no parcel is found', async () => {
+      const req = mockRequest({
+        user: { id: userId },
+        query: { lng: mockCoordinates.lng.toString(), lat: mockCoordinates.lat.toString() },
+      }) as AuthRequest;
+      const res = mockResponse();
+
+      // Mock service to throw "No parcel found" error
+      (parcelService.getParcelByCoordinates as jest.Mock).mockRejectedValue(
+        new Error('No parcel found at specified coordinates'),
+      );
+
+      await parcelController.getParcel(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'No parcel found at the specified coordinates',
+      });
+    });
+
+    it('should return 500 if service throws an unexpected error', async () => {
+      const req = mockRequest({
+        user: { id: userId },
+        query: { lng: mockCoordinates.lng.toString(), lat: mockCoordinates.lat.toString() },
+      }) as AuthRequest;
+      const res = mockResponse();
+
+      // Mock service to throw a generic error
+      (parcelService.getParcelByCoordinates as jest.Mock).mockRejectedValue(
+        new Error('Unexpected error'),
+      );
+
+      await parcelController.getParcel(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Error retrieving parcel',
+        error: 'Unexpected error',
+      });
+    });
+  });
+
+  describe('createParcel', () => {
+    it('should return 401 if user is not authenticated', async () => {
+      const req = mockRequest() as AuthRequest;
+      const res = mockResponse();
+
+      await parcelController.createParcel(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({ message: 'Authentication required' });
+    });
+
+    it('should create a parcel and return 201', async () => {
+      const parcelData = {
+        size: 'Mediana',
+        crop: 'Cereales',
+        location: {
+          lat: mockCoordinates.lat,
+          lng: mockCoordinates.lng,
+        },
+        autonomousCommunity: 'Castilla-La Mancha',
+        geoJSON: {
+          type: 'Polygon',
+          coordinates: [[]],
+        },
+      };
+
+      const req = mockRequest({
+        user: { id: userId },
+        body: parcelData,
+      }) as AuthRequest;
+      const res = mockResponse();
+
+      // Mock service response
+      (parcelService.createParcel as jest.Mock).mockResolvedValue(mockParcel);
+
+      await parcelController.createParcel(req, res);
+
+      expect(parcelService.createParcel).toHaveBeenCalledWith({
+        ...parcelData,
+        user: userId,
+      });
+      expect(res.status).toHaveBeenCalledWith(201);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Parcel created successfully',
+        parcel: mockParcel,
+      });
+    });
+
+    it('should return 500 if service throws an error', async () => {
+      const req = mockRequest({
+        user: { id: userId },
+        body: { size: 'Mediana' }, // Incomplete data
+      }) as AuthRequest;
+      const res = mockResponse();
+
+      // Mock service to throw an error
+      (parcelService.createParcel as jest.Mock).mockRejectedValue(
+        new Error('Failed to create parcel'),
+      );
+
+      await parcelController.createParcel(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Error creating parcel',
+        error: 'Failed to create parcel',
+      });
+    });
+  });
+});
