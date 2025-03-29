@@ -1,17 +1,7 @@
 import { Request, Response } from 'express';
 import userService from '../services/user.service';
 import logger from '../utils/logger';
-
-// Extended Request interface to include user property
-interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    username?: string;
-    email?: string;
-    role?: string;
-    isAdmin?: boolean;
-  };
-}
+import { AutonomousComunity, UserRole } from '../models/user.model';
 
 /**
  * Creates a user and saves it in the DB.
@@ -28,7 +18,6 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       profilePicture: req.body.profilePicture,
       role: req.body.role,
       autonomousCommunity: req.body.autonomousCommunity,
-      isAdmin: req.body.isAdmin || false,
     };
 
     const user = await userService.createUser(userData);
@@ -147,105 +136,36 @@ export const getUser = async (req: Request, res: Response): Promise<void> => {
  */
 export const getAllUsers = async (req: Request, res: Response): Promise<void> => {
   try {
-    const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
-    const skip = req.query.skip ? parseInt(req.query.skip as string) : undefined;
+    const username = req.query.username as string | undefined;
+    const email = req.query.email as string | undefined;
+    const role = req.query.role as UserRole | undefined;
+    const autCom = req.query.autCom as AutonomousComunity | undefined;
+    const isAdmin = req.query.isAdmin as boolean | undefined;
+    const page = parseInt(req.query.page as string) || 1; // Default to page 1
+    const size = parseInt(req.query.size as string) || 10; // Default to size 16
 
-    const users = await userService.findAllUsers(limit, skip);
-    const total = await userService.countUsers();
+    const { users, totalPages } = await userService.findAllUsers(
+      username,
+      email,
+      role,
+      autCom,
+      isAdmin,
+      page,
+      size,
+    );
+    const totalUsers = await userService.countUsers();
 
     res.status(200).json({
-      users,
-      pagination: {
-        total,
-        limit,
-        skip,
-      },
+      users: users,
+      page: page,
+      pageSize: size,
+      totalUsers: totalUsers,
+      totalPages: totalPages,
     });
     logger.info(`Retrieved all users: ${users.length}`);
   } catch (err: any) {
     res.status(500).json({ message: 'Error retrieving users', error: err.message });
     logger.error('Error retrieving users', err);
-  }
-};
-
-/**
- * Changes user password.
- * @param req Request object containing current and new password.
- * @param res Response object, will have 200 if password changed, 401 if current password is incorrect, or 500 if an error occurred.
- * @returns Promise<void>
- */
-export const changePassword = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const userId = req.params.id;
-    const { currentPassword, newPassword } = req.body;
-
-    const success = await userService.changePassword(userId, currentPassword, newPassword);
-
-    if (!success) {
-      res.status(401).json({ message: 'Current password is incorrect or user not found' });
-      return;
-    }
-
-    res.status(200).json({ message: 'Password changed successfully' });
-    logger.info(`Password changed for user: ${userId}`);
-  } catch (err: any) {
-    res.status(500).json({ message: 'Error changing password', error: err.message });
-    logger.error('Error changing password', err);
-  }
-};
-
-/**
- * Validates if a user token is valid.
- * @param req Request object containing user ID from authenticated token.
- * @param res Response object, will have 200 if token is valid or 401 if invalid.
- * @returns Promise<void>
- */
-export const validateToken = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const userId = req.user?.id; // User ID is available from auth middleware
-
-    if (!userId) {
-      res.status(401).json({ message: 'Invalid token' });
-      return;
-    }
-
-    const isValid = await userService.validateUserToken(userId);
-
-    if (!isValid) {
-      res.status(401).json({ message: 'Invalid token' });
-      return;
-    }
-
-    res.status(200).json({ message: 'Token is valid' });
-  } catch (err: any) {
-    res.status(500).json({ message: 'Error validating token', error: err.message });
-    logger.error('Error validating token', err);
-  }
-};
-
-/**
- * Searches users based on various criteria.
- * @param req Request object containing search parameters.
- * @param res Response object, will have 200 with matching users or 500 if an error occurred.
- * @returns Promise<void>
- */
-export const searchUsers = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const searchParams = {
-      username: req.query.username as string,
-      email: req.query.email as string,
-      role: req.query.role as any,
-      autonomousCommunity: req.query.autonomousCommunity as any,
-      isAdmin: req.query.isAdmin === 'true',
-    };
-
-    const users = await userService.findUsersBySearchCriteria(searchParams);
-
-    res.status(200).json({ users, count: users.length });
-    logger.info(`User search completed: ${users.length} results`);
-  } catch (err: any) {
-    res.status(500).json({ message: 'Error searching users', error: err.message });
-    logger.error('Error searching users', err);
   }
 };
 

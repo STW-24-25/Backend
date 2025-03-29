@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import * as userCont from '../controllers/user.controller';
 import { validateSchema } from '../middleware/validator';
-import { loginSchema, newUserSchema } from '../middleware/validator/user.schemas';
+import * as userRequestSchemas from '../middleware/validator/user.schemas';
+import { authenticateJWT } from '../middleware/auth';
 
 const router = Router();
 
@@ -11,7 +12,7 @@ const router = Router();
  * @swagger
  * /api/users:
  *  post:
- *    summary: Create a new user account with the provided details.
+ *    summary: Create a new user account (non admin) with the provided details.
  *    tags: [User]
  *    requestBody:
  *      required: true
@@ -27,21 +28,18 @@ const router = Router();
  *      500:
  *        description: Error processing the request
  */
-router.post('/', validateSchema(newUserSchema), userCont.createUser);
+router.post('/', validateSchema(userRequestSchemas.newUserSchema), userCont.createUser);
 
 /**
  * @swagger
  * /api/users/{id}:
  *  put:
- *    summary: Update an existing user
+ *    summary: Update an existing user data
  *    tags: [User]
+ *    security:
+ *      - bearerAuth: []
  *    parameters:
- *      - in: path
- *        name: id
- *        schema:
- *          type: string
- *        required: true
- *        description: User ID
+ *      - $ref: '#/components/parameters/updateUserUserIdParameterSchema'
  *    requestBody:
  *      required: true
  *      content:
@@ -58,21 +56,26 @@ router.post('/', validateSchema(newUserSchema), userCont.createUser);
  *      500:
  *        description: Error processing the request
  */
-router.put('/:id', userCont.updateUser);
+router.put(
+  '/:id',
+  authenticateJWT(),
+  validateSchema(userRequestSchemas.updateUserSchema),
+  userCont.updateUser,
+);
 
 /**
  * @swagger
  * /api/users/{id}:
  *  delete:
  *    summary: Delete a user account
+ *    description: >
+ *      Deletes a user account, if the authenticated user is not admin only their own, otherwise
+ *      any account may be deleted.
+ *    security:
+ *      - bearerAuth: []
  *    tags: [User]
  *    parameters:
- *      - in: path
- *        name: id
- *        schema:
- *          type: string
- *        required: true
- *        description: User ID
+ *      - $ref: '#/components/parameters/deleteUserUserIdParameterSchema'
  *    responses:
  *      200:
  *        description: User deleted successfully
@@ -81,7 +84,12 @@ router.put('/:id', userCont.updateUser);
  *      500:
  *        description: Error processing the request
  */
-router.delete('/:id', userCont.deleteUser);
+router.delete(
+  '/:id',
+  authenticateJWT(),
+  validateSchema(userRequestSchemas.deleteUserSchema),
+  userCont.deleteUser,
+);
 
 /**
  * @swagger
@@ -107,6 +115,24 @@ router.delete('/:id', userCont.deleteUser);
  *                  type: string
  *                user:
  *                  type: object
+ *                  properties:
+ *                    username:
+ *                      type: string
+ *                    email:
+ *                      type: string
+ *                    profilePicture:
+ *                      type: string
+ *                      nullable: true
+ *                    role:
+ *                      $ref: '#/components/schemas/UserRole'
+ *                    autonomousCommunity:
+ *                      $ref: '#/components/schemas/AutonomousCommunity'
+ *                    isAdmin:
+ *                      type: boolean
+ *                      default: false
+ *                    isBlocked:
+ *                      type: boolean
+ *                      default: false
  *      400:
  *        description: Bad request, schema validation failed
  *      401:
@@ -114,51 +140,69 @@ router.delete('/:id', userCont.deleteUser);
  *      500:
  *        description: Error processing the request
  */
-router.post('/login', validateSchema(loginSchema), userCont.login);
+router.post('/login', validateSchema(userRequestSchemas.loginSchema), userCont.login);
 
 /**
  * @swagger
  * /api/users/{id}:
  *  get:
  *    summary: Get user information by ID
+ *    security:
+ *      - bearerAuth: []
  *    tags: [User]
  *    parameters:
- *      - in: path
- *        name: id
- *        schema:
- *          type: string
- *        required: true
- *        description: User ID
+ *      - $ref: '#/components/parameters/getUserUserIdParameterSchema'
  *    responses:
  *      200:
  *        description: User information retrieved successfully
  *        content:
  *          application/json:
  *            schema:
- *              $ref: '#/components/schemas/User'
+ *              type: object
+ *              properties:
+ *                username:
+ *                  type: string
+ *                email:
+ *                  type: string
+ *                profilePicture:
+ *                  type: string
+ *                  nullable: true
+ *                role:
+ *                  $ref: '#/components/schemas/UserRole'
+ *                autonomousCommunity:
+ *                  $ref: '#/components/schemas/AutonomousCommunity'
+ *                isAdmin:
+ *                  type: boolean
+ *                  default: false
+ *                isBlocked:
+ *                  type: boolean
+ *                  default: false
  *      404:
  *        description: User not found
  *      500:
  *        description: Error processing the request
  */
-router.get('/:id', userCont.getUser);
+router.get(
+  '/:id',
+  authenticateJWT(),
+  validateSchema(userRequestSchemas.getUserSchema),
+  userCont.getUser,
+);
 
 /**
  * @swagger
  * /api/users/request-unblock:
  *  post:
  *    summary: Request to unblock a user account
+ *    security:
+ *      - bearerAuth: []
  *    tags: [User]
  *    requestBody:
  *      required: true
  *      content:
  *        application/json:
  *          schema:
- *            type: object
- *            properties:
- *              userId:
- *                type: string
- *                description: ID of the user requesting unblock
+ *            $ref: '#/components/requestBodies/requestUnblock'
  *    responses:
  *      200:
  *        description: Unblock request submitted successfully
@@ -168,10 +212,13 @@ router.get('/:id', userCont.getUser);
  *        description: User not found
  *      500:
  *        description: Error processing the request
- *      501:
- *        description: Feature not implemented yet
  */
-router.post('/request-unblock', userCont.requestUnblock);
+router.post(
+  '/request-unblock',
+  authenticateJWT(),
+  validateSchema(userRequestSchemas.requestUnblockSchema),
+  userCont.requestUnblock,
+);
 
 // ##### ADMIN #####
 
@@ -179,44 +226,18 @@ router.post('/request-unblock', userCont.requestUnblock);
  * @swagger
  * /api/users:
  *  get:
- *    summary: Get all users with optional pagination
+ *    summary: Get all users with optional pagination (Admin only)
+ *    security:
+ *      - bearerAuth: []
  *    tags: [User]
  *    parameters:
- *      - in: query
- *        name: limit
- *        schema:
- *          type: integer
- *        description: Number of users to return
- *      - in: query
- *        name: skip
- *        schema:
- *          type: integer
- *        description: Number of users to skip
- *      - in: query
- *        name: username
- *        schema:
- *          type: string
- *        description: Filter by username
- *      - in: query
- *        name: email
- *        schema:
- *          type: string
- *        description: Filter by email
- *      - in: query
- *        name: role
- *        schema:
- *          type: string
- *        description: Filter by role
- *      - in: query
- *        name: autonomousCommunity
- *        schema:
- *          type: string
- *        description: Filter by autonomous community
- *      - in: query
- *        name: isAdmin
- *        schema:
- *          type: boolean
- *        description: Filter by admin status
+ *      - $ref: '#/components/parameters/getAllUsersUsernameParameterSchema'
+ *      - $ref: '#/components/parameters/getAllUsersEmailParameterSchema'
+ *      - $ref: '#/components/parameters/getAllUsersRoleParameterSchema'
+ *      - $ref: '#/components/parameters/getAllUsersAutonomousCommunityParameterSchema'
+ *      - $ref: '#/components/parameters/getAllUsersIsAdminParameterSchema'
+ *      - $ref: '#/components/parameters/getAllUsersPageParameterSchema'
+ *      - $ref: '#/components/parameters/getAllUsersSizeParameterSchema'
  *    responses:
  *      200:
  *        description: List of users
@@ -228,40 +249,58 @@ router.post('/request-unblock', userCont.requestUnblock);
  *                users:
  *                  type: array
  *                  items:
- *                    $ref: '#/components/schemas/User'
- *                pagination:
- *                  type: object
- *                  properties:
- *                    total:
- *                      type: integer
- *                    limit:
- *                      type: integer
- *                    skip:
- *                      type: integer
+ *                    type: object
+ *                    properties:
+ *                      username:
+ *                        type: string
+ *                      email:
+ *                        type: string
+ *                        format: email
+ *                      profilePicture:
+ *                        type: string
+ *                      role:
+ *                        $ref: '#/components/schemas/UserRole'
+ *                      autonomousCommunity:
+ *                        $ref: '#/components/schemas/AutonomousCommunity'
+ *                      isAdmin:
+ *                        type: boolean
+ *                      createdAt:
+ *                        type: string
+ *                        format: date
+ *                      isBlocked:
+ *                        type: boolean
+ *                page:
+ *                  type: integer
+ *                pageSize:
+ *                  type: integer
+ *                totalUsers:
+ *                  type: integer
+ *                totalPages:
+ *                  type: integer
  *      500:
  *        description: Error processing the request
  */
-router.get('/', userCont.getAllUsers);
+router.get(
+  '/',
+  authenticateJWT(),
+  validateSchema(userRequestSchemas.getAllUsersSchema),
+  userCont.getAllUsers,
+);
 
 /**
  * @swagger
  * /api/users/block:
  *  post:
  *    summary: Block a user account (Admin only)
+ *    security:
+ *      - bearerAuth: []
  *    tags: [User]
  *    requestBody:
  *      required: true
  *      content:
  *        application/json:
  *          schema:
- *            type: object
- *            properties:
- *              userId:
- *                type: string
- *                description: ID of the user to block
- *              reason:
- *                type: string
- *                description: Reason for blocking the user
+ *            $ref: '#/components/requestBodies/block'
  *    responses:
  *      200:
  *        description: User blocked successfully
@@ -271,27 +310,28 @@ router.get('/', userCont.getAllUsers);
  *        description: User not found
  *      500:
  *        description: Error processing the request
- *      501:
- *        description: Feature not implemented yet
  */
-router.post('/block', userCont.blockUser);
+router.post(
+  '/block',
+  authenticateJWT(),
+  validateSchema(userRequestSchemas.blockSchema),
+  userCont.blockUser,
+);
 
 /**
  * @swagger
  * /api/users/unblock:
  *  post:
  *    summary: Unblock a user account (Admin only)
+ *    security:
+ *      - bearerAuth: []
  *    tags: [User]
  *    requestBody:
  *      required: true
  *      content:
  *        application/json:
  *          schema:
- *            type: object
- *            properties:
- *              userId:
- *                type: string
- *                description: ID of the user to unblock
+ *            $ref: '#/components/requestBodies/unblock'
  *    responses:
  *      200:
  *        description: User unblocked successfully
@@ -301,9 +341,12 @@ router.post('/block', userCont.blockUser);
  *        description: User not found
  *      500:
  *        description: Error processing the request
- *      501:
- *        description: Feature not implemented yet
  */
-router.post('/unblock', userCont.unBlockUser);
+router.post(
+  '/unblock',
+  authenticateJWT(),
+  validateSchema(userRequestSchemas.unblockSchema),
+  userCont.unBlockUser,
+);
 
 export default router;

@@ -64,7 +64,7 @@ const router = Router();
  *      500:
  *        description: Error retrieving parcel
  */
-router.get('/', authenticateJWT, parcelController.getParcel);
+router.get('/', authenticateJWT(), parcelController.getParcel);
 
 /**
  * @swagger
@@ -99,6 +99,6 @@ router.get('/', authenticateJWT, parcelController.getParcel);
  *      500:
  *        description: Error creating parcel
  */
-router.post('/', authenticateJWT, validateSchema(newParcelSchema), parcelController.createParcel);
+router.post('/', authenticateJWT(), validateSchema(newParcelSchema), parcelController.createParcel);
 
 export default router;

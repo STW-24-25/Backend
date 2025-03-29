@@ -382,57 +382,19 @@ describe('UserService', () => {
         email: 'admin2@example.com',
       });
 
-      const result = await userService.findAllUsers();
+      const result = await userService.findAllUsers(
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        1,
+        16,
+      );
 
       expect(result).toBeDefined();
-      expect(result.length).toBe(3);
-      expect(result[0].passwordHash).toBeUndefined(); // Password should not be included
-    });
-
-    it('should respect limit parameter', async () => {
-      // Create multiple users
-      await createTestUser(testUserData);
-      await createTestUser({
-        ...adminUserData,
-        username: 'admin1',
-        email: 'admin1@example.com',
-      });
-      await createTestUser({
-        ...adminUserData,
-        username: 'admin2',
-        email: 'admin2@example.com',
-      });
-
-      const result = await userService.findAllUsers(2);
-
-      expect(result).toBeDefined();
-      expect(result.length).toBe(2);
-    });
-
-    it('should respect skip parameter', async () => {
-      // Create multiple users
-      const user1 = await createTestUser(testUserData);
-      const user2 = await createTestUser({
-        ...adminUserData,
-        username: 'admin1',
-        email: 'admin1@example.com',
-      });
-      const user3 = await createTestUser({
-        ...adminUserData,
-        username: 'admin2',
-        email: 'admin2@example.com',
-      });
-
-      const result = await userService.findAllUsers(undefined, 2);
-
-      expect(result).toBeDefined();
-      expect(result.length).toBe(1);
-
-      // With skip=2, we should get only the third user
-      const ids = result.map(u => (u._id as unknown as Types.ObjectId).toString());
-      expect(ids).toContain((user3._id as unknown as Types.ObjectId).toString());
-      expect(ids).not.toContain((user1._id as unknown as Types.ObjectId).toString());
-      expect(ids).not.toContain((user2._id as unknown as Types.ObjectId).toString());
+      expect(result.users.length).toBe(3);
+      expect(result.users[0].passwordHash).toBeUndefined(); // Password should not be included
     });
   });
 

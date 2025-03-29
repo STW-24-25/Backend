@@ -292,24 +292,50 @@ class UserService {
    * @param skip Number of users to skip (optional)
    * @returns Array of users
    */
-  async findAllUsers(limit?: number, skip?: number): Promise<UserDocument[]> {
+  async findAllUsers(
+    username: string | undefined,
+    email: string | undefined,
+    role: UserRole | undefined,
+    autCom: AutonomousComunity | undefined,
+    isAdmin: boolean | undefined,
+    page: number,
+    size: number,
+  ): Promise<{ users: UserDocument[]; totalPages: number }> {
     try {
-      logger.info(`Finding all users${limit ? ` (limit: ${limit}, skip: ${skip})` : ''}`);
+      logger.info(`Finding all users with pagination (page: ${page}, size: ${size})`);
 
-      let query = User.find().select('-passwordHash');
+      const query: any = {};
 
-      if (skip) {
-        query = query.skip(skip);
+      if (username) {
+        query.username = { $regex: username, $options: 'i' }; // Case-insensitive search
       }
 
-      if (limit) {
-        query = query.limit(limit);
+      if (email) {
+        query.email = { $regex: email, $options: 'i' };
       }
 
-      const users = await query.exec();
+      if (role) {
+        query.role = role;
+      }
+
+      if (autCom) {
+        query.autonomousCommunity = autCom;
+      }
+
+      if (isAdmin !== undefined) {
+        query.isAdmin = isAdmin;
+      }
+
+      const totalPages = Math.ceil((await User.countDocuments(query)) / size);
+
+      const users = await User.find(query)
+        .select('-passwordHash')
+        .skip((page - 1) * size)
+        .limit(size)
+        .exec();
 
       logger.info(`Found ${users.length} users`);
-      return users as UserDocument[];
+      return { users: users as UserDocument[], totalPages };
     } catch (error) {
       logger.error(`Error finding all users: ${error}`);
       throw error;

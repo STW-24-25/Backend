@@ -35,10 +35,6 @@ import { AutonomousComunity, UserRole } from '../../models/user.model';
  *          $ref: '#/components/schemas/UserRole'
  *        autonomousCommunity:
  *          $ref: '#/components/schemas/AutonomousCommunity'
- *        isAdmin:
- *          type: boolean
- *          default: false
- *          description: Indica si el usuario es administrador
  */
 export const newUserSchema = z.object({
   body: z.object({
@@ -48,35 +44,38 @@ export const newUserSchema = z.object({
     profilePicture: z.string().optional(),
     role: z.nativeEnum(UserRole),
     autonomousCommunity: z.nativeEnum(AutonomousComunity),
-    isAdmin: z.boolean().optional().default(false),
   }),
 });
 
 /**
  * @swagger
  * components:
+ *  parameters:
+ *    updateUserUserIdParameterSchema:
+ *      in: path
+ *      name: id
+ *      schema:
+ *        type: string
+ *      required: true
+ *      description: User ID
  *  requestBodies:
  *    updateUser:
  *      type: object
  *      properties:
  *        username:
  *          type: string
- *          description: Nombre de usuario único
+ *          description: Unique username
  *        email:
  *          type: string
  *          format: email
- *          description: Correo electrónico único
+ *          description: Unique user email
  *        profilePicture:
  *          type: string
- *          nullable: true
- *          description: URL de la imagen de perfil
+ *          description: Profile picture path
  *        role:
  *          $ref: '#/components/schemas/UserRole'
  *        autonomousCommunity:
  *          $ref: '#/components/schemas/AutonomousCommunity'
- *        isAdmin:
- *          type: boolean
- *          description: Indica si el usuario es administrador
  */
 export const updateUserSchema = z.object({
   body: z.object({
@@ -85,7 +84,24 @@ export const updateUserSchema = z.object({
     profilePicture: z.string().optional(),
     role: z.nativeEnum(UserRole).optional(),
     autonomousCommunity: z.nativeEnum(AutonomousComunity).optional(),
-    isAdmin: z.boolean().optional(),
+  }),
+});
+
+/**
+ * @swagger
+ * components:
+ *  parameters:
+ *    deleteUserUserIdParameterSchema:
+ *      in: path
+ *      name: id
+ *      schema:
+ *        type: string
+ *      required: true
+ *      description: User ID
+ */
+export const deleteUserSchema = z.object({
+  params: z.object({
+    id: z.string(),
   }),
 });
 
@@ -101,11 +117,11 @@ export const updateUserSchema = z.object({
  *      properties:
  *        usernameOrEmail:
  *          type: string
- *          description: Nombre de usuario o correo electrónico
+ *          description: Username or email of the user
  *        password:
  *          type: string
  *          format: password
- *          description: Contraseña del usuario
+ *          description: Password (as plain text) of the user
  */
 export const loginSchema = z.object({
   body: z.object({
@@ -117,26 +133,18 @@ export const loginSchema = z.object({
 /**
  * @swagger
  * components:
- *  requestBodies:
- *    changePassword:
- *      type: object
- *      required:
- *        - currentPassword
- *        - newPassword
- *      properties:
- *        currentPassword:
- *          type: string
- *          format: password
- *          description: Contraseña actual del usuario
- *        newPassword:
- *          type: string
- *          format: password
- *          description: Nueva contraseña (mínimo 6 caracteres)
+ *  parameters:
+ *    getUserUserIdParameterSchema:
+ *      in: path
+ *      name: id
+ *      schema:
+ *        type: string
+ *      required: true
+ *      description: ID of the user to retrieve
  */
-export const changePasswordSchema = z.object({
-  body: z.object({
-    currentPassword: z.string().min(6),
-    newPassword: z.string().min(6),
+export const getUserSchema = z.object({
+  params: z.object({
+    id: z.string(),
   }),
 });
 
@@ -144,84 +152,128 @@ export const changePasswordSchema = z.object({
  * @swagger
  * components:
  *  parameters:
- *    getAllUsersLimitParameterSchema:
- *      in: query
- *      name: limit
- *      schema:
- *        type: integer
- *        minimum: 1
- *      required: false
- *      description: Número de usuarios a devolver
- *    getAllUsersSkipParameterSchema:
- *      in: query
- *      name: skip
- *      schema:
- *        type: integer
- *        minimum: 0
- *      required: false
- *      description: Número de usuarios a omitir
- *    searchUsersUsernameParameterSchema:
+ *    getAllUsersUsernameParameterSchema:
  *      in: query
  *      name: username
  *      schema:
  *        type: string
  *      required: false
- *      description: Filtrar por nombre de usuario
- *    searchUsersEmailParameterSchema:
+ *      description: Filter by username
+ *    getAllUsersEmailParameterSchema:
  *      in: query
  *      name: email
  *      schema:
  *        type: string
+ *        format: email
  *      required: false
- *      description: Filtrar por correo electrónico
- *    searchUsersRoleParameterSchema:
+ *      description: Filter by email
+ *    getAllUsersRoleParameterSchema:
  *      in: query
  *      name: role
  *      schema:
  *        $ref: '#/components/schemas/UserRole'
  *      required: false
  *      description: Filtrar por rol de usuario
- *    searchUsersAutonomousCommunityParameterSchema:
+ *    getAllUsersAutonomousCommunityParameterSchema:
  *      in: query
  *      name: autonomousCommunity
  *      schema:
  *        $ref: '#/components/schemas/AutonomousCommunity'
  *      required: false
- *      description: Filtrar por comunidad autónoma
- *    searchUsersIsAdminParameterSchema:
+ *      description: Filter by autonomous community
+ *    getAllUsersIsAdminParameterSchema:
  *      in: query
  *      name: isAdmin
  *      schema:
  *        type: boolean
  *      required: false
- *      description: Filtrar por estado de administrador
+ *      description: Filter by admin status
+ *    getAllUsersPageParameterSchema:
+ *      in: query
+ *      name: page
+ *      schema:
+ *        type: integer
+ *        minimum: 1
+ *        default: 1
+ *      required: true
+ *      description: Page to be retrieved
+ *    getAllUsersSizeParameterSchema:
+ *      in: query
+ *      name: size
+ *      schema:
+ *        type: integer
+ *        minimum: 1
+ *        default: 16
+ *      required: true
+ *      description: Number of products per page
  */
 export const getAllUsersSchema = z.object({
   query: z.object({
-    limit: z
-      .string()
-      .optional()
-      .refine(val => !val || (!isNaN(Number(val)) && Number(val) > 0), {
-        message: 'Limit debe ser un número positivo',
-      }),
-    skip: z
-      .string()
-      .optional()
-      .refine(val => !val || (!isNaN(Number(val)) && Number(val) >= 0), {
-        message: 'Skip debe ser un número positivo o cero',
-      }),
+    username: z.string().min(3).optional(),
+    email: z.string().email().optional(),
+    role: z.nativeEnum(UserRole).optional(),
+    autonomousCommunity: z.nativeEnum(AutonomousComunity).optional(),
+    isAdmin: z.boolean().optional(),
   }),
 });
 
-export const searchUsersSchema = z.object({
-  query: z.object({
-    username: z.string().optional(),
-    email: z.string().optional(),
-    role: z.nativeEnum(UserRole).optional(),
-    autonomousCommunity: z.nativeEnum(AutonomousComunity).optional(),
-    isAdmin: z
-      .string()
-      .optional()
-      .transform(val => val === 'true'),
+/**
+ * @swagger
+ * components:
+ *  requestBodies:
+ *    requestUnblock:
+ *      type: object
+ *      required:
+ *        - id
+ *      properties:
+ *        id:
+ *          type: string
+ *          description: ID of the user requesting unblock
+ */
+export const requestUnblockSchema = z.object({
+  body: z.object({
+    id: z.string(),
+  }),
+});
+
+/**
+ * @swagger
+ * components:
+ *  requestBodies:
+ *    block:
+ *      type: object
+ *      required:
+ *        - id
+ *      properties:
+ *        id:
+ *          type: string
+ *          description: ID of the user account to be blocked
+ *        reason:
+ *          type: string
+ *          description: Reason for the account block
+ */
+export const blockSchema = z.object({
+  body: z.object({
+    id: z.string(),
+    reason: z.string().optional(),
+  }),
+});
+
+/**
+ * @swagger
+ * components:
+ *  requestBodies:
+ *    unblock:
+ *      type: object
+ *      required:
+ *        - id
+ *      properties:
+ *        id:
+ *          type: string
+ *          description: ID of the user to be unblocked
+ */
+export const unblockSchema = z.object({
+  body: z.object({
+    id: z.string(),
   }),
 });

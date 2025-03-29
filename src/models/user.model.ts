@@ -15,7 +15,6 @@ import mongoose, { Schema, Document } from 'mongoose';
  *      - Presidente de cooperativa
  *      - Mayorista
  *      - Experto
- *
  */
 export enum UserRole {
   SMALL_FARMER = 'Agricultor pequeño',
@@ -124,6 +123,8 @@ interface IUser extends Document {
  *        createdAt:
  *          type: string
  *          format: date
+ *        isBlocked:
+ *          type: boolean
  */
 
 // User scheema for mongoose
@@ -137,9 +138,11 @@ const userSchema: Schema = new Schema({
     type: String,
     enum: AutonomousComunity,
     default: AutonomousComunity.ARAGON,
+    required: true,
   },
   isAdmin: { type: Boolean, default: false, required: true },
-  createdAt: { type: Date, default: Date.now() },
+  createdAt: { type: Date, default: Date.now(), required: true },
+  isBlocked: { type: Boolean, default: false, required: true },
 });
 
 const UserModel = mongoose.model<IUser>('User', userSchema);

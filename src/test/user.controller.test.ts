@@ -6,20 +6,10 @@ import User, { UserRole, AutonomousComunity } from '../models/user.model';
 import { genJWT } from '../middleware/auth';
 import dotenv from 'dotenv';
 import { Request, Response } from 'express';
+import userService from '../services/user.service';
 
 // Cargar variables de entorno
 dotenv.config();
-
-// Extender la interfaz Request para incluir el usuario autenticado
-interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    username?: string;
-    email?: string;
-    role?: string;
-    isAdmin?: boolean;
-  };
-}
 
 // Mock del middleware de autenticación
 jest.mock('../middleware/auth', () => ({
@@ -144,16 +134,11 @@ jest.mock('../services/user.service', () => ({
 }));
 
 // Mock para Request y Response de Express
-const mockRequest = (data: any = {}): Request | AuthRequest => {
+const mockRequest = (data: any = {}): Request => {
   const req: Partial<Request> = {};
   req.body = data.body || {};
   req.params = data.params || {};
   req.query = data.query || {};
-
-  if (data.user) {
-    (req as Partial<AuthRequest>).user = data.user;
-    return req as AuthRequest;
-  }
 
   return req as Request;
 };
@@ -468,150 +453,62 @@ describe('UserController', () => {
       expect(res.json).toHaveBeenCalledWith({ message: 'User not found' });
     });
   });
-
-  describe('getAllUsers', () => {
-    it('should get all users with pagination', async () => {
-      // Create multiple users
-      await createTestUser();
-      await createTestUser({
-        ...testUserData,
+  it('should get all users with pagination', async () => {
+    // Mock the userService.findAllUsers to return the expected structure
+    const mockUsers: UserDocument[] = [
+      {
+        _id: new mongoose.Types.ObjectId(),
+        username: 'user1',
+        email: 'user1@example.com',
+        role: UserRole.SMALL_FARMER,
+        autonomousCommunity: AutonomousComunity.ARAGON,
+        isAdmin: false,
+        createdAt: new Date(),
+      } as UserDocument,
+      {
+        _id: new mongoose.Types.ObjectId(),
         username: 'user2',
         email: 'user2@example.com',
-      });
-      await createTestUser({
-        ...testUserData,
+        role: UserRole.SMALL_FARMER,
+        autonomousCommunity: AutonomousComunity.ARAGON,
+        isAdmin: false,
+        createdAt: new Date(),
+      } as UserDocument,
+      {
+        _id: new mongoose.Types.ObjectId(),
         username: 'user3',
         email: 'user3@example.com',
-      });
-
-      const req = mockRequest({
-        query: { limit: '2', skip: '0' },
-      });
-      const res = mockResponse();
-
-      await userController.getAllUsers(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalled();
-
-      const responseData = (res.json as jest.Mock).mock.calls[0][0];
-      expect(responseData.users).toBeDefined();
-      expect(responseData.pagination).toBeDefined();
-    });
-  });
-
-  describe('searchUsers', () => {
-    beforeEach(async () => {
-      // Preparar usuarios para buscar
-      await createTestUser();
-
-      await createTestUser({
-        username: 'johnsmith',
-        email: 'john@example.com',
-        password: 'Password123',
-        role: UserRole.MEDIUM_FARMER,
-        autonomousCommunity: AutonomousComunity.VALENCIA,
+        role: UserRole.SMALL_FARMER,
+        autonomousCommunity: AutonomousComunity.ARAGON,
         isAdmin: false,
-      });
+        createdAt: new Date(),
+      } as UserDocument,
+    ];
+    const mockTotalPages = 1;
 
-      await createTestUser({
-        username: 'janedoe',
-        email: 'jane@example.com',
-        password: 'Password123',
-        role: UserRole.EXPERT,
-        autonomousCommunity: AutonomousComunity.CATALUGNA,
-        isAdmin: true,
-      });
+    jest.spyOn(userService, 'findAllUsers').mockResolvedValue({
+      users: mockUsers,
+      totalPages: mockTotalPages,
     });
 
-    it('should find users by search parameters', async () => {
-      const req = mockRequest({
-        query: {
-          username: 'john',
-          role: UserRole.MEDIUM_FARMER,
-        },
-      });
-      const res = mockResponse();
+    jest.spyOn(userService, 'countUsers').mockResolvedValue(mockUsers.length);
 
-      await userController.searchUsers(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalled();
+    const req = mockRequest({
+      query: { page: '1', size: '16' },
     });
-  });
+    const res = mockResponse();
 
-  describe('validateToken', () => {
-    it('should validate token for existing user', async () => {
-      const user = await createTestUser();
+    await userController.getAllUsers(req, res);
 
-      const req = mockRequest({
-        user: {
-          id: user._id.toString(),
-          username: user.username,
-          email: user.email,
-          role: user.role,
-        },
-      }) as AuthRequest;
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalled();
 
-      const res = mockResponse();
-
-      await userController.validateToken(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalled();
-    });
-
-    it('should return 401 if token is invalid', async () => {
-      // Sin proporcionar user.id
-      const req = mockRequest({ user: {} }) as AuthRequest;
-      const res = mockResponse();
-
-      await userController.validateToken(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Invalid token' });
-    });
-  });
-
-  describe('changePassword', () => {
-    it('should change password successfully', async () => {
-      const user = await createTestUser();
-      const userId = user._id.toString();
-
-      const req = mockRequest({
-        params: { id: userId },
-        body: {
-          currentPassword: testUserData.password,
-          newPassword: 'NewPassword123',
-        },
-      });
-      const res = mockResponse();
-
-      await userController.changePassword(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Password changed successfully' });
-    });
-
-    it('should fail if current password is incorrect', async () => {
-      const user = await createTestUser();
-      const userId = user._id.toString();
-
-      const req = mockRequest({
-        params: { id: userId },
-        body: {
-          currentPassword: 'WrongPassword',
-          newPassword: 'NewPassword123',
-        },
-      });
-      const res = mockResponse();
-
-      await userController.changePassword(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.json).toHaveBeenCalledWith({
-        message: 'Current password is incorrect or user not found',
-      });
-    });
+    const responseData = (res.json as jest.Mock).mock.calls[0][0];
+    expect(responseData.users).toBeDefined();
+    expect(responseData.users.length).toBe(3);
+    expect(responseData.totalPages).toBe(1);
+    expect(responseData.page).toBe(1);
+    expect(responseData.pageSize).toBe(16);
+    expect(responseData.totalUsers).toBe(3);
   });
 });

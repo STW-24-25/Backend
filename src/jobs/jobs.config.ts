@@ -21,10 +21,10 @@ export const pricesUpdateJob = cron.schedule(
 
 // Función para configurar todos los jobs
 export function configurarJobs() {
-  logger.info('Configurando jobs programados...');
+  logger.info('Configuring scheduled jobs...');
 
   // Iniciar la tarea de actualización de precios
   pricesUpdateJob.start();
 
-  logger.info('Jobs programados configurados correctamente');
+  logger.info('Jobs scheduled succesfully');
 }
