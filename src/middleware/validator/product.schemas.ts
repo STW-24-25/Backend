@@ -47,3 +47,21 @@ export const getAllProductsSchema = z.object({
       }),
   }),
 });
+
+/**
+ * @swagger
+ * components:
+ *  parameters:
+ *    getProductByIdIdParameterSchema:
+ *      in: path
+ *      name: id
+ *      schema:
+ *        type: string
+ *      required: true
+ *      description: The id of the product to retrieve
+ */
+export const getProductByIdSchema = z.object({
+  params: z.object({
+    id: z.string(),
+  }),
+});
