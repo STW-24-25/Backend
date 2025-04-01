@@ -40,16 +40,20 @@ jest.mock('../services/user.service', () => ({
     await user.save();
     return user;
   }),
+
   findUserById: jest.fn().mockImplementation(async id => {
     return User.findById(id);
   }),
+
   updateUser: jest.fn().mockImplementation(async (id, updateData) => {
     return User.findByIdAndUpdate(id, updateData, { new: true });
   }),
+
   deleteUser: jest.fn().mockImplementation(async id => {
     const result = await User.findByIdAndDelete(id);
     return !!result;
   }),
+
   loginUser: jest.fn().mockImplementation(async (usernameOrEmail, password) => {
     const user = await User.findOne({
       $or: [{ username: usernameOrEmail }, { email: usernameOrEmail }],

@@ -31,7 +31,7 @@ const router = Router();
  *                  items:
  *                    type: object
  *                    properties:
- *                      _id:
+ *                      id:
  *                        type: string
  *                      name:
  *                        type: string
