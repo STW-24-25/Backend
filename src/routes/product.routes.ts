@@ -107,6 +107,12 @@ router.get(
  *                    one_year:
  *                      type: number
  *                      format: float
+ *                    all:
+ *                      type: number
+ *                      format: float
+ *                    ytd:
+ *                      type: number
+ *                      format: float
  *      404:
  *        description: Product not found
  *      500:

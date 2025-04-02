@@ -51,6 +51,13 @@ class ProductService {
       return;
     }
 
+    const firstPrice = product.prices[0].price;
+    const lastPrice = product.prices[product.prices.length - 1].price;
+    const currentYear = new Date().getFullYear();
+    const currentYearPrices = product.prices.filter(priceEntry => {
+      return new Date(priceEntry.date).getFullYear() === currentYear;
+    });
+
     return {
       id: product._id,
       name: product.name,
@@ -60,6 +67,9 @@ class ProductService {
         one_month: this.getPriceDiff(product.prices, 1),
         six_month: this.getPriceDiff(product.prices, 6),
         one_year: this.getPriceDiff(product.prices, 12),
+        all: ((lastPrice - firstPrice) / firstPrice) * 100,
+        ytd:
+          ((currentYearPrices[currentYearPrices.length - 1].price - firstPrice) / firstPrice) * 100,
       },
     };
   }
