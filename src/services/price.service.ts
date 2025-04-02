@@ -81,8 +81,7 @@ class PriceService {
         const pricesList = item.prices || item.precios;
         for (const priceItem of pricesList) {
           const dateValue = priceItem.date || priceItem.fecha;
-          const weekValue =
-            priceItem.week || priceItem.semana || `Semana ${Math.floor(Math.random() * 52) + 1}`;
+          const weekValue = priceItem.week || priceItem.semana;
           const priceValue = priceItem.price || priceItem.precio || priceItem.valor;
 
           if (priceValue === null || priceValue === undefined) {
@@ -94,6 +93,7 @@ class PriceService {
 
           normalizedData.push({
             name: productName,
+            sector: item.sector,
             date: cleanDateValue,
             price: priceValue,
           });
@@ -185,7 +185,7 @@ class PriceService {
       const convertedPrices = this.convertDataToEurosPerKg(data);
 
       // Apply date filter if provided
-      let filteredPrices = convertedPrices;
+      let filteredPrices = this.normalizeProductPrices(convertedPrices, year);
       if (filter) {
         filteredPrices = convertedPrices.filter(price => {
           const priceDate = new Date(price.fecha);
@@ -252,7 +252,7 @@ class PriceService {
 
           try {
             await ProductModel.findOneAndUpdate(
-              { name: item.name },
+              { name: item.name, sector: item.sector },
               {
                 $push: {
                   prices: {

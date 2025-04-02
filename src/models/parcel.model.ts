@@ -83,6 +83,7 @@ interface IParcel extends Document {
  *      required:
  *      - user
  *      - size
+ *      - sector
  *      - crop
  *      - location
  *      - autonomousCommunity
@@ -94,6 +95,8 @@ interface IParcel extends Document {
  *          description: Reference to the user who owns the parcel
  *        size:
  *          $ref: '#/components/schemas/ParcelSize'
+ *        sector:
+ *         type: string
  *        crop:
  *          $ref: '#/components/schemas/CropType'
  *        location:
