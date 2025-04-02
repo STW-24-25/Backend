@@ -2,6 +2,11 @@
 
 REST API documentation is in `/api/docs`.
 
+## Primary dependencies
+
+- NodeJS v22.14.0
+- npm v11.1.0
+
 ## Some homemade libraries used
 
 - **agro-precios** = https://github.com/carloss4dv/agro-precios
