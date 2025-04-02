@@ -77,7 +77,7 @@ export enum AutonomousComunity {
 }
 
 // User interface
-interface IUser extends Document {
+export interface IUser extends Document {
   username: string;
   email: string;
   passwordHash: string;
