@@ -218,7 +218,7 @@ Resources:
             StringEquals:
               'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com'
             StringLike:
-              'token.actions.githubusercontent.com:sub': 'repo:${GitHubRepoName}:ref:refs/heads/main'
+              'token.actions.githubusercontent.com:sub': !Sub 'repo:${GitHubRepoName}:ref:refs/heads/main'
       ManagedPolicyArns:
       - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess
       Tags:

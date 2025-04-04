@@ -22,6 +22,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v3
         with:  
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/agronet-dev-env-GitHubActionsRole-1mGOgm6lm3a4
+          role-session: agonet-develop
           aws-region: ${{ secrets.AWS_REGION }}
           audience: sts.amazonaws.com
       
