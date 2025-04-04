@@ -43,6 +43,7 @@ Parameters:
   GitHubRepoName:
     Description: GitHub repository name (format username/repository)
     Type: String
+    Default: STW-24-25/Backend
 
   GitHubBranch:
     Description: GitHub branch to monitor for deployments
@@ -188,9 +189,23 @@ Resources:
             ]
           }
 
+  # GitHub OIDC Provider
+  GitHubOIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        - 6938fd4d98bab03faadb97b34396831e3780aea1
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-GitHubOIDCProvider
+
   # IAM Resources for GitHub Actions
   GitHubActionsRole:
     Type: AWS::IAM::Role
+    DependsOn: GitHubOIDCProvider
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -203,7 +218,7 @@ Resources:
             StringEquals:
               'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com'
             StringLike:
-              'token.actions.githubusercontent.com:sub': !Sub 'repo:${GitHubRepoName}:*'
+              'token.actions.githubusercontent.com:sub': 'repo:${GitHubRepoName}:ref:refs/heads/main'
       ManagedPolicyArns:
       - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess
       Tags:
