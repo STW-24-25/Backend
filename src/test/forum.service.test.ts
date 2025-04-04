@@ -8,16 +8,7 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
-// Create and register the User model schema before any tests run
-const userSchema = new mongoose.Schema({
-  username: String,
-  email: String,
-  profilePicture: String,
-});
-
-// Register the User model but don't use it directly in tests
-// This is needed for potential references in the Forum model
-mongoose.model('User', userSchema);
+// No schema needed for this test file
 
 // Mock the logger to avoid logs during tests
 jest.mock('../utils/logger', () => ({
@@ -174,12 +165,17 @@ describe('ForumService', () => {
 
       const foundForum = await forumService.findForumById(forumId);
 
-      // Comprobamos que el foro existe y tiene las propiedades esperadas
+      // First verify the forum exists
       expect(foundForum).not.toBeNull();
-      // Verificamos que el ID coincide (usando comparación de strings)
-      expect(String(foundForum?._id)).toBe(forumId);
-      // Verificamos el título
-      expect(foundForum?.title).toBe(testForumData.title);
+
+      // Then do separate assertions - this avoids the conditional expect issue
+      // and properly handles the type checking
+      expect(foundForum).toBeDefined();
+
+      // Now we can safely access properties
+      const forum = foundForum as any;
+      expect(forum._id.toString()).toBe(forumId);
+      expect(forum.title).toBe(testForumData.title);
     });
 
     it('should return null if forum not found', async () => {

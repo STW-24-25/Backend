@@ -1,0 +1,377 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template for a Node.js containerized backend with GitHub Actions integration and MongoDB Atlas'
+Parameters:
+  EnvironmentName:
+    Description: Name of the environment
+    Type: String
+    Default: nodejsdevenvironment
+
+  VpcCIDR:
+    Description: CIDR block for the VPC
+    Type: String
+    Default: 10.0.0.0/16
+
+  PublicSubnet1CIDR:
+    Description: CIDR block for the first public subnet
+    Type: String
+    Default: 10.0.1.0/24
+
+  PublicSubnet2CIDR:
+    Description: CIDR block for the second public subnet
+    Type: String
+    Default: 10.0.2.0/24
+
+  KeyPairName:
+    Description: Name of an existing EC2 key pair for SSH access
+    Type: AWS::EC2::KeyPair::KeyName
+
+  AllowedCIDR:
+    Description: CIDR block allowed for SSH access
+    Type: String
+    Default: 0.0.0.0/0
+
+  NodeJsVersion:
+    Description: Node.js version to install
+    Type: String
+    Default: '22.14'
+    AllowedValues:
+    - '16'
+    - '18'
+    - '20'
+    - '22.14'
+
+  GitHubRepoName:
+    Description: GitHub repository name (format username/repository)
+    Type: String
+
+  GitHubBranch:
+    Description: GitHub branch to monitor for deployments
+    Type: String
+    Default: main
+
+  LatestAmiId:
+    Description: "Latest Amazon Linux 2 AMI"
+    Type: 'String'
+    Default: 'ami-0274f4b62b6ae3bd5'
+
+Resources:
+  # VPC Configuration
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCIDR
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName}-VPC
+
+  # Internet Gateway
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName}-IGW
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  # Public Subnets for High Availability
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Ref PublicSubnet1CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName}-PublicSubnet1
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      CidrBlock: !Ref PublicSubnet2CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName}-PublicSubnet2
+
+  # Route Tables
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName}-PublicRouteTable
+
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet1
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet2
+
+  # VPC Security Groups
+  EC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Node.js development server
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: !Ref AllowedCIDR
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 3000
+        ToPort: 3000
+        CidrIp: 0.0.0.0/0
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName}-EC2-SG
+
+  # ECR Repository
+  ContainerRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub ${EnvironmentName}-repo
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      ImageTagMutability: MUTABLE
+      EncryptionConfiguration:
+        EncryptionType: AES256
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep only the last 10 images",
+                "selection": {
+                  "tagStatus": "any",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 10
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+
+  # IAM Resources for GitHub Actions
+  GitHubActionsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Federated: !Sub 'arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com'
+          Action: sts:AssumeRoleWithWebIdentity
+          Condition:
+            StringEquals:
+              'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com'
+            StringLike:
+              'token.actions.githubusercontent.com:sub': !Sub 'repo:${GitHubRepoName}:*'
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName}-GitHubActionsRole
+
+  # IAM Resources for EC2
+  EC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: ec2.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+      - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+      Policies:
+      - PolicyName: S3Access
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - s3:GetObject
+            - s3:PutObject
+            - s3:ListBucket
+            Resource:
+            - !Sub arn:aws:s3:::${ArtifactBucket}
+            - !Sub arn:aws:s3:::${ArtifactBucket}/*
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName}-EC2Role
+
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+      - !Ref EC2Role
+
+  # S3 Bucket for Artifacts and Backups
+  ArtifactBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${EnvironmentName}-artifacts-${AWS::AccountId}-${AWS::Region}
+      AccessControl: Private
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        Rules:
+        - Id: TransitionToIA
+          Status: Enabled
+          Transitions:
+          - TransitionInDays: 30
+            StorageClass: STANDARD_IA
+
+  # EC2 Instance for Node.js Development (Free Tier eligible)
+  NodeJsInstance:
+    Type: AWS::EC2::Instance
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+    Properties:
+      InstanceType: t3.micro
+      SecurityGroupIds:
+      - !Ref EC2SecurityGroup
+      KeyName: !Ref KeyPairName
+      ImageId: !Ref LatestAmiId
+      SubnetId: !Ref PublicSubnet1
+      IamInstanceProfile: !Ref EC2InstanceProfile
+      BlockDeviceMappings:
+      - DeviceName: /dev/xvda
+        Ebs:
+          VolumeSize: 8
+          VolumeType: gp2
+          DeleteOnTermination: true
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+
+          # Update system packages
+          yum update -y
+
+          # Install required components
+          yum install -y amazon-cloudwatch-agent docker
+
+          # Configure and start Docker
+          systemctl enable docker
+          systemctl start docker
+          usermod -a -G docker ec2-user
+
+          # Login to ECR using instance role credentials
+          aws ecr get-login-password --region ${AWS::Region} | docker login --username AWS --password-stdin ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com
+
+          # Create container management script
+          cat > /home/ec2-user/run-container.sh << EOF
+          #!/bin/bash
+          # Pull latest container image
+          docker pull ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ContainerRepository}:latest
+
+          # Stop and remove existing container
+          docker stop nodejs-app 2>/dev/null || true
+          docker rm nodejs-app 2>/dev/null || true
+
+          # Run new container with essential configurations
+          docker run -d \\
+            --name nodejs-app \\
+            -p 3000:3000 \\
+            --restart unless-stopped \\
+            ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ContainerRepository}:latest
+          EOF
+
+          # Make script executable and run it
+          chmod +x /home/ec2-user/run-container.sh
+
+
+          # Signal CloudFormation
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource NodeJsInstance --region ${AWS::Region}
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName}-NodeJsInstance
+      - Key: Environment
+        Value: Development
+
+Outputs:
+  VPC:
+    Description: VPC ID
+    Value: !Ref VPC
+    Export:
+      Name: !Sub ${AWS::StackName}-VPC
+  PublicSubnets:
+    Description: List of Public Subnets
+    Value: !Join [ ",", [ !Ref PublicSubnet1, !Ref PublicSubnet2 ] ]
+    Export:
+      Name: !Sub ${AWS::StackName}-PublicSubnets
+  NodeJsInstancePublicIP:
+    Description: Public IP address of the Node.js instance
+    Value: !GetAtt NodeJsInstance.PublicIp
+    Export:
+      Name: !Sub ${AWS::StackName}-NodeJsIP
+  NodeJsInstancePublicDNS:
+    Description: Public DNS of the Node.js instance
+    Value: !GetAtt NodeJsInstance.PublicDnsName
+    Export:
+      Name: !Sub ${AWS::StackName}-NodeJsDNS
+  SSHCommand:
+    Description: SSH command to connect to the instance
+    Value: !Sub ssh -i ${KeyPairName}.pem ec2-user@${NodeJsInstance.PublicDnsName}
+  ArtifactBucketName:
+    Description: S3 Bucket for artifacts and backups
+    Value: !Ref ArtifactBucket
+    Export:
+      Name: !Sub ${AWS::StackName}-ArtifactBucket
+  ECRRepositoryURL:
+    Description: ECR Repository URL
+    Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ContainerRepository}
+    Export:
+      Name: !Sub ${AWS::StackName}-ECRRepository
+  GitHubActionsRoleARN:
+    Description: IAM Role ARN for GitHub Actions
+    Value: !GetAtt GitHubActionsRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-GitHubActionsRole
