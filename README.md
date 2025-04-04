@@ -33,3 +33,6 @@ npm run test:coverage
 ### Nota para CI/CD
 
 Los tests en entornos de CI/CD (GitHub Actions) pueden requerir la instalación de `libssl1.1` para que MongoDB Memory Server funcione correctamente. Esto ya está configurado en los archivos de workflow.
+
+## Data structure
+![myimage](AgroNET.png)
