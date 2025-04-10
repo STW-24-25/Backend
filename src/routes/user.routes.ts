@@ -79,6 +79,8 @@ router.put(
  *    responses:
  *      200:
  *        description: User deleted successfully
+ *      400:
+ *        description: Bad request, schema validation failed
  *      404:
  *        description: User not found
  *      500:
@@ -177,6 +179,8 @@ router.post('/login', validateSchema(userRequestSchemas.loginSchema), userCont.l
  *                isBlocked:
  *                  type: boolean
  *                  default: false
+ *      400:
+ *        description: Bad request, schema validation failed
  *      404:
  *        description: User not found
  *      500:
@@ -277,6 +281,8 @@ router.post(
  *                  type: integer
  *                totalPages:
  *                  type: integer
+ *      400:
+ *        description: Bad request, schema validation failed
  *      500:
  *        description: Error processing the request
  */

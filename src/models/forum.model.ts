@@ -9,6 +9,7 @@ import type { IUser } from './user.model';
  *      type: object
  *      required:
  *        - title
+ *        - description
  *        - createdBy
  *        - createdAt
  *        - updatedAt
@@ -28,7 +29,7 @@ import type { IUser } from './user.model';
  */
 export interface IForum extends Document {
   title: string;
-  description?: string;
+  description: string;
   createdBy: Types.ObjectId | IUser;
   createdAt: Date;
   updatedAt: Date;

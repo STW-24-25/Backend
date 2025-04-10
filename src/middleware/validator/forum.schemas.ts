@@ -1,13 +1,15 @@
 import { z } from 'zod';
 import { isValidObjectId } from 'mongoose';
+
 /**
  * @swagger
  * components:
- *  schemas:
- *    CreateForumRequest:
+ *  requestBodies:
+ *    createForum:
  *      type: object
  *      required:
  *        - title
+ *        - description
  *      properties:
  *        title:
  *          type: string
@@ -22,7 +24,58 @@ import { isValidObjectId } from 'mongoose';
 export const createForumSchema = z.object({
   body: z.object({
     title: z.string().min(3).max(100),
-    description: z.string().max(500).optional(),
+    description: z.string().max(500),
+  }),
+});
+
+/**
+ * @swagger
+ * components:
+ *  requestBodies:
+ *    updateForum:
+ *      type: object
+ *      required:
+ *        - id
+ *        - title
+ *        - description
+ *      properties:
+ *        id:
+ *          type: string
+ *          format: MongoId
+ *        title:
+ *          type: string
+ *          minLength: 3
+ *          maxLength: 100
+ *          example: "Sustainable Agriculture Techniques"
+ *        description:
+ *          type: string
+ *          maxLength: 500
+ *          example: "Discussion about eco-friendly farming methods"
+ */
+export const updateForumSchema = z.object({
+  body: z.object({
+    id: z.string().refine(val => isValidObjectId(val)),
+    title: z.string().min(3).max(100),
+    description: z.string().max(500),
+  }),
+});
+
+/**
+ * @swagger
+ * components:
+ *  requestBodies:
+ *    deleteForum:
+ *      type: object
+ *      required:
+ *        - id
+ *      properties:
+ *        id:
+ *          type: string
+ *          format: MongoId
+ */
+export const deleteForumSchema = z.object({
+  body: z.object({
+    id: z.string().refine(val => isValidObjectId(val)),
   }),
 });
 
@@ -78,7 +131,7 @@ export const getAllForumsSchema = z.object({
  * @swagger
  * components:
  *  parameters:
- *    getForumByIdParameterSchema:
+ *    getForumByIdIdParameterSchema:
  *      in: path
  *      name: id
  *      schema:
