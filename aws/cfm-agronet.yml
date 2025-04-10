@@ -404,10 +404,16 @@ Resources:
                 -p 443:443 \
                 -e SSL_KEY_PATH="/etc/ssl/agronet/server.key" \
                 -e SSL_CERT_PATH="/etc/ssl/agronet/server.crt" \
+                -e PORT=80 \
+                -e HTTPS_PORT=443 \
                 -v /etc/ssl/agronet:/etc/ssl/agronet:ro \
                 --restart unless-stopped \
                 $FULL_IMAGE_NAME
                 
+              # Verificar que los certificados sean accesibles desde el contenedor
+              echo "Verificando acceso a los certificados desde el contenedor..."
+              docker exec nodejs-app ls -la /etc/ssl/agronet/ || echo "¡Error! No se puede acceder a los certificados"
+              
               echo "Container updated successfully with new image."
             else
               echo "Failed to pull image. Check ECR permissions and connectivity."
@@ -438,6 +444,20 @@ Resources:
           ln -sf /etc/letsencrypt/live/$PRIMARY_DOMAIN/privkey.pem /etc/ssl/agronet/server.key
           ln -sf /etc/letsencrypt/live/$PRIMARY_DOMAIN/fullchain.pem /etc/ssl/agronet/server.crt
           
+          # Asegurar que los permisos sean correctos
+          chmod 644 /etc/ssl/agronet/server.crt
+          chmod 600 /etc/ssl/agronet/server.key
+          # Permitir que el usuario dentro del contenedor pueda leer los archivos
+          setfacl -R -m u:1000:r /etc/ssl/agronet/
+          
+          # No ejecutamos update-container.sh inmediatamente
+          # En su lugar, configuramos un cron job para que verifique periódicamente si hay imágenes en ECR
+          echo "0 * * * * /home/ec2-user/update-container.sh >> /home/ec2-user/container-updates.log 2>&1" | crontab -
+          
+          # Mensaje informativo para el usuario
+          echo "La instancia EC2 está configurada. Los certificados SSL se han generado correctamente." > /home/ec2-user/setup-complete.txt
+          echo "El contenedor se iniciará automáticamente cuando se detecte una imagen en ECR (GitHub Actions)." >> /home/ec2-user/setup-complete.txt
+          echo "Puedes verificar el estado ejecutando: cat /home/ec2-user/container-updates.log" >> /home/ec2-user/setup-complete.txt
           
           # Create renewal hook for certbot to update symbolic links
           mkdir -p /etc/letsencrypt/renewal-hooks/post/
@@ -460,8 +480,7 @@ Resources:
           chmod +x /etc/letsencrypt/renewal-hooks/post/update-symlinks.sh
           
           # Add cron job for certificate renewal
-          echo "0 3 * * * certbot renew --quiet" | crontab -
-          echo "0 * * * * /home/ec2-user/update-container.sh >> /home/ec2-user/container-updates.log 2>&1" | crontab -
+          echo "0 3 * * * certbot renew --quiet" | tee -a /var/spool/cron/root
 
           # Signal CloudFormation
           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource NodeJsInstance --region ${AWS::Region}
