@@ -21,7 +21,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:  
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/agronet-dev-enviroment-GitHubActionsRole-tfICRAXtEUU0
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/agronet-dev-enviroment-GitHubActionsRole-eIOSys4qz46y
           role-session-name: agronet-develop
           aws-region: ${{ secrets.AWS_REGION }}
           audience: sts.amazonaws.com
