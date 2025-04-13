@@ -86,6 +86,7 @@ export interface IUser extends Document {
   autonomousCommunity: AutonomousComunity;
   isAdmin: boolean;
   createdAt: Date;
+  isBlocked: boolean;
 }
 
 // Swagger schema doc for User
@@ -143,6 +144,22 @@ const userSchema: Schema = new Schema({
   isAdmin: { type: Boolean, default: false, required: true },
   createdAt: { type: Date, default: Date.now(), required: true },
   isBlocked: { type: Boolean, default: false, required: true },
+  loginHistory: {
+    type: [
+      {
+        timestamp: { type: Date, default: Date.now, required: true },
+        ipAddress: { type: String, required: true },
+      },
+    ],
+    required: true,
+  },
+  unblockTicket: {
+    type: {
+      content: { type: String },
+      createdAt: { type: String, default: Date.now },
+    },
+    required: false,
+  },
 });
 
 const UserModel = mongoose.model<IUser>('User', userSchema);
