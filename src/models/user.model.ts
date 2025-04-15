@@ -133,7 +133,7 @@ const userSchema: Schema = new Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   passwordHash: { type: String, required: true },
-  profilePicture: { type: String },
+  profilePicture: { type: String, required: false },
   role: { type: String, enum: UserRole, default: UserRole.SMALL_FARMER, required: true },
   autonomousCommunity: {
     type: String,
