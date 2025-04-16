@@ -203,4 +203,4 @@ router.post(
   forumCont.deleteForum,
 );
 
-export default {};
+export default router;

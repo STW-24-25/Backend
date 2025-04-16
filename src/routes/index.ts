@@ -1,13 +1,16 @@
 import { Router } from 'express';
 import userRoutes from './user.routes';
 import parcelRoutes from './parcel.routes';
-// Import other route files as needed
+import forumRoutes from './forum.routes';
+import productRoutes from './product.routes';
+import statsRoutes from './stats.routes';
 
 const router = Router();
 
-// Mount routes
 router.use('/users', userRoutes);
 router.use('/parcels', parcelRoutes);
-// Use other routes as needed
+router.use('/forum', forumRoutes);
+router.use('/product', productRoutes);
+router.use('/stats', statsRoutes);
 
 export default router;
