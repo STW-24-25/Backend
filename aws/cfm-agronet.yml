@@ -323,7 +323,7 @@ Resources:
           
           # Create domains using nip.io for dynamic IP
           PRIMARY_DOMAIN="$INSTANCE_PUBLIC_IP.nip.io"
-          SECONDARY_DOMAIN="agronetdev.$INSTANCE_PUBLIC_IP.nip.io"
+          SECONDARY_DOMAIN="www.agronetdev.$INSTANCE_PUBLIC_IP.nip.io"
           
           # Create directories for SSL certificates
           mkdir -p /etc/ssl/agronet
@@ -359,13 +359,21 @@ Resources:
             docker stop nodejs-app 2>/dev/null || true
             
             # Obtener certificados
-            certbot certonly --standalone --non-interactive --agree-tos -m admin@example.com \
+            certbot certonly --standalone --non-interactive --agree-tos -m 848481@unizar.es \
               -d "$PRIMARY_DOMAIN" -d "$SECONDARY_DOMAIN" --cert-name "$PRIMARY_DOMAIN"
             
             # Create symbolic links to certificates for easier access
             mkdir -p /etc/ssl/agronet
-            ln -sf $SSL_KEY_PATH /etc/ssl/agronet/server.key
-            ln -sf $SSL_CERT_PATH /etc/ssl/agronet/server.crt
+            
+            # Copiar los certificados en lugar de crear enlaces simbólicos
+            cp -L /etc/letsencrypt/live/$PRIMARY_DOMAIN/privkey.pem /etc/ssl/agronet/server.key
+            cp -L /etc/letsencrypt/live/$PRIMARY_DOMAIN/fullchain.pem /etc/ssl/agronet/server.crt
+            
+            # Asegurar que los permisos sean correctos
+            chmod 644 /etc/ssl/agronet/server.crt
+            chmod 600 /etc/ssl/agronet/server.key
+            # Cambiar el propietario para permitir acceso desde el contenedor
+            chown 1000:1000 /etc/ssl/agronet/server.*
           fi
           
           # Get the current image digest if we have it locally
@@ -439,16 +447,16 @@ Resources:
           certbot certonly --standalone --non-interactive --agree-tos -m 848481@unizar.es \
             -d "$PRIMARY_DOMAIN" -d "$SECONDARY_DOMAIN" --cert-name "$PRIMARY_DOMAIN"
           
-          # Create symbolic links to certificates for easier access
+          # Copiar los certificados en lugar de crear enlaces simbólicos
           mkdir -p /etc/ssl/agronet
-          ln -sf /etc/letsencrypt/live/$PRIMARY_DOMAIN/privkey.pem /etc/ssl/agronet/server.key
-          ln -sf /etc/letsencrypt/live/$PRIMARY_DOMAIN/fullchain.pem /etc/ssl/agronet/server.crt
+          cp -L /etc/letsencrypt/live/$PRIMARY_DOMAIN/privkey.pem /etc/ssl/agronet/server.key
+          cp -L /etc/letsencrypt/live/$PRIMARY_DOMAIN/fullchain.pem /etc/ssl/agronet/server.crt
           
           # Asegurar que los permisos sean correctos
           chmod 644 /etc/ssl/agronet/server.crt
           chmod 600 /etc/ssl/agronet/server.key
-          # Permitir que el usuario dentro del contenedor pueda leer los archivos
-          setfacl -R -m u:1000:r /etc/ssl/agronet/
+          # Cambiar el propietario para permitir acceso desde el contenedor
+          chown 1000:1000 /etc/ssl/agronet/server.*
           
           # No ejecutamos update-container.sh inmediatamente
           # En su lugar, configuramos un cron job para que verifique periódicamente si hay imágenes en ECR
@@ -469,9 +477,14 @@ Resources:
           INSTANCE_PUBLIC_IP=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/public-ipv4)
           PRIMARY_DOMAIN="$INSTANCE_PUBLIC_IP.nip.io"
           
-          # Update symbolic links
-          ln -sf /etc/letsencrypt/live/$PRIMARY_DOMAIN/privkey.pem /etc/ssl/agronet/server.key
-          ln -sf /etc/letsencrypt/live/$PRIMARY_DOMAIN/fullchain.pem /etc/ssl/agronet/server.crt
+          # Copiar los certificados renovados
+          cp -L /etc/letsencrypt/live/$PRIMARY_DOMAIN/privkey.pem /etc/ssl/agronet/server.key
+          cp -L /etc/letsencrypt/live/$PRIMARY_DOMAIN/fullchain.pem /etc/ssl/agronet/server.crt
+          
+          # Asegurar que los permisos sean correctos
+          chmod 644 /etc/ssl/agronet/server.crt
+          chmod 600 /etc/ssl/agronet/server.key
+          chown 1000:1000 /etc/ssl/agronet/server.*
           
           # Restart container to pick up new certificates
           docker restart nodejs-app
