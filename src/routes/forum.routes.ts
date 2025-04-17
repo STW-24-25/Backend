@@ -123,7 +123,7 @@ router.get(
  *    summary: Create a new forum (admin only)
  *    security:
  *      - bearerAuth: []
- *    tags: [Forum]
+ *    tags: [Admin]
  *    requestBody:
  *      required: true
  *      content:
@@ -152,7 +152,7 @@ router.post(
  *    summary: Update a forum (admin only)
  *    security:
  *      - bearerAuth: []
- *    tags: [Forum]
+ *    tags: [Admin]
  *    requestBody:
  *      required: true
  *      content:
@@ -181,7 +181,7 @@ router.post(
  *    summary: Delete a forum and all its messages (admin only)
  *    security:
  *      - bearerAuth: []
- *    tags: [Forum]
+ *    tags: [Admin]
  *    requestBody:
  *      required: true
  *      content:
