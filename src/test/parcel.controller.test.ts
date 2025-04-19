@@ -6,7 +6,7 @@ import { Request, Response } from 'express';
 
 // Mock auth interface
 interface AuthRequest extends Request {
-  user?: {
+  auth?: {
     id: string;
     username?: string;
     email?: string;
@@ -74,8 +74,13 @@ describe('ParcelController', () => {
     req.query = data.query || {};
 
     if (data.user) {
-      (req as Partial<AuthRequest>).user = data.user;
-      return req as AuthRequest;
+      (req as Partial<AuthRequest>).auth = {
+        id: data.user.id,
+        username: data.user.username,
+        email: data.user.email,
+        role: data.user.role,
+        isAdmin: data.user.isAdmin,
+      };
     }
 
     return req as Request;
