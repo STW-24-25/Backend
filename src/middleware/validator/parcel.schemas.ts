@@ -9,16 +9,11 @@ import { CropType, ParcelSize } from '../../models/parcel.model';
  *    createParcel:
  *      type: object
  *      required:
- *        - user
  *        - size
  *        - crop
  *        - location
  *        - autonomousCommunity
- *        - geoJSON
  *      properties:
- *        user:
- *          type: string
- *          description: ID del usuario propietario de la parcela
  *        size:
  *          $ref: '#/components/schemas/ParcelSize'
  *        crop:
@@ -32,21 +27,16 @@ import { CropType, ParcelSize } from '../../models/parcel.model';
  *              type: number
  *        autonomousCommunity:
  *          $ref: '#/components/schemas/AutonomousCommunity'
- *        geoJSON:
- *          type: object
- *          description: Representación GeoJSON de la parcela
  */
 export const newParcelSchema = z.object({
   body: z.object({
-    user: z.string(),
     size: z.nativeEnum(ParcelSize),
-    crop: z.nativeEnum(CropType),
+    products: z.string().array().optional(),
     location: z.object({
       lat: z.number(),
       lng: z.number(),
     }),
     autonomousCommunity: z.nativeEnum(AutonomousComunity),
-    geoJSON: z.object({}).passthrough(),
   }),
 });
 
@@ -70,9 +60,6 @@ export const newParcelSchema = z.object({
  *              type: number
  *        autonomousCommunity:
  *          $ref: '#/components/schemas/AutonomousCommunity'
- *        geoJSON:
- *          type: object
- *          description: Representación GeoJSON de la parcela
  */
 export const updateParcelSchema = z.object({
   body: z.object({
@@ -85,7 +72,6 @@ export const updateParcelSchema = z.object({
       })
       .optional(),
     autonomousCommunity: z.nativeEnum(AutonomousComunity).optional(),
-    geoJSON: z.object({}).passthrough().optional(),
   }),
 });
 

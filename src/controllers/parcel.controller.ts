@@ -1,17 +1,7 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import parcelService from '../services/parcel.service';
 import logger from '../utils/logger';
-
-// Extended Request interface to include user property
-interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    username?: string;
-    email?: string;
-    role?: string;
-    isAdmin?: boolean;
-  };
-}
+import { AuthRequest } from '../types/auth';
 
 /**
  * Gets parcel information based on coordinates.
@@ -21,8 +11,9 @@ interface AuthRequest extends Request {
  */
 export const getParcel = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    // Validate that we have a user ID
-    const userId = req.user?.id;
+    // Get user ID from headers
+    const userId = req.auth?.id;
+    logger.info(`User ID: ${userId}`);
     if (!userId) {
       res.status(401).json({ message: 'Authentication required' });
       return;
@@ -63,8 +54,9 @@ export const getParcel = async (req: AuthRequest, res: Response): Promise<void> 
  */
 export const createParcel = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    // Validate that we have a user ID
-    const userId = req.user?.id;
+    // Get user ID from headers
+    const userId = req.auth?.id;
+    logger.info(`Auth data: ${req.auth?.id}`);
     if (!userId) {
       res.status(401).json({ message: 'Authentication required' });
       return;

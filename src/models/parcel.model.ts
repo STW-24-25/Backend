@@ -1,5 +1,4 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { AutonomousComunity } from './user.model';
 
 // Possible parcel crop types
 /**
@@ -51,24 +50,11 @@ export enum ParcelSize {
 
 // Parcel interface
 interface IParcel extends Document {
-  user: mongoose.Schema.Types.ObjectId;
-  size: ParcelSize;
-  crop: CropType;
   location: {
     type: string;
     coordinates: number[];
   };
-  autonomousCommunity: AutonomousComunity;
-  geoJSON: any;
-  sigpacData: {
-    provincia: string;
-    municipio: string;
-    poligono: string;
-    parcela: string;
-    area: number;
-    perimetro: number;
-    declarationInfo: any;
-  };
+  products: mongoose.Schema.Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -81,24 +67,9 @@ interface IParcel extends Document {
  *    Parcel:
  *      type: object
  *      required:
- *      - user
- *      - size
- *      - sector
- *      - crop
  *      - location
- *      - autonomousCommunity
- *      - geoJSON
- *      - createdAt
+ *      - products
  *      properties:
- *        user:
- *          type: string
- *          description: Reference to the user who owns the parcel
- *        size:
- *          $ref: '#/components/schemas/ParcelSize'
- *        sector:
- *         type: string
- *        crop:
- *          $ref: '#/components/schemas/CropType'
  *        location:
  *          type: object
  *          properties:
@@ -106,34 +77,18 @@ interface IParcel extends Document {
  *              type: string
  *            coordinates:
  *              type: array
- *        autonomousCommunity:
- *          $ref: '#/components/schemas/AutonomousCommunity'
- *        geoJSON:
- *          type: object
- *          description: GeoJSON representation of the parcel
- *        createdAt:
- *          type: string
- *          format: date
+ *              items:
+ *                type: number
+ *        products:
+ *          type: array
+ *          items:
+ *            type: string
+ *            description: Reference to the product
  */
 
 // Parcel schema for mongoose
 const parcelSchema: Schema = new Schema(
   {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
-    size: {
-      type: String,
-      enum: ParcelSize,
-      required: true,
-    },
-    crop: {
-      type: String,
-      enum: CropType,
-      required: true,
-    },
     location: {
       type: {
         type: String,
@@ -143,26 +98,21 @@ const parcelSchema: Schema = new Schema(
       coordinates: {
         type: [Number],
         required: true,
+        validate: {
+          validator: function (v: number[]) {
+            return v.length === 2;
+          },
+          message: 'Las coordenadas deben tener exactamente dos valores: [longitud, latitud]',
+        },
       },
     },
-    autonomousCommunity: {
-      type: String,
-      enum: AutonomousComunity,
-      required: true,
-    },
-    geoJSON: {
-      type: mongoose.Schema.Types.Mixed,
-      required: true,
-    },
-    sigpacData: {
-      provincia: String,
-      municipio: String,
-      poligono: String,
-      parcela: String,
-      area: Number,
-      perimetro: Number,
-      declarationInfo: mongoose.Schema.Types.Mixed,
-    },
+    products: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Products',
+        required: true,
+      },
+    ],
   },
   {
     timestamps: true,

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import * as parcelController from '../controllers/parcel.controller';
 import { validateSchema } from '../middleware/validator';
 import { newParcelSchema } from '../middleware/validator/parcel.schemas';
-import { authenticateJWT } from '../middleware/auth'; // Assuming you have an auth middleware
+import { authenticateJWT } from '../middleware/auth';
 
 const router = Router();
 

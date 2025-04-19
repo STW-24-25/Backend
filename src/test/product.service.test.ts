@@ -1,7 +1,7 @@
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose, { Types } from 'mongoose';
 import productService from '../services/product.service';
-import Product, { ProductSector } from '../models/product.model';
+import ProductModel, { ProductSector } from '../models/product.model';
 
 jest.mock('../utils/logger', () => ({
   info: jest.fn(),
@@ -142,9 +142,9 @@ describe('ProductService', () => {
     };
 
     return Promise.all([
-      new Product(testProductData1).save(),
-      new Product(testProductData2).save(),
-      new Product(testProductData3).save(),
+      new ProductModel(testProductData1).save(),
+      new ProductModel(testProductData2).save(),
+      new ProductModel(testProductData3).save(),
     ]);
   };
 
