@@ -5,13 +5,15 @@ WORKDIR /app
 
 # Define build arguments
 ARG MONGO_URI
-ARG PORT=5000
+ARG PORT=80
+ARG HTTPS_PORT=443
 ARG JWT_SECRET
 ARG NODE_ENV=development
 
 # Set environment variables from build arguments
 ENV MONGO_URI=$MONGO_URI
 ENV PORT=$PORT
+ENV HTTPS_PORT=$HTTPS_PORT
 ENV JWT_SECRET=$JWT_SECRET
 ENV NODE_ENV=$NODE_ENV
 
@@ -27,8 +29,8 @@ RUN npm install -g nodemon
 # Copy source code (after dependency installation for better caching)
 COPY . .
 
-# Expose the port the app runs on
-EXPOSE ${PORT}
+# Expose ports the app runs on
+EXPOSE ${PORT} ${HTTPS_PORT}
 
 # Install curl for healthcheck
 RUN apk --no-cache add curl

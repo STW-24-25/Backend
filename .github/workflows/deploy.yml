@@ -21,7 +21,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:  
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/agronet-dev-env-GitHubActionsRole-caPunLasGWrF
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/agronet-dev-enviroment-GitHubActionsRole-eIOSys4qz46y
           role-session-name: agronet-develop
           aws-region: ${{ secrets.AWS_REGION }}
           audience: sts.amazonaws.com
@@ -38,7 +38,8 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
           # Environment variables for the application
           MONGO_URI: ${{ secrets.MONGO_URI }}
-          PORT: ${{ secrets.PORT || '5000' }}
+          PORT: ${{ secrets.PORT || '80' }}
+          HTTPS_PORT: ${{ secrets.HTTPS_PORT || '443' }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           NODE_ENV: development
         run: |
@@ -46,6 +47,7 @@ jobs:
           docker build \
             --build-arg MONGO_URI="${MONGO_URI}" \
             --build-arg PORT="${PORT}" \
+            --build-arg HTTPS_PORT="${HTTPS_PORT}" \
             --build-arg JWT_SECRET="${JWT_SECRET}" \
             --build-arg NODE_ENV="${NODE_ENV}" \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .

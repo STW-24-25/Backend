@@ -55,16 +55,6 @@ Parameters:
     Type: 'String'
     Default: 'ami-0274f4b62b6ae3bd5'
 
-  DomainName:
-    Description: "Domain name for HTTPS (e.g., example.com)"
-    Type: String
-    Default: ""
-
-  Email:
-    Description: "Email for Let's Encrypt certificate notifications"
-    Type: String
-    Default: ""
-
 Resources:
   # VPC Configuration
   VPC:
@@ -317,7 +307,7 @@ Resources:
           yum update -y
 
           # Install required components
-          yum install -y amazon-cloudwatch-agent docker nginx certbot python3-certbot-nginx
+          yum install -y amazon-cloudwatch-agent docker certbot jq cronie
 
           # Configure and start Docker
           systemctl enable docker
@@ -327,6 +317,17 @@ Resources:
           # Login to ECR using instance role credentials
           aws ecr get-login-password --region ${AWS::Region} | docker login --username AWS --password-stdin ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com
 
+          # Get instance metadata (including public IP)
+          TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+          INSTANCE_PUBLIC_IP=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/public-ipv4)
+          
+          # Create domains using nip.io for dynamic IP
+          PRIMARY_DOMAIN="$INSTANCE_PUBLIC_IP.nip.io"
+          SECONDARY_DOMAIN="agronetdev.$INSTANCE_PUBLIC_IP.nip.io"
+          
+          # Create directories for SSL certificates
+          mkdir -p /etc/ssl/agronet
+          
           # Create container management script that only pulls new images when needed
           cat > /home/ec2-user/update-container.sh << 'EOF'
           #!/bin/bash
@@ -336,8 +337,36 @@ Resources:
           TAG="latest"
           FULL_IMAGE_NAME="$REPO:$TAG"
           
+          # Get instance metadata (for dynamic IP)
+          TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+          INSTANCE_PUBLIC_IP=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/public-ipv4)
+          
+          # Create domains using nip.io
+          PRIMARY_DOMAIN="$INSTANCE_PUBLIC_IP.nip.io"
+          SECONDARY_DOMAIN="agronetdev.$INSTANCE_PUBLIC_IP.nip.io"
+          
           # Login to ECR (token expires after 12 hours)
           aws ecr get-login-password --region ${AWS::Region} | docker login --username AWS --password-stdin $REPO
+          
+          # Check SSL certificates and renew if needed
+          SSL_KEY_PATH="/etc/letsencrypt/live/$PRIMARY_DOMAIN/privkey.pem"
+          SSL_CERT_PATH="/etc/letsencrypt/live/$PRIMARY_DOMAIN/fullchain.pem"
+          
+          # Check if certificates exist and are valid
+          if [ ! -f "$SSL_KEY_PATH" ] || [ ! -f "$SSL_CERT_PATH" ]; then
+            echo "SSL certificates not found. Requesting new certificates..."
+            # Temporalmente detener cualquier contenedor que pueda estar usando el puerto 80
+            docker stop nodejs-app 2>/dev/null || true
+            
+            # Obtener certificados
+            certbot certonly --standalone --non-interactive --agree-tos -m admin@example.com \
+              -d "$PRIMARY_DOMAIN" -d "$SECONDARY_DOMAIN" --cert-name "$PRIMARY_DOMAIN"
+            
+            # Create symbolic links to certificates for easier access
+            mkdir -p /etc/ssl/agronet
+            ln -sf $SSL_KEY_PATH /etc/ssl/agronet/server.key
+            ln -sf $SSL_CERT_PATH /etc/ssl/agronet/server.crt
+          fi
           
           # Get the current image digest if we have it locally
           CURRENT_DIGEST=""
@@ -368,17 +397,24 @@ Resources:
               docker stop nodejs-app 2>/dev/null || true
               docker rm nodejs-app 2>/dev/null || true
               
-              # Run new container with essential configurations
+              # Run new container mapping directly to host ports 80 y 443
               docker run -d \
                 --name nodejs-app \
-                -p 5000:5000 \
+                -p 80:80 \
+                -p 443:443 \
+                -e SSL_KEY_PATH="/etc/ssl/agronet/server.key" \
+                -e SSL_CERT_PATH="/etc/ssl/agronet/server.crt" \
+                -e PORT=80 \
+                -e HTTPS_PORT=443 \
+                -v /etc/ssl/agronet:/etc/ssl/agronet:ro \
                 --restart unless-stopped \
                 $FULL_IMAGE_NAME
                 
-              echo "Container updated successfully with new image."
+              # Verificar que los certificados sean accesibles desde el contenedor
+              echo "Verificando acceso a los certificados desde el contenedor..."
+              docker exec nodejs-app ls -la /etc/ssl/agronet/ || echo "¡Error! No se puede acceder a los certificados"
               
-              # Reload Nginx to ensure it picks up the new container
-              systemctl reload nginx
+              echo "Container updated successfully with new image."
             else
               echo "Failed to pull image. Check ECR permissions and connectivity."
             fi
@@ -390,112 +426,65 @@ Resources:
           # Make script executable
           chmod +x /home/ec2-user/update-container.sh
           
-          # Configure Nginx as reverse proxy (initially only HTTP)
-          cat > /etc/nginx/conf.d/nodejs-app.conf << 'EOF'
-          server {
-              listen 80;
-              server_name ${DomainName};
-              
-              location / {
-                  proxy_pass http://localhost:5000;
-                  proxy_http_version 1.1;
-                  proxy_set_header Upgrade $http_upgrade;
-                  proxy_set_header Connection 'upgrade';
-                  proxy_set_header Host $host;
-                  proxy_cache_bypass $http_upgrade;
-                  proxy_set_header X-Real-IP $remote_addr;
-                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto $scheme;
-              }
-          }
-          EOF
+          # Obtener los certificados iniciales
+          # Get instance metadata (for dynamic IP)
+          TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+          INSTANCE_PUBLIC_IP=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/public-ipv4)
           
-          # Start and enable Nginx
-          systemctl start nginx
-          systemctl enable nginx
+          # Create domains using nip.io
+          PRIMARY_DOMAIN="$INSTANCE_PUBLIC_IP.nip.io"
+          SECONDARY_DOMAIN="agronetdev.$INSTANCE_PUBLIC_IP.nip.io"
           
-          # Run the container update script once to start the container initially
-          /home/ec2-user/update-container.sh
+          # Request certificates from Let's Encrypt
+          certbot certonly --standalone --non-interactive --agree-tos -m 848481@unizar.es \
+            -d "$PRIMARY_DOMAIN" -d "$SECONDARY_DOMAIN" --cert-name "$PRIMARY_DOMAIN"
           
-          # Create a cron job to check for updates every hour
+          # Create symbolic links to certificates for easier access
+          mkdir -p /etc/ssl/agronet
+          ln -sf /etc/letsencrypt/live/$PRIMARY_DOMAIN/privkey.pem /etc/ssl/agronet/server.key
+          ln -sf /etc/letsencrypt/live/$PRIMARY_DOMAIN/fullchain.pem /etc/ssl/agronet/server.crt
+          
+          # Asegurar que los permisos sean correctos
+          chmod 644 /etc/ssl/agronet/server.crt
+          chmod 600 /etc/ssl/agronet/server.key
+          # Permitir que el usuario dentro del contenedor pueda leer los archivos
+          setfacl -R -m u:1000:r /etc/ssl/agronet/
+          
+          # No ejecutamos update-container.sh inmediatamente
+          # En su lugar, configuramos un cron job para que verifique periódicamente si hay imágenes en ECR
           echo "0 * * * * /home/ec2-user/update-container.sh >> /home/ec2-user/container-updates.log 2>&1" | crontab -
           
-          # Set up SSL with Let's Encrypt if domain name is provided
-          if [ ! -z "${DomainName}" ] && [ ! -z "${Email}" ]; then
-            # Start Nginx first (required for Certbot)
-            systemctl start nginx
-            
-            # Wait a bit to ensure DNS propagation (if newly configured)
-            sleep 30
-            
-            # Try to get Let's Encrypt certificate
-            if certbot --nginx -d ${DomainName} --non-interactive --agree-tos -m ${Email} --redirect; then
-              echo "Let's Encrypt certificate obtained successfully"
-              
-              # Add cron job for certificate renewal
-              echo "0 3 * * * certbot renew --quiet" | tee -a /var/spool/cron/root
-            else
-              echo "Let's Encrypt certificate failed, creating self-signed certificate"
-              
-              # Create directory for certificates if it doesn't exist
-              sudo mkdir -p /etc/nginx/ssl/
-              sudo chmod 700 /etc/nginx/ssl/
-              
-              # Generate self-signed certificate
-              sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-                -keyout /etc/nginx/ssl/nginx-selfsigned.key \
-                -out /etc/nginx/ssl/nginx-selfsigned.crt \
-                -subj "/C=ES/ST=Aragon/L=Zaragoza/O=AgroNET/CN=${DomainName}"
-              
-              # Set proper permissions
-              sudo chmod 600 /etc/nginx/ssl/nginx-selfsigned.key
-              sudo chmod 644 /etc/nginx/ssl/nginx-selfsigned.crt
-              sudo chown nginx:nginx /etc/nginx/ssl/nginx-selfsigned.*
-              
-              # Configure Nginx with self-signed certificate
-              cat > /etc/nginx/conf.d/nodejs-app.conf << 'EOF'
-              server {
-                  listen 80;
-                  server_name ${DomainName};
-                  return 301 https://$host$request_uri;
-              }
-              
-              server {
-                  listen 443 ssl;
-                  server_name ${DomainName};
-                  
-                  ssl_certificate /etc/nginx/ssl/nginx-selfsigned.crt;
-                  ssl_certificate_key /etc/nginx/ssl/nginx-selfsigned.key;
-                  
-                  ssl_protocols TLSv1.2 TLSv1.3;
-                  
-                  location / {
-                      proxy_pass http://localhost:5000;
-                      proxy_http_version 1.1;
-                      proxy_set_header Upgrade $http_upgrade;
-                      proxy_set_header Connection 'upgrade';
-                      proxy_set_header Host $host;
-                      proxy_cache_bypass $http_upgrade;
-                      proxy_set_header X-Real-IP $remote_addr;
-                      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                      proxy_set_header X-Forwarded-Proto $scheme;
-                  }
-              }
-              EOF
-              
-              # Reload Nginx with the new configuration
-              systemctl reload nginx
-            fi
-          else
-            # If no domain provided, just start Nginx with HTTP
-            systemctl start nginx
-          fi
+          # Mensaje informativo para el usuario
+          echo "La instancia EC2 está configurada. Los certificados SSL se han generado correctamente." > /home/ec2-user/setup-complete.txt
+          echo "El contenedor se iniciará automáticamente cuando se detecte una imagen en ECR (GitHub Actions)." >> /home/ec2-user/setup-complete.txt
+          echo "Puedes verificar el estado ejecutando: cat /home/ec2-user/container-updates.log" >> /home/ec2-user/setup-complete.txt
           
-          # Enable Nginx to start on boot
-          systemctl enable nginx
+          # Create renewal hook for certbot to update symbolic links
+          mkdir -p /etc/letsencrypt/renewal-hooks/post/
+          cat > /etc/letsencrypt/renewal-hooks/post/update-symlinks.sh << 'EOF'
+          #!/bin/bash
+          
+          # Get instance metadata
+          TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+          INSTANCE_PUBLIC_IP=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/public-ipv4)
+          PRIMARY_DOMAIN="$INSTANCE_PUBLIC_IP.nip.io"
+          
+          # Update symbolic links
+          ln -sf /etc/letsencrypt/live/$PRIMARY_DOMAIN/privkey.pem /etc/ssl/agronet/server.key
+          ln -sf /etc/letsencrypt/live/$PRIMARY_DOMAIN/fullchain.pem /etc/ssl/agronet/server.crt
+          
+          # Restart container to pick up new certificates
+          docker restart nodejs-app
+          EOF
+          
+          chmod +x /etc/letsencrypt/renewal-hooks/post/update-symlinks.sh
+          
+          # Add cron job for certificate renewal
+          echo "0 3 * * * certbot renew --quiet" | tee -a /var/spool/cron/root
 
           # Signal CloudFormation
           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource NodeJsInstance --region ${AWS::Region}
+
       Tags:
       - Key: Name
         Value: !Sub ${EnvironmentName}-NodeJsInstance
@@ -542,10 +531,11 @@ Outputs:
     Export:
       Name: !Sub ${AWS::StackName}-GitHubActionsRole
   WebsiteURL:
-    Description: URL to access the website
-    Value: !If [HasDomainName, !Sub "https://${DomainName}", !Sub "http://${NodeJsInstance.PublicDnsName}"]
+    Description: URLs to access the website
+    Value: !Sub |
+      La aplicación estará disponible en:
+      HTTP: http://${NodeJsInstance.PublicIp}.nip.io
+      HTTPS: https://${NodeJsInstance.PublicIp}.nip.io
+      Alternativo: https://agronetdev.${NodeJsInstance.PublicIp}.nip.io
     Export:
       Name: !Sub ${AWS::StackName}-WebsiteURL
-
-Conditions:
-  HasDomainName: !Not [!Equals [!Ref DomainName, ""]]
