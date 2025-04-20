@@ -5,7 +5,6 @@ import { newParcelSchema } from '../middleware/validator/parcel.schemas';
 import { authenticateJWT } from '../middleware/auth';
 
 const router = Router();
-
 /**
  * @swagger
  * /api/parcels:
@@ -36,25 +35,99 @@ const router = Router();
  *              type: object
  *              properties:
  *                parcel:
- *                  $ref: '#/components/schemas/Parcel'
+ *                  type: object
+ *                  properties:
+ *                    geoJSON:
+ *                      type: object
+ *                      properties:
+ *                        type:
+ *                          type: string
+ *                        features:
+ *                          type: array
+ *                          items:
+ *                            type: object
+ *                            properties:
+ *                              type:
+ *                                type: string
+ *                              geometry:
+ *                                type: object
+ *                    products:
+ *                      type: array
+ *                      items:
+ *                        type: string
+ *                    createdAt:
+ *                      type: string
+ *                      format: date-time
+ *                    municipality:
+ *                      type: string
+ *                    province:
+ *                      type: string
+ *                    size:
+ *                      type: number
  *                weather:
  *                  type: object
  *                  properties:
- *                    temperature:
- *                      type: number
- *                      description: Current temperature in Celsius
- *                    humidity:
- *                      type: number
- *                      description: Current humidity percentage
- *                    windSpeed:
- *                      type: number
- *                      description: Wind speed in m/s
+ *                    main:
+ *                      type: object
+ *                      properties:
+ *                        temp:
+ *                          type: number
+ *                          description: Current temperature in Celsius
+ *                        humidity:
+ *                          type: number
+ *                          description: Current humidity percentage
+ *                        temp_max:
+ *                          type: number
+ *                          description: Maximum temperature in Celsius
+ *                        temp_min:
+ *                          type: number
+ *                          description: Minimum temperature in Celsius
+ *                        pressure_max:
+ *                          type: number
+ *                          description: Maximum pressure in hPa
+ *                        pressure_min:
+ *                          type: number
+ *                          description: Minimum pressure in hPa
+ *                    wind:
+ *                      type: object
+ *                      properties:
+ *                        speed:
+ *                          type: number
+ *                          description: Wind speed in m/s
+ *                        gust:
+ *                          type: number
+ *                          description: Wind gust speed in m/s
+ *                        direction:
+ *                          type: number
+ *                          description: Wind direction in degrees
+ *                    precipitation:
+ *                      type: object
+ *                      properties:
+ *                        rain:
+ *                          type: number
+ *                          description: Rain amount in mm
+ *                        snow:
+ *                          type: number
+ *                          description: Snow amount in mm
+ *                    solar:
+ *                      type: object
+ *                      properties:
+ *                        radiation:
+ *                          type: number
+ *                          description: Solar radiation
  *                    description:
  *                      type: string
  *                      description: Weather condition description
  *                    icon:
  *                      type: string
  *                      description: Weather icon code
+ *                    date:
+ *                      type: string
+ *                      format: date
+ *                    time_max_temp:
+ *                      type: string
+ *                    time_min_temp:
+ *                      type: string
  *      400:
  *        description: Invalid coordinates provided
  *      401:
@@ -100,5 +173,49 @@ router.get('/', authenticateJWT(), parcelController.getParcel);
  *        description: Error creating parcel
  */
 router.post('/', authenticateJWT(), validateSchema(newParcelSchema), parcelController.createParcel);
+/**
+ * @swagger
+ * /api/parcels/all:
+ *   get:
+ *     summary: Get all parcels for a user
+ *     tags: [Parcel]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Parcels retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   municipio:
+ *                     type: string
+ *                     description: Municipality name
+ *                   ubicacion:
+ *                     type: array
+ *                     items:
+ *                       type: number
+ *                     description: Coordinates of the parcel [lat, lng]
+ *                   producto:
+ *                     type: string
+ *                     description: Main product of the parcel
+ *                 example:
+ *                   municipio: "Madrid"
+ *                   ubicacion: [40.4168, -3.7038]
+ *                   producto: "Tomate"
+ *       400:
+ *         description: Bad request, schema validation failed
+ *       401:
+ *         description: Authentication required
+ *       404:
+ *         description: No parcels found for the user
+ *       500:
+ *         description: Error retrieving parcels
+ */
+
+router.get('/all', authenticateJWT(), parcelController.getParcels);
 
 export default router;

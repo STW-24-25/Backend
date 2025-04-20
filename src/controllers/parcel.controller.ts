@@ -78,3 +78,31 @@ export const createParcel = async (req: AuthRequest, res: Response): Promise<voi
     logger.error('Error creating parcel', error);
   }
 };
+
+/**
+ * Gets all parcels for a given user.
+ * @param req Request object containing parcel ID and data to update.
+ * @param res Response object, will have 200 if updated, 400 if invalid data, or 500 if an error occurred.
+ * @returns Promise<void>
+ */
+
+export const getParcels = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    // Get user ID from headers
+    const userId = req.auth?.id;
+    logger.info(`Auth data: ${req.auth?.id}`);
+    if (!userId) {
+      res.status(401).json({ message: 'Authentication required' });
+      return;
+    }
+
+    // Get parcels for the user
+    const parcels = await parcelService.getAllParcels(userId);
+
+    res.status(200).json(parcels);
+    logger.info(`Parcels retrieved for user ${userId}`);
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error retrieving parcels', error: error.message });
+    logger.error('Error retrieving parcels', error);
+  }
+};
