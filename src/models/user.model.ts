@@ -87,6 +87,7 @@ export interface IUser extends Document {
   isAdmin: boolean;
   createdAt: Date;
   isBlocked: boolean;
+  parcels?: mongoose.Schema.Types.ObjectId[];
 }
 
 // Swagger schema doc for User
@@ -126,6 +127,12 @@ export interface IUser extends Document {
  *          format: date
  *        isBlocked:
  *          type: boolean
+ *        parcels:
+ *          type: array
+ *          items:
+ *            type: string
+ *          description: Array of parcel IDs
+ *          nullable: true
  */
 
 // User scheema for mongoose
@@ -141,9 +148,17 @@ const userSchema: Schema = new Schema({
     default: AutonomousComunity.ARAGON,
     required: true,
   },
-  isAdmin: { type: Boolean, default: false, required: true },
+  isAdmin: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now(), required: true },
   isBlocked: { type: Boolean, default: false, required: true },
+  parcels: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Parcel',
+      required: false,
+    },
+  ],
+
   loginHistory: {
     type: [
       {

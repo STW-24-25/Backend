@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { expressjwt } from 'express-jwt';
-
+import dotenv from 'dotenv';
+dotenv.config();
 /**
  * Generates a JWT token for the given payload.
  * @param payload Data to include in the token
