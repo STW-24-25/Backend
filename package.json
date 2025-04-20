@@ -28,6 +28,7 @@
   },
   "homepage": "https://github.com/STW-24-25/Backend#readme",
   "dependencies": {
+    "@turf/area": "^7.2.0",
     "@types/express": "^5.0.1",
     "@types/node-cron": "^3.0.11",
     "aemet-api": "^1.0.1",
