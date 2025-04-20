@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { AutonomousComunity } from '../../models/user.model';
-import { CropType, ParcelSize } from '../../models/parcel.model';
+import { CropType } from '../../models/parcel.model';
 
 /**
  * @swagger
@@ -15,7 +15,8 @@ import { CropType, ParcelSize } from '../../models/parcel.model';
  *        - autonomousCommunity
  *      properties:
  *        size:
- *          $ref: '#/components/schemas/ParcelSize'
+ *          type: number
+ *          description: Tamaño de la parcela en hectáreas
  *        crop:
  *          $ref: '#/components/schemas/CropType'
  *        location:
@@ -30,13 +31,11 @@ import { CropType, ParcelSize } from '../../models/parcel.model';
  */
 export const newParcelSchema = z.object({
   body: z.object({
-    size: z.nativeEnum(ParcelSize),
-    products: z.string().array().optional(),
     location: z.object({
       lat: z.number(),
       lng: z.number(),
     }),
-    autonomousCommunity: z.nativeEnum(AutonomousComunity),
+    products: z.string().array().optional(),
   }),
 });
 
@@ -48,7 +47,8 @@ export const newParcelSchema = z.object({
  *      type: object
  *      properties:
  *        size:
- *          $ref: '#/components/schemas/ParcelSize'
+ *          type: number
+ *          description: Tamaño de la parcela en hectáreas
  *        crop:
  *          $ref: '#/components/schemas/CropType'
  *        location:
@@ -63,7 +63,7 @@ export const newParcelSchema = z.object({
  */
 export const updateParcelSchema = z.object({
   body: z.object({
-    size: z.nativeEnum(ParcelSize).optional(),
+    size: z.number().optional(),
     crop: z.nativeEnum(CropType).optional(),
     location: z
       .object({
@@ -75,61 +75,15 @@ export const updateParcelSchema = z.object({
   }),
 });
 
-/**
- * @swagger
- * components:
- *  parameters:
- *    getAllParcelsCropParameterSchema:
- *      in: query
- *      name: crop
- *      schema:
- *        $ref: '#/components/schemas/CropType'
- *      required: false
- *      description: Tipo de cultivo para filtrar
- *    getAllParcelsSizeParameterSchema:
- *      in: query
- *      name: size
- *      schema:
- *        $ref: '#/components/schemas/ParcelSize'
- *      required: false
- *      description: Tamaño de parcela para filtrar
- *    getAllParcelsAutonomousCommunityParameterSchema:
- *      in: query
- *      name: autonomousCommunity
- *      schema:
- *        $ref: '#/components/schemas/AutonomousCommunity'
- *      required: false
- *      description: Comunidad autónoma para filtrar
- *    getAllParcelsUserParameterSchema:
- *      in: query
- *      name: user
- *      schema:
- *        type: string
- *      required: false
- *      description: ID del usuario propietario para filtrar
- *    getAllParcelsLimitParameterSchema:
- *      in: query
- *      name: limit
- *      schema:
- *        type: integer
- *        minimum: 1
- *        default: 10
- *      required: false
- *      description: Límite de resultados por página
- *    getAllParcelsSkipParameterSchema:
- *      in: query
- *      name: skip
- *      schema:
- *        type: integer
- *        minimum: 0
- *        default: 0
- *      required: false
- *      description: Número de resultados a omitir
+/* TODO swagger
+ *
+ *
  */
+
 export const getAllParcelsSchema = z.object({
   query: z.object({
     crop: z.nativeEnum(CropType).optional(),
-    size: z.nativeEnum(ParcelSize).optional(),
+    size: z.number().optional(),
     autonomousCommunity: z.nativeEnum(AutonomousComunity).optional(),
     user: z.string().optional(),
     limit: z
