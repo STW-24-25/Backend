@@ -5,22 +5,30 @@ import logger from '../utils/logger';
 import dotenv from 'dotenv';
 import { Aemet } from 'aemet-api';
 import { CAPITAL_NAMES } from './constants/location.constants';
+import area from '@turf/area';
 
 // Load environment variables
 dotenv.config();
 
 // Initialize AEMET client with API key from .env
-const aemetClient = new Aemet(
-  process.env.AEMET_API_KEY ||
-    'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI4NDg0ODFAdW5pemFyLmVzIiwianRpIjoiOTZkNjQ1YmItZDAwYi00ZmQ5LWFkMmEtYjg4OTQ2NmFkMzYwIiwiaXNzIjoiQUVNRVQiLCJpYXQiOjE3NDQ4MjExMzUsInVzZXJJZCI6Ijk2ZDY0NWJiLWQwMGItNGZkOS1hZDJhLWI4ODk0NjZhZDM2MCIsInJvbGUiOiIifQ.xdtMRcilXabDMIrC8rjxPqY-5M6S3q2sID0YMs-Z360',
-);
+const aemetClient = new Aemet(process.env.AEMET_API_KEY || 'YOUR_API_KEY');
 
 /**
  * Service class that handles parcel-related operations.
  * Includes operations against the database and external API calls to Sigpac.
  */
 class ParcelService {
-  private municipalitiesCache: { [key: string]: string } = {};
+  private municipalitiesCache: { [key: string]: { [key: string]: string } } = {};
+
+  /**
+   * Formatea un nombre para tener la primera letra en mayúscula y el resto en minúsculas
+   * @param name - Nombre a formatear
+   * @returns Nombre formateado
+   */
+  private formatName(name: string): string {
+    if (!name) return '';
+    return name.toLowerCase().replace(/(?:^|\s)\S/g, c => c.toUpperCase());
+  }
 
   /**
    * Creates a new parcel in the database.
@@ -29,16 +37,23 @@ class ParcelService {
    */
   async createParcel(parcelData: any) {
     try {
+      // Get SIGPAC data first to extract province and municipality
+      const sigpacData = await this.getParcelInfoFromSigpac(
+        Number(parcelData.location.lng),
+        Number(parcelData.location.lat),
+      );
+
       // Convert location format from {lat, lng} to GeoJSON Point
       const parcelToCreate = {
         ...parcelData,
         location: {
           type: 'Point',
-          coordinates: [
-            Number(parcelData.location.lng), // Asegurar que se mantenga el signo usando Number()
-            Number(parcelData.location.lat),
-          ],
+          coordinates: [Number(parcelData.location.lng), Number(parcelData.location.lat)],
         },
+        // Add province and municipality from SIGPAC data using correct field names
+        province: sigpacData.declarationData.province,
+        municipality: sigpacData.declarationData.municipality,
+        size: sigpacData.declarationData.superficie,
       };
 
       // Remove original lat/lng properties if they exist at root level
@@ -126,24 +141,25 @@ class ParcelService {
             `Parcela encontrada en el array de parcelas del usuario: [${parcel.location.coordinates}]`,
           );
 
-          // Obtener datos de SIGPAC una sola vez
-          const sigpacData = await this.getParcelInfoFromSigpac(lng, lat);
+          const parcelGeoJSON = await this.getParcelGeoJSON(lng, lat);
+          logger.info('Parcel GeoJSON data:', parcelGeoJSON);
 
-          // Extract only the names from municipio and provincia
-          const municipioFormatted = sigpacData.declarationData.municipio.split(' - ')[1] || '';
-          const provinciaFormatted = sigpacData.declarationData.provincia.split(' - ')[1] || '';
-
-          // Usar los datos de SIGPAC para obtener el tiempo
-          const weatherData = await this.getWeatherData(lng, lat, sigpacData);
+          // Get weather data using the stored province and municipality
+          const weatherData = await this.getWeatherData(lng, lat, {
+            declarationData: {
+              provincia: parcel.province,
+              municipio: parcel.municipality,
+            },
+          });
 
           return {
             parcel: {
-              geoJSON: sigpacData.parcelGeoJSON,
+              geoJSON: parcelGeoJSON.parcelGeoJSON,
               products: parcel.products,
               createdAt: parcel.createdAt,
-              municipio: municipioFormatted,
-              provincia: provinciaFormatted.toLowerCase(),
-              superficie: sigpacData.declarationData.superficie,
+              municipality: parcel.municipality.split(' - ')[1],
+              province: parcel.province.split(' - ')[1],
+              size: parcel.size,
             },
             weather: {
               main: {
@@ -185,14 +201,13 @@ class ParcelService {
   }
 
   /**
-   * Retrieves parcel information from Sigpac API based on coordinates.
-   * @param lng - Longitude coordinate
-   * @param lat - Latitude coordinate
-   * @returns Parcel information with geojson and declaration data
+   * Obtiene solo el GeoJSON de una parcela desde SIGPAC
+   * @param lng - Longitud
+   * @param lat - Latitud
+   * @returns GeoJSON de la parcela
    */
-  private async getParcelInfoFromSigpac(lng: number, lat: number) {
+  private async getParcelGeoJSON(lng: number, lat: number) {
     try {
-      // Get parcel GeoJSON using direct fetch
       const responseGeoJSON = await fetch(
         `https://sigpac-hubcloud.es/servicioconsultassigpac/query/recinfobypoint/4258/${lng}/${lat}.geojson`,
         {
@@ -200,6 +215,7 @@ class ParcelService {
             'User-Agent':
               'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
             Accept: 'application/json',
+            'Accept-Encoding': 'gzip, deflate, br',
           },
         },
       );
@@ -215,78 +231,111 @@ class ParcelService {
         throw new Error('No parcel found at specified coordinates');
       }
 
-      // Extract province code from GeoJSON before removing properties
-      const provinceCode = rawParcelGeoJSON.features[0].properties.provincia;
-      const municipalityCode = rawParcelGeoJSON.features[0].properties.municipio;
-
-      // Create a clean version of the GeoJSON without properties and crs
-      const parcelGeoJSON = {
-        type: rawParcelGeoJSON.type,
-        features: rawParcelGeoJSON.features.map((feature: { type: string; geometry: any }) => ({
-          type: feature.type,
-          geometry: feature.geometry,
-        })),
-      };
-
-      // Get declaration data from new SIGPAC endpoint
-      const responseDeclaration = await fetch(
-        `https://sigpac.mapama.gob.es/fega/serviciosvisorsigpac/query/infodeclaracion/${lng}/${lat}`,
-        {
-          headers: {
-            'User-Agent':
-              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-            Accept: 'application/json',
-          },
+      return {
+        parcelGeoJSON: {
+          type: rawParcelGeoJSON.type,
+          features: rawParcelGeoJSON.features.map((feature: { type: string; geometry: any }) => ({
+            type: feature.type,
+            geometry: feature.geometry,
+          })),
         },
-      );
+        provinceCode: String(rawParcelGeoJSON.features[0].properties.provincia).padStart(2, '0'),
+        municipalityCode: Number(rawParcelGeoJSON.features[0].properties.municipio),
+        usoSigpac: rawParcelGeoJSON.features[0].properties.uso_sigpac || '',
+        geometry: rawParcelGeoJSON.features[0].geometry,
+      };
+    } catch (error: any) {
+      logger.error('Error fetching GeoJSON from Sigpac', error);
+      throw new Error(`Failed to fetch GeoJSON from Sigpac: ${error.message}`);
+    }
+  }
 
-      let declarationData;
-      try {
-        const rawDeclarationData = await responseDeclaration.json();
-        logger.info('Declaration data retrieved from Sigpac:', responseDeclaration);
-
-        // Map province code to name
-        const provinceName = `${provinceCode} - ${CAPITAL_NAMES[provinceCode] || ''}`;
-
-        declarationData = {
-          provincia: provinceName, // Format: "19 - GUADALAJARA"
-          municipio: `${municipalityCode} - ${rawDeclarationData?.features?.[0]?.properties?.municipio || ''}`,
-          superficie:
-            this.convertToHectares(rawDeclarationData?.features?.[0]?.properties?.parc_supcult) ||
-            0,
-          cultivo: rawDeclarationData?.features?.[0]?.properties?.parc_producto || '',
-          ayudas: rawDeclarationData?.features?.[0]?.properties?.parc_ayu_desc || [],
-        };
-      } catch (error) {
-        logger.error('Error parsing declaration data:', error);
-        // Provide fallback data using GeoJSON information
-        declarationData = {
-          provincia: `${provinceCode} - ${CAPITAL_NAMES[provinceCode] || ''}`,
-          municipio: `${municipalityCode} - `,
-          superficie: 0,
-          cultivo: '',
-          ayudas: [],
-        };
+  /**
+   * Obtiene los datos de provincia y municipio basados en los códigos
+   * @param provinceCode - Código de provincia
+   * @param municipalityCode - Código de municipio
+   * @returns Información formateada de provincia y municipio
+   */
+  private async getLocationInfo(provinceCode: string, municipalityCode: number) {
+    try {
+      // Get province name and ensure it exists
+      const provinceName = CAPITAL_NAMES[provinceCode];
+      if (!provinceName) {
+        throw new Error(`Province code ${provinceCode} not found in capital names`);
       }
 
+      // Get municipality name from cached data or fetch it
+      if (!this.municipalitiesCache[provinceCode]) {
+        try {
+          const municResponse = await fetch(
+            `https://sigpac-hubcloud.es/codigossigpac/municipio${provinceCode}.json`,
+            {
+              headers: {
+                'User-Agent':
+                  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                Accept: 'application/json',
+              },
+            },
+          );
+          const municipalityData = await municResponse.json();
+
+          // Convert the array format to our cache format
+          this.municipalitiesCache[provinceCode] = {};
+          if (municipalityData.codigos && Array.isArray(municipalityData.codigos)) {
+            municipalityData.codigos.forEach((item: { codigo: number; descripcion: string }) => {
+              this.municipalitiesCache[provinceCode][item.codigo] = item.descripcion;
+            });
+          }
+        } catch (error) {
+          logger.error('Error fetching municipality data:', error);
+          this.municipalitiesCache[provinceCode] = {};
+        }
+      }
+
+      const municipalityName = this.formatName(
+        this.municipalitiesCache[provinceCode][municipalityCode] || '',
+      );
+      const formattedProvinceName = this.formatName(provinceName);
+
       return {
-        parcelGeoJSON,
-        declarationData,
+        province: `${provinceCode} - ${formattedProvinceName}`,
+        municipality: `${municipalityCode} - ${municipalityName}`,
+      };
+    } catch (error: any) {
+      logger.error('Error getting location info', error);
+      throw new Error(`Failed to get location info: ${error.message}`);
+    }
+  }
+
+  /**
+   * Obtiene toda la información de una parcela desde SIGPAC
+   */
+  private async getParcelInfoFromSigpac(lng: number, lat: number) {
+    try {
+      // Get GeoJSON and codes first
+      const parcelData = await this.getParcelGeoJSON(lng, lat);
+
+      // Get province and municipality info
+      const locationInfo = await this.getLocationInfo(
+        parcelData.provinceCode,
+        parcelData.municipalityCode,
+      );
+
+      // Calculate area from GeoJSON using turf
+      const surfaceArea = area(parcelData.geometry) / 10000; // Convert from m² to hectares
+
+      return {
+        parcelGeoJSON: parcelData.parcelGeoJSON,
+        declarationData: {
+          ...locationInfo,
+          superficie: Number(surfaceArea.toFixed(4)),
+          cultivo: parcelData.usoSigpac,
+        },
       };
     } catch (error: any) {
       logger.error('Error fetching parcel from Sigpac', error);
       throw new Error(`Failed to fetch parcel data from Sigpac: ${error.message}`);
     }
-  }
-
-  /**
-   * Converts surface area from square meters to hectares
-   * @param surfaceInSqMeters - Surface area in square meters
-   * @returns Surface area in hectares
-   */
-  private convertToHectares(surfaceInSqMeters: number): number {
-    if (!surfaceInSqMeters) return 0;
-    return Number((surfaceInSqMeters / 10000).toFixed(4)); // 1 hectare = 10000 square meters
   }
 
   /**
@@ -332,34 +381,23 @@ class ParcelService {
       logger.info('Datos de declaración de SIGPAC recibidos:', sigpacData.declarationData);
 
       // Get province code and name from declaration data
-      let provinceCode, provinceName;
+      const [provinceCode, provinceName] = sigpacData.declarationData.provincia.split(' - ');
+      const formattedProvinceName = this.formatName(provinceName);
 
-      if (sigpacData.declarationData.provincia.includes(' - ')) {
-        // Format: "19 - GUADALAJARA"
-        [provinceCode, provinceName] = sigpacData.declarationData.provincia.split(' - ');
-      } else {
-        // Format: "GUADALAJARA"
-        provinceName = sigpacData.declarationData.provincia;
-        // Buscar el código de provincia basado en el nombre
-        for (const [code, name] of Object.entries(CAPITAL_NAMES)) {
-          if (name.toLowerCase() === provinceName.toLowerCase()) {
-            provinceCode = code;
-            break;
-          }
-        }
-      }
-
-      logger.info('Código de provincia:', provinceCode);
+      logger.info(`Código de provincia: ${provinceCode}`);
+      logger.info(`Nombre de provincia: ${formattedProvinceName}`);
 
       if (!provinceName) {
         logger.error('No se encontró el nombre de la provincia en los datos de declaración');
         return this.getDefaultWeatherData();
       }
 
-      logger.info('Nombre de provincia:', provinceName);
-
       // Get weather data using AEMET method
-      const weatherResponse = await aemetClient.getWeatherByCoordinates(lat, lng, provinceName);
+      const weatherResponse = await aemetClient.getWeatherByCoordinates(
+        lat,
+        lng,
+        formattedProvinceName,
+      );
       logger.info('Respuesta de AEMET:', weatherResponse);
 
       // Map the response to our expected format
@@ -522,6 +560,32 @@ class ParcelService {
 
   private degToRad(deg: number): number {
     return deg * (Math.PI / 180);
+  }
+
+  /**
+   * Gets all parcels basic information for a user
+   * @param userId - User ID
+   * @returns Array of parcels with basic information (municipality, location, crop)
+   */
+  async getAllParcels(userId: string) {
+    try {
+      // Get user with populated parcels
+      const user = await mongoose.model('User').findById(userId).populate('parcels');
+
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      // Transform parcels to required format
+      return user.parcels.map((parcel: any) => ({
+        municipio: parcel.municipality.split(' - ')[1], // Remove code from municipality
+        ubicacion: [parcel.location.coordinates[1], parcel.location.coordinates[0]], // lat, lng directly from db
+        producto: parcel.products[0] || 'Sin producto', // Take first product as main product
+      }));
+    } catch (error: any) {
+      logger.error('Error getting all parcels', error);
+      throw new Error(`Failed to get all parcels: ${error.message}`);
+    }
   }
 }
 
