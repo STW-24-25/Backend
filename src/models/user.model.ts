@@ -158,6 +158,7 @@ const userSchema: Schema = new Schema({
       required: false,
     },
   ],
+
   loginHistory: {
     type: [
       {

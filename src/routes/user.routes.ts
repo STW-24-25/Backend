@@ -73,7 +73,7 @@ router.put(
  *      any account may be deleted.
  *    security:
  *      - bearerAuth: []
- *    tags: [User]
+ *    tags: [Admin]
  *    parameters:
  *      - $ref: '#/components/parameters/deleteUserUserIdParameterSchema'
  *    responses:
@@ -233,7 +233,7 @@ router.post(
  *    summary: Get all users with optional pagination (Admin only)
  *    security:
  *      - bearerAuth: []
- *    tags: [User]
+ *    tags: [Admin]
  *    parameters:
  *      - $ref: '#/components/parameters/getAllUsersUsernameParameterSchema'
  *      - $ref: '#/components/parameters/getAllUsersEmailParameterSchema'
@@ -300,7 +300,7 @@ router.get(
  *    summary: Block a user account (Admin only)
  *    security:
  *      - bearerAuth: []
- *    tags: [User]
+ *    tags: [Admin]
  *    requestBody:
  *      required: true
  *      content:
@@ -331,7 +331,7 @@ router.post(
  *    summary: Unblock a user account (Admin only)
  *    security:
  *      - bearerAuth: []
- *    tags: [User]
+ *    tags: [Admin]
  *    requestBody:
  *      required: true
  *      content:
