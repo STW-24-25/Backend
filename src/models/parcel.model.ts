@@ -30,31 +30,16 @@ export enum CropType {
   OTHERS = 'Otros',
 }
 
-// Possible parcel size categories
-/**
- * @swagger
- * components:
- *  schemas:
- *    ParcelSize:
- *      type: string
- *      enum:
- *      - Pequeña
- *      - Mediana
- *      - Grande
- */
-export enum ParcelSize {
-  SMALL = 'Pequeña',
-  MEDIUM = 'Mediana',
-  LARGE = 'Grande',
-}
-
 // Parcel interface
-interface IParcel extends Document {
+export interface IParcel extends Document {
   location: {
     type: string;
     coordinates: number[];
   };
   products: mongoose.Schema.Types.ObjectId[];
+  province: string;
+  municipality: string;
+  size: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -69,6 +54,9 @@ interface IParcel extends Document {
  *      required:
  *      - location
  *      - products
+ *      - province
+ *      - municipality
+ *      - size
  *      properties:
  *        location:
  *          type: object
@@ -84,6 +72,15 @@ interface IParcel extends Document {
  *          items:
  *            type: string
  *            description: Reference to the product
+ *        province:
+ *         type: string
+ *         description: Name of the province
+ *        municipality:
+ *         type: string
+ *         description: Name of the municipality
+ *        size:
+ *         type: number
+ *         description: Size of the parcel in hectares
  */
 
 // Parcel schema for mongoose
@@ -113,6 +110,18 @@ const parcelSchema: Schema = new Schema(
         required: true,
       },
     ],
+    province: {
+      type: String,
+      required: true,
+    },
+    municipality: {
+      type: String,
+      required: true,
+    },
+    size: {
+      type: Number,
+      required: true,
+    },
   },
   {
     timestamps: true,
