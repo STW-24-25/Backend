@@ -11,8 +11,8 @@ import ProductService from '../services/product.service';
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
     const { name, page, size } = req.query;
-    const pageNumber = parseInt(page as string) || 1;
-    const pageSize = parseInt(size as string) || 16;
+    const pageNumber = parseInt(page as string);
+    const pageSize = parseInt(size as string);
 
     const data = await ProductService.getProductsByName(name as string, pageNumber, pageSize);
 

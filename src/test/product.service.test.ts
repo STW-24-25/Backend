@@ -173,7 +173,7 @@ describe('ProductService', () => {
   describe('getProductsByName', () => {
     it('should return all products', async () => {
       await createTestProducts();
-      const result = await productService.getProductsByName('', 1, 16);
+      const result = await productService.getProductsByName('');
 
       expect(result).toBeDefined();
       expect(result.products.length).toBe(3);

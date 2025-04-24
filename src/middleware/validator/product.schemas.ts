@@ -18,7 +18,7 @@ import { z } from 'zod';
  *        type: integer
  *        minimum: 1
  *        default: 1
- *      required: true
+ *      required: false
  *      description: Page to be retrieved
  *    getAllProductsSizeParameterSchema:
  *      in: query
@@ -27,24 +27,14 @@ import { z } from 'zod';
  *        type: integer
  *        minimum: 1
  *        default: 16
- *      required: true
+ *      required: false
  *      description: Number of products per page
  */
 export const getAllProductsSchema = z.object({
   query: z.object({
     name: z.string().optional(),
-    page: z
-      .string()
-      .optional()
-      .refine(val => !isNaN(Number(val)) && Number(val) > 0, {
-        message: 'Page must be a positive number',
-      }),
-    size: z
-      .string()
-      .optional()
-      .refine(val => !isNaN(Number(val)) && Number(val) > 0, {
-        message: 'Size must be a positive number',
-      }),
+    page: z.string().optional(),
+    size: z.string().optional(),
   }),
 });
 

@@ -1,14 +1,17 @@
 import ProductModel from '../models/product.model';
 
 class ProductService {
-  async getProductsByName(name: string, pageNumber: number, pageSize: number) {
+  async getProductsByName(name: string, pageNumber?: number, pageSize?: number) {
     const filter: any = {};
     if (name) filter.name = { $regex: name, $options: 'i' };
 
-    const products = await ProductModel.find(filter)
-      .skip((pageNumber - 1) * pageSize)
-      .limit(pageSize)
-      .lean();
+    let productsQuery = ProductModel.find(filter).lean();
+
+    if (pageNumber && pageSize) {
+      productsQuery = productsQuery.skip((pageNumber - 1) * pageSize).limit(pageSize);
+    }
+
+    const products = await productsQuery;
 
     const productsWithLastPrice = products.map(product => {
       const lastPrice = product.prices[product.prices.length - 1].price;
@@ -24,10 +27,10 @@ class ProductService {
     const totalProducts = await ProductModel.countDocuments(filter);
     return {
       products: productsWithLastPrice,
-      page: pageNumber,
-      pageSize,
+      page: pageNumber || 1,
+      pageSize: pageSize || totalProducts,
       totalProducts,
-      totalPages: Math.ceil(totalProducts / pageSize),
+      totalPages: pageSize ? Math.ceil(totalProducts / pageSize) : 1,
     };
   }
 
