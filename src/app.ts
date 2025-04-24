@@ -1,8 +1,6 @@
 import express from 'express';
 import cors = require('cors');
-import userRouter from './routes/user.routes';
-import productRouter from './routes/product.routes';
-import parcelRouter from './routes/parcel.routes';
+import router from './routes';
 import { swaggerOptions } from './utils/swagger';
 import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
@@ -25,10 +23,7 @@ app.get('/api/docs.json', (_req, res): void => {
 
 app.use(cors());
 app.use(express.json());
-
-app.use('/api/users', userRouter);
-app.use('/api/products', productRouter);
-app.use('/api/parcels', parcelRouter);
+app.use('/api', router);
 
 // Configurar jobs programados
 configurarJobs();

@@ -9,8 +9,8 @@ const router = Router();
 
 router.use('/users', userRoutes);
 router.use('/parcels', parcelRoutes);
-router.use('/forum', forumRoutes);
-router.use('/product', productRoutes);
+router.use('/forums', forumRoutes);
+router.use('/products', productRoutes);
 router.use('/stats', statsRoutes);
 
 export default router;
