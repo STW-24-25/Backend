@@ -52,11 +52,8 @@ class ForumService {
    * @param forumId ID of the forum to find.
    * @returns Promise with the forum or null if not found.
    */
-  async findForumById(forumId: string): Promise<IForum | null> {
-    return await ForumModel.findById(forumId).populate(
-      'createdBy',
-      'username email profilePicture',
-    );
+  async getForumById(forumId: string): Promise<IForum | null> {
+    return await ForumModel.findById(forumId);
   }
 
   /**
@@ -67,7 +64,7 @@ class ForumService {
    * @param size Number of items per page.
    * @returns Promise with forums and pagination info.
    */
-  async findAllForums(
+  async getAllForums(
     title?: string,
     createdBy?: string,
     page: number = 1,
@@ -104,7 +101,7 @@ class ForumService {
    * @param size Number of items per page.
    * @returns Promise with forums and pagination info.
    */
-  async findForumsByUser(
+  async getForumsByUserId(
     userId: string,
     page: number = 1,
     size: number = 10,

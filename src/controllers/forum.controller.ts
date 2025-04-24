@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import forumService from '../services/forum.service';
 import logger from '../utils/logger';
+import messageService from '../services/message.service';
 
 /**
  * Creates a forum and saves it in the DB.
@@ -81,17 +82,19 @@ export const deleteForum = async (req: Request, res: Response): Promise<void> =>
  * @param res Response object, will have 200 if forum is found, 404 if not found, or 500 if an error occurred.
  * @returns Promise<void>
  */
-export const getForum = async (req: Request, res: Response): Promise<void> => {
+export const getForumById = async (req: Request, res: Response): Promise<void> => {
   try {
     const forumId = req.params.id;
-    const forum = await forumService.findForumById(forumId);
+    const forum = await forumService.getForumById(forumId);
+    const messages = await messageService.getMessagesByForumId(forumId);
 
     if (!forum) {
+      logger.info(`Forum with id ${forumId} not found`);
       res.status(404).json({ message: 'Forum not found' });
       return;
     }
 
-    res.status(200).json({ forum });
+    res.status(200).json({ ...forum.toObject(), messages });
     logger.info(`Forum retrieved: ${forumId}`);
   } catch (err: any) {
     res.status(500).json({ message: 'Error retrieving forum', error: err.message });
@@ -112,7 +115,7 @@ export const getAllForums = async (req: Request, res: Response): Promise<void> =
     const page = parseInt(req.query.page as string) || 1; // Default to page 1
     const size = parseInt(req.query.size as string) || 10; // Default to size 10
 
-    const { forums, totalPages } = await forumService.findAllForums(title, createdBy, page, size);
+    const { forums, totalPages } = await forumService.getAllForums(title, createdBy, page, size);
     const totalForums = await forumService.countForums();
 
     res.status(200).json({
@@ -135,13 +138,13 @@ export const getAllForums = async (req: Request, res: Response): Promise<void> =
  * @param res Response object, will have 200 with forums array or 500 if an error occurred.
  * @returns Promise<void>
  */
-export const getForumsByUser = async (req: Request, res: Response): Promise<void> => {
+export const getForumsByUserId = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.params.userId;
     const page = parseInt(req.query.page as string) || 1;
     const size = parseInt(req.query.size as string) || 10;
 
-    const { forums, totalPages } = await forumService.findForumsByUser(userId, page, size);
+    const { forums, totalPages } = await forumService.getForumsByUserId(userId, page, size);
     const totalForums = await forumService.countForumsByUser(userId);
 
     res.status(200).json({

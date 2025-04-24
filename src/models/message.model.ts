@@ -19,7 +19,7 @@ import { IForum } from './forum.model';
  *          type: string
  *        author:
  *          $ref: '#/components/schemas/User'
- *        forum:
+ *        forumId:
  *          $ref: '#/components/schemas/Forum'
  *        parentMessage:
  *          $ref: '#/components/schemas/Message'
@@ -39,7 +39,7 @@ import { IForum } from './forum.model';
 export interface IMessage extends Document {
   content: string;
   author: Types.ObjectId | IUser;
-  forum: Types.ObjectId | IForum;
+  forumId: Types.ObjectId | IForum;
   parentMessage?: Types.ObjectId | IMessage;
   upvotes: Types.ObjectId[];
   isPinned: boolean;
@@ -50,7 +50,7 @@ export interface IMessage extends Document {
 const messageSchema = new Schema<IMessage>({
   content: { type: String, required: true },
   author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  forum: { type: Schema.Types.ObjectId, ref: 'Forum', required: true },
+  forumId: { type: Schema.Types.ObjectId, ref: 'Forum', required: true },
   parentMessage: { type: Schema.Types.ObjectId, ref: 'Message' },
   upvotes: [{ type: Schema.Types.ObjectId, ref: 'User' }],
   isPinned: { type: Boolean, default: false },

@@ -113,14 +113,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 export const getUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.params.id;
-    const user = await userService.findUserById(userId);
+    const user = await userService.getUserById(userId);
 
     if (!user) {
       res.status(404).json({ message: 'User not found' });
       return;
     }
 
-    res.status(200).json({ user });
+    res.status(200).json({ ...user.toObject() });
     logger.info(`User retrieved: ${userId}`);
   } catch (err: any) {
     res.status(500).json({ message: 'Error retrieving user', error: err.message });
@@ -144,7 +144,7 @@ export const getAllUsers = async (req: Request, res: Response): Promise<void> =>
     const page = parseInt(req.query.page as string) || 1; // Default to page 1
     const size = parseInt(req.query.size as string) || 10; // Default to size 16
 
-    const { users, totalPages } = await userService.findAllUsers(
+    const { users, totalPages } = await userService.getAllUsers(
       username,
       email,
       role,

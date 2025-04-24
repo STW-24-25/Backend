@@ -41,7 +41,7 @@ jest.mock('../services/user.service', () => ({
     return user;
   }),
 
-  findUserById: jest.fn().mockImplementation(async id => {
+  getUserById: jest.fn().mockImplementation(async id => {
     return User.findById(id);
   }),
 
@@ -73,7 +73,7 @@ jest.mock('../services/user.service', () => ({
     });
     return { user, token };
   }),
-  findAllUsers: jest.fn().mockImplementation(async (limit, skip) => {
+  getAllUsers: jest.fn().mockImplementation(async (limit, skip) => {
     let query = User.find();
     if (skip) query = query.skip(skip);
     if (limit) query = query.limit(limit);
@@ -312,8 +312,8 @@ describe('UserController', () => {
       expect(res.json).toHaveBeenCalled();
 
       const responseData = (res.json as jest.Mock).mock.calls[0][0];
-      expect(responseData.user).toBeDefined();
-      expect(responseData.user.email).toBe(testUserData.email);
+      expect(responseData).toBeDefined();
+      expect(responseData.email).toBe(testUserData.email);
     });
 
     it('should return 404 if user not found', async () => {
@@ -490,7 +490,7 @@ describe('UserController', () => {
     ];
     const mockTotalPages = 1;
 
-    jest.spyOn(userService, 'findAllUsers').mockResolvedValue({
+    jest.spyOn(userService, 'getAllUsers').mockResolvedValue({
       users: mockUsers,
       totalPages: mockTotalPages,
     });

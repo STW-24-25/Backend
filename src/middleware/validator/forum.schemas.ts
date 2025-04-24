@@ -20,11 +20,16 @@ import { isValidObjectId } from 'mongoose';
  *          type: string
  *          maxLength: 500
  *          example: "Discussion about eco-friendly farming methods"
+ *        createdBy:
+ *          type: string
+ *          format: MongoId
+ *          example: "680a35acc572f4e445bbb05d"
  */
 export const createForumSchema = z.object({
   body: z.object({
     title: z.string().min(3).max(100),
     description: z.string().max(500),
+    createdBy: z.string().refine(val => isValidObjectId(val)),
   }),
 });
 
@@ -144,4 +149,28 @@ export const getForumByIdSchema = z.object({
   params: z.object({
     id: z.string().refine(val => isValidObjectId(val)),
   }),
+});
+
+export const joinForumSchema = z.object({
+  forumId: z
+    .string()
+    .trim()
+    .refine(val => isValidObjectId(val)),
+});
+
+export const postMessageSchema = z.object({
+  content: z.string().trim().min(1),
+  author: z
+    .string()
+    .trim()
+    .refine(val => isValidObjectId(val)),
+  forumId: z
+    .string()
+    .trim()
+    .refine(val => isValidObjectId(val)),
+  parentMessage: z
+    .string()
+    .trim()
+    .optional()
+    .refine(val => isValidObjectId(val)),
 });

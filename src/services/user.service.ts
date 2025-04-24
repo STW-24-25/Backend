@@ -106,7 +106,7 @@ class UserService {
    * @param includePassword Whether to include password in the response
    * @returns User if found, null otherwise
    */
-  async findUserById(userId: string, includePassword = false): Promise<UserDocument | null> {
+  async getUserById(userId: string, includePassword = false): Promise<UserDocument | null> {
     try {
       logger.info(`Finding user by ID: ${userId}`);
 
@@ -138,7 +138,7 @@ class UserService {
    * @param includePassword Whether to include password in the response
    * @returns User if found, null otherwise
    */
-  async findUserByEmail(email: string, includePassword = false): Promise<UserDocument | null> {
+  async getUserByEmail(email: string, includePassword = false): Promise<UserDocument | null> {
     try {
       logger.info(`Finding user by email: ${email}`);
       const user = await User.findOne({ email }).select(
@@ -164,10 +164,7 @@ class UserService {
    * @param includePassword Whether to include password in the response
    * @returns User if found, null otherwise
    */
-  async findUserByUsername(
-    username: string,
-    includePassword = false,
-  ): Promise<UserDocument | null> {
+  async getUserByUsername(username: string, includePassword = false): Promise<UserDocument | null> {
     try {
       logger.info(`Finding user by username: ${username}`);
       const user = await User.findOne({ username }).select(
@@ -292,7 +289,7 @@ class UserService {
    * @param skip Number of users to skip (optional)
    * @returns Array of users
    */
-  async findAllUsers(
+  async getAllUsers(
     username: string | undefined,
     email: string | undefined,
     role: UserRole | undefined,
@@ -479,7 +476,7 @@ class UserService {
    * @param searchParams Search parameters
    * @returns Array of matching users
    */
-  async findUsersBySearchCriteria(searchParams: SearchUserParams): Promise<UserDocument[]> {
+  async getUsersBySearchCriteria(searchParams: SearchUserParams): Promise<UserDocument[]> {
     try {
       logger.info(`Searching users with criteria: ${JSON.stringify(searchParams)}`);
 

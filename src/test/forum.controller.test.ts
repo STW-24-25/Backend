@@ -2,17 +2,22 @@ import { Request, Response } from 'express';
 import * as forumController from '../controllers/forum.controller';
 import forumService from '../services/forum.service';
 import { Types } from 'mongoose';
+import messageService from '../services/message.service';
 
 // Mock the forum service
 jest.mock('../services/forum.service', () => ({
   createForum: jest.fn(),
   updateForum: jest.fn(),
   deleteForum: jest.fn(),
-  findForumById: jest.fn(),
-  findAllForums: jest.fn(),
-  findForumsByUser: jest.fn(),
+  getForumById: jest.fn(),
+  getAllForums: jest.fn(),
+  getForumsByUserId: jest.fn(),
   countForums: jest.fn(),
   countForumsByUser: jest.fn(),
+}));
+
+jest.mock('../services/message.service', () => ({
+  getMessagesByForumId: jest.fn(),
 }));
 
 // Mock the logger
@@ -62,6 +67,7 @@ describe('Forum Controller', () => {
     ...mockForumData,
     createdAt: new Date(),
     updatedAt: new Date(),
+    messages: [],
   };
 
   describe('createForum', () => {
@@ -231,23 +237,32 @@ describe('Forum Controller', () => {
     });
   });
 
-  describe('getForum', () => {
+  describe('getForumById', () => {
     it('should get a forum and return 200 status', async () => {
       // Arrange
       mockRequest = {
         params: { id: mockForumId },
       };
+      const mockMessages: any[] = [];
 
-      (forumService.findForumById as jest.Mock).mockResolvedValue(mockForumResponse);
+      const mockForumDocument = {
+        ...mockForumResponse, // Spread the plain data
+        toObject: () => mockForumResponse, // Add the mock toObject method
+      };
+
+      (forumService.getForumById as jest.Mock).mockResolvedValue(mockForumDocument);
+      (messageService.getMessagesByForumId as jest.Mock).mockResolvedValue(mockMessages);
 
       // Act
-      await forumController.getForum(mockRequest as Request, mockResponse as Response);
+      await forumController.getForumById(mockRequest as Request, mockResponse as Response);
 
       // Assert
-      expect(forumService.findForumById).toHaveBeenCalledWith(mockForumId);
+      expect(forumService.getForumById).toHaveBeenCalledWith(mockForumId);
+      expect(messageService.getMessagesByForumId).toHaveBeenCalledWith(mockForumId);
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
-        forum: mockForumResponse,
+        ...mockForumResponse,
+        messages: mockMessages,
       });
     });
 
@@ -256,11 +271,10 @@ describe('Forum Controller', () => {
       mockRequest = {
         params: { id: mockForumId },
       };
-
-      (forumService.findForumById as jest.Mock).mockResolvedValue(null);
+      (forumService.getForumById as jest.Mock).mockResolvedValue(null);
 
       // Act
-      await forumController.getForum(mockRequest as Request, mockResponse as Response);
+      await forumController.getForumById(mockRequest as Request, mockResponse as Response);
 
       // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(404);
@@ -276,10 +290,10 @@ describe('Forum Controller', () => {
       };
 
       const errorMessage = 'Database error';
-      (forumService.findForumById as jest.Mock).mockRejectedValue(new Error(errorMessage));
+      (forumService.getForumById as jest.Mock).mockRejectedValue(new Error(errorMessage));
 
       // Act
-      await forumController.getForum(mockRequest as Request, mockResponse as Response);
+      await forumController.getForumById(mockRequest as Request, mockResponse as Response);
 
       // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
@@ -304,7 +318,7 @@ describe('Forum Controller', () => {
         mockForumResponse,
         { ...mockForumResponse, _id: new Types.ObjectId().toString() },
       ];
-      (forumService.findAllForums as jest.Mock).mockResolvedValue({
+      (forumService.getAllForums as jest.Mock).mockResolvedValue({
         forums: mockForums,
         totalPages: 1,
       });
@@ -314,7 +328,7 @@ describe('Forum Controller', () => {
       await forumController.getAllForums(mockRequest as Request, mockResponse as Response);
 
       // Assert
-      expect(forumService.findAllForums).toHaveBeenCalledWith(undefined, undefined, 1, 10);
+      expect(forumService.getAllForums).toHaveBeenCalledWith(undefined, undefined, 1, 10);
       expect(forumService.countForums).toHaveBeenCalledWith();
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
@@ -337,7 +351,7 @@ describe('Forum Controller', () => {
       };
 
       const mockForums = [mockForumResponse];
-      (forumService.findAllForums as jest.Mock).mockResolvedValue({
+      (forumService.getAllForums as jest.Mock).mockResolvedValue({
         forums: mockForums,
         totalPages: 1,
       });
@@ -347,7 +361,7 @@ describe('Forum Controller', () => {
       await forumController.getAllForums(mockRequest as Request, mockResponse as Response);
 
       // Assert
-      expect(forumService.findAllForums).toHaveBeenCalledWith('Test', undefined, 1, 10);
+      expect(forumService.getAllForums).toHaveBeenCalledWith('Test', undefined, 1, 10);
       expect(forumService.countForums).toHaveBeenCalledWith();
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
@@ -370,7 +384,7 @@ describe('Forum Controller', () => {
       };
 
       const mockForums = [mockForumResponse];
-      (forumService.findAllForums as jest.Mock).mockResolvedValue({
+      (forumService.getAllForums as jest.Mock).mockResolvedValue({
         forums: mockForums,
         totalPages: 1,
       });
@@ -380,7 +394,7 @@ describe('Forum Controller', () => {
       await forumController.getAllForums(mockRequest as Request, mockResponse as Response);
 
       // Assert
-      expect(forumService.findAllForums).toHaveBeenCalledWith(undefined, mockUserId, 1, 10);
+      expect(forumService.getAllForums).toHaveBeenCalledWith(undefined, mockUserId, 1, 10);
       expect(forumService.countForums).toHaveBeenCalledWith();
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
@@ -399,7 +413,7 @@ describe('Forum Controller', () => {
       };
 
       const errorMessage = 'Database error';
-      (forumService.findAllForums as jest.Mock).mockRejectedValue(new Error(errorMessage));
+      (forumService.getAllForums as jest.Mock).mockRejectedValue(new Error(errorMessage));
 
       // Act
       await forumController.getAllForums(mockRequest as Request, mockResponse as Response);
@@ -413,7 +427,7 @@ describe('Forum Controller', () => {
     });
   });
 
-  describe('getForumsByUser', () => {
+  describe('getForumsByUserId', () => {
     it('should get forums by user with pagination and return 200 status', async () => {
       // Arrange
       mockRequest = {
@@ -430,17 +444,17 @@ describe('Forum Controller', () => {
         mockForumResponse,
         { ...mockForumResponse, _id: new Types.ObjectId().toString() },
       ];
-      (forumService.findForumsByUser as jest.Mock).mockResolvedValue({
+      (forumService.getForumsByUserId as jest.Mock).mockResolvedValue({
         forums: mockForums,
         totalPages: 1,
       });
       (forumService.countForumsByUser as jest.Mock).mockResolvedValue(mockForums.length);
 
       // Act
-      await forumController.getForumsByUser(mockRequest as Request, mockResponse as Response);
+      await forumController.getForumsByUserId(mockRequest as Request, mockResponse as Response);
 
       // Assert
-      expect(forumService.findForumsByUser).toHaveBeenCalledWith(mockUserId, 1, 10);
+      expect(forumService.getForumsByUserId).toHaveBeenCalledWith(mockUserId, 1, 10);
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
         forums: mockForums,
@@ -461,10 +475,10 @@ describe('Forum Controller', () => {
       };
 
       const errorMessage = 'Database error';
-      (forumService.findForumsByUser as jest.Mock).mockRejectedValue(new Error(errorMessage));
+      (forumService.getForumsByUserId as jest.Mock).mockRejectedValue(new Error(errorMessage));
 
       // Act
-      await forumController.getForumsByUser(mockRequest as Request, mockResponse as Response);
+      await forumController.getForumsByUserId(mockRequest as Request, mockResponse as Response);
 
       // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);

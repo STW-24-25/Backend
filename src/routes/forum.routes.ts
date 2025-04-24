@@ -1,4 +1,3 @@
-// Importaciones no utilizadas se han eliminado
 import { Router } from 'express';
 import * as forumCont from '../controllers/forum.controller';
 import { validateSchema } from '../middleware/validator';
@@ -111,7 +110,7 @@ router.get(
   '/:id',
   authenticateJWT(),
   validateSchema(forumRequestSchemas.getForumByIdSchema),
-  forumCont.getForum,
+  forumCont.getForumById,
 );
 
 // ##### ADMIN #####

@@ -153,7 +153,7 @@ describe('UserService', () => {
     it('should find a user by ID', async () => {
       const createdUser = await createTestUser();
 
-      const result = await userService.findUserById(
+      const result = await userService.getUserById(
         (createdUser._id as unknown as Types.ObjectId).toString(),
       );
 
@@ -165,7 +165,7 @@ describe('UserService', () => {
     it('should find a user by ID with password when includePassword is true', async () => {
       const createdUser = await createTestUser();
 
-      const result = await userService.findUserById(
+      const result = await userService.getUserById(
         (createdUser._id as unknown as Types.ObjectId).toString(),
         true,
       );
@@ -176,7 +176,7 @@ describe('UserService', () => {
     });
 
     it('should return null for invalid ID format', async () => {
-      const result = await userService.findUserById('invalid-id');
+      const result = await userService.getUserById('invalid-id');
 
       expect(result).toBeNull();
     });
@@ -184,7 +184,7 @@ describe('UserService', () => {
     it('should return null if user not found', async () => {
       const validButNonExistentId = new mongoose.Types.ObjectId().toString();
 
-      const result = await userService.findUserById(validButNonExistentId);
+      const result = await userService.getUserById(validButNonExistentId);
 
       expect(result).toBeNull();
     });
@@ -194,7 +194,7 @@ describe('UserService', () => {
     it('should find a user by email', async () => {
       await createTestUser();
 
-      const result = await userService.findUserByEmail(testUserData.email);
+      const result = await userService.getUserByEmail(testUserData.email);
 
       expect(result).toBeDefined();
       expect(result!.email).toBe(testUserData.email);
@@ -204,7 +204,7 @@ describe('UserService', () => {
     it('should find a user by email with password when includePassword is true', async () => {
       await createTestUser();
 
-      const result = await userService.findUserByEmail(testUserData.email, true);
+      const result = await userService.getUserByEmail(testUserData.email, true);
 
       expect(result).toBeDefined();
       expect(result!.email).toBe(testUserData.email);
@@ -212,7 +212,7 @@ describe('UserService', () => {
     });
 
     it('should return null if user not found by email', async () => {
-      const result = await userService.findUserByEmail('nonexistent@example.com');
+      const result = await userService.getUserByEmail('nonexistent@example.com');
 
       expect(result).toBeNull();
     });
@@ -222,7 +222,7 @@ describe('UserService', () => {
     it('should find a user by username', async () => {
       await createTestUser();
 
-      const result = await userService.findUserByUsername(testUserData.username);
+      const result = await userService.getUserByUsername(testUserData.username);
 
       expect(result).toBeDefined();
       expect(result!.username).toBe(testUserData.username);
@@ -232,7 +232,7 @@ describe('UserService', () => {
     it('should find a user by username with password when includePassword is true', async () => {
       await createTestUser();
 
-      const result = await userService.findUserByUsername(testUserData.username, true);
+      const result = await userService.getUserByUsername(testUserData.username, true);
 
       expect(result).toBeDefined();
       expect(result!.username).toBe(testUserData.username);
@@ -240,7 +240,7 @@ describe('UserService', () => {
     });
 
     it('should return null if user not found by username', async () => {
-      const result = await userService.findUserByUsername('nonexistentuser');
+      const result = await userService.getUserByUsername('nonexistentuser');
 
       expect(result).toBeNull();
     });
@@ -382,7 +382,7 @@ describe('UserService', () => {
         email: 'admin2@example.com',
       });
 
-      const result = await userService.findAllUsers(
+      const result = await userService.getAllUsers(
         undefined,
         undefined,
         undefined,
@@ -541,7 +541,7 @@ describe('UserService', () => {
     });
 
     it('should find users by username (case insensitive)', async () => {
-      const result = await userService.findUsersBySearchCriteria({ username: 'john' });
+      const result = await userService.getUsersBySearchCriteria({ username: 'john' });
 
       expect(result).toBeDefined();
       expect(result.length).toBe(1);
@@ -549,7 +549,7 @@ describe('UserService', () => {
     });
 
     it('should find users by email (case insensitive)', async () => {
-      const result = await userService.findUsersBySearchCriteria({ email: 'JANE' });
+      const result = await userService.getUsersBySearchCriteria({ email: 'JANE' });
 
       expect(result).toBeDefined();
       expect(result.length).toBe(1);
@@ -557,7 +557,7 @@ describe('UserService', () => {
     });
 
     it('should find users by role', async () => {
-      const result = await userService.findUsersBySearchCriteria({ role: UserRole.EXPERT });
+      const result = await userService.getUsersBySearchCriteria({ role: UserRole.EXPERT });
 
       expect(result).toBeDefined();
       expect(result.length).toBe(1); // Solo hay un usuario con rol EXPERT en el beforeEach (janedoe)
@@ -565,7 +565,7 @@ describe('UserService', () => {
     });
 
     it('should find users by autonomousCommunity', async () => {
-      const result = await userService.findUsersBySearchCriteria({
+      const result = await userService.getUsersBySearchCriteria({
         autonomousCommunity: AutonomousComunity.VALENCIA,
       });
 
@@ -584,7 +584,7 @@ describe('UserService', () => {
         isAdmin: true,
       });
 
-      const result = await userService.findUsersBySearchCriteria({
+      const result = await userService.getUsersBySearchCriteria({
         role: UserRole.EXPERT,
         isAdmin: true,
       });
@@ -596,7 +596,7 @@ describe('UserService', () => {
     });
 
     it('should return empty array when no users match criteria', async () => {
-      const result = await userService.findUsersBySearchCriteria({ username: 'nonexistent' });
+      const result = await userService.getUsersBySearchCriteria({ username: 'nonexistent' });
 
       expect(result).toBeDefined();
       expect(result.length).toBe(0);

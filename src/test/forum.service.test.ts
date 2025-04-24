@@ -163,7 +163,7 @@ describe('ForumService', () => {
       const createdForum = await createTestForum();
       const forumId = createdForum._id?.toString() || '';
 
-      const foundForum = await forumService.findForumById(forumId);
+      const foundForum = await forumService.getForumById(forumId);
 
       // First verify the forum exists
       expect(foundForum).not.toBeNull();
@@ -181,7 +181,7 @@ describe('ForumService', () => {
     it('should return null if forum not found', async () => {
       const nonExistentId = new Types.ObjectId().toString();
 
-      const result = await forumService.findForumById(nonExistentId);
+      const result = await forumService.getForumById(nonExistentId);
 
       expect(result).toBeNull();
     });
@@ -211,14 +211,14 @@ describe('ForumService', () => {
     });
 
     it('should find all forums with pagination', async () => {
-      const { forums, totalPages } = await forumService.findAllForums(undefined, undefined, 1, 10);
+      const { forums, totalPages } = await forumService.getAllForums(undefined, undefined, 1, 10);
 
       expect(forums).toHaveLength(3);
       expect(totalPages).toBe(1); // With 3 forums and page size 10, we should have 1 page
     });
 
     it('should filter forums by title', async () => {
-      const { forums } = await forumService.findAllForums('Forum 1');
+      const { forums } = await forumService.getAllForums('Forum 1');
 
       expect(forums).toHaveLength(1);
       expect(forums[0].title).toBe('Forum 1');
@@ -230,7 +230,7 @@ describe('ForumService', () => {
       const userForum = allForums[0];
       const userId = userForum.createdBy.toString();
 
-      const { forums } = await forumService.findAllForums(undefined, userId);
+      const { forums } = await forumService.getAllForums(undefined, userId);
 
       expect(forums).toHaveLength(1);
       expect(forums[0].title).toBe('User Forum');
@@ -247,16 +247,16 @@ describe('ForumService', () => {
       }
 
       // Get page 1 with size 5
-      const page1 = await forumService.findAllForums(undefined, undefined, 1, 5);
+      const page1 = await forumService.getAllForums(undefined, undefined, 1, 5);
       expect(page1.forums).toHaveLength(5);
       expect(page1.totalPages).toBe(3); // With 2 forums and page size 5, we should have 3 pages
 
       // Get page 2 with size 5
-      const page2 = await forumService.findAllForums(undefined, undefined, 2, 5);
+      const page2 = await forumService.getAllForums(undefined, undefined, 2, 5);
       expect(page2.forums).toHaveLength(5);
 
       // Get page 3 with size 5
-      const page3 = await forumService.findAllForums(undefined, undefined, 3, 5);
+      const page3 = await forumService.getAllForums(undefined, undefined, 3, 5);
       expect(page3.forums).toHaveLength(3); // Only 3 forums on the last page
     });
   });
@@ -289,7 +289,7 @@ describe('ForumService', () => {
     });
 
     it('should find forums created by a specific user', async () => {
-      const { forums, totalPages } = await forumService.findForumsByUser(userId);
+      const { forums, totalPages } = await forumService.getForumsByUserId(userId);
 
       expect(forums).toHaveLength(2);
       expect(totalPages).toBe(1);
@@ -303,7 +303,7 @@ describe('ForumService', () => {
     it('should return empty array if user has no forums', async () => {
       const nonExistentUserId = new Types.ObjectId().toString();
 
-      const { forums, totalPages } = await forumService.findForumsByUser(nonExistentUserId);
+      const { forums, totalPages } = await forumService.getForumsByUserId(nonExistentUserId);
 
       expect(forums).toHaveLength(0);
       expect(totalPages).toBe(0);
@@ -320,16 +320,16 @@ describe('ForumService', () => {
       }
 
       // Get page 1 with size 5
-      const page1 = await forumService.findForumsByUser(userId, 1, 5);
+      const page1 = await forumService.getForumsByUserId(userId, 1, 5);
       expect(page1.forums).toHaveLength(5);
       expect(page1.totalPages).toBe(3); // With 12 forums and page size 5, we should have 3 pages
 
       // Get page 2 with size 5
-      const page2 = await forumService.findForumsByUser(userId, 2, 5);
+      const page2 = await forumService.getForumsByUserId(userId, 2, 5);
       expect(page2.forums).toHaveLength(5);
 
       // Get page 3 with size 5
-      const page3 = await forumService.findForumsByUser(userId, 3, 5);
+      const page3 = await forumService.getForumsByUserId(userId, 3, 5);
       expect(page3.forums).toHaveLength(2); // Only 2 forums on the last page
     });
   });
