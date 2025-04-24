@@ -18,15 +18,19 @@ import { IForum } from './forum.model';
  *        content:
  *          type: string
  *        author:
- *          $ref: '#/components/schemas/User'
+ *          type: string
+ *          format: MongoId
  *        forumId:
- *          $ref: '#/components/schemas/Forum'
+ *          type: string
+ *          format: MongoId
  *        parentMessage:
- *          $ref: '#/components/schemas/Message'
+ *          type: string
+ *          format: MongoId
  *        upvotes:
  *          type: array
  *          items:
- *            $ref: '#/components/schemas/User'
+ *            type: string
+ *            format: MongoId
  *        isPinned:
  *          type: boolean
  *        createdAt:

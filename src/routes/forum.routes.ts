@@ -80,13 +80,13 @@ router.get(
  *      - $ref: '#/components/parameters/getForumByIdIdParameterSchema'
  *    responses:
  *      200:
- *        description: The forum information
+ *        description: The forum information including its messages
  *        content:
  *          application/json:
  *            schema:
  *              type: object
  *              properties:
- *                id:
+ *                _id:
  *                  type: string
  *                title:
  *                  type: string
@@ -101,6 +101,10 @@ router.get(
  *                updatedAt:
  *                  type: string
  *                  format: date
+ *                messages:
+ *                  type: array
+ *                  items:
+ *                    $ref: '#/components/schemas/Message'
  *      400:
  *        description: Bad request, schema validation failed
  *      500:
