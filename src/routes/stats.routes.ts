@@ -1,8 +1,11 @@
 import { Router } from 'express';
 import { authenticateJWT } from '../middleware/auth';
 import * as statsCont from '../controllers/stats.controller';
+import { isAdmin } from '../middleware/admin';
 
 const router = Router();
+
+// #### ADMIN ####
 
 /**
  * @swagger
@@ -74,6 +77,6 @@ const router = Router();
  *                      userCount:
  *                        type: integer
  */
-router.get('/', authenticateJWT(), statsCont.getAllStats);
+router.get('/', authenticateJWT(), isAdmin(), statsCont.getAllStats);
 
 export default router;

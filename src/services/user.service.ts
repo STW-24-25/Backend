@@ -408,9 +408,51 @@ class UserService {
 
       logger.info(`User authenticated successfully: ${emailOrUsername}`);
       return { user: loginUserData as unknown as UserDocument, token };
-    } catch (error) {
-      logger.error(`Error authenticating user: ${error}`);
-      throw error;
+    } catch (err) {
+      logger.error(`Error authenticating user: ${err}`);
+      throw err;
+    }
+  }
+
+  /**
+   * Flags a user as blocked.
+   * @param userId The user ID to block
+   */
+  async blockUser(userId: string): Promise<boolean> {
+    try {
+      const result = await User.findByIdAndUpdate(userId, { isBlocked: true });
+
+      if (!result) {
+        logger.warn(`Failed to block user with id ${userId}`);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      logger.error(`Error blocking user: ${err}`);
+      throw err;
+    }
+  }
+
+  /**
+   * Flags a user as unblocked, removing the unblocking appeal.
+   * @param userId The user ID to unblock
+   */
+  async unblockUser(userId: string): Promise<boolean> {
+    try {
+      const result = await User.findByIdAndUpdate(userId, {
+        isBlocked: false,
+        unblockAppeal: null,
+      });
+
+      if (!result) {
+        logger.warn(`Failed to unblock user with id ${userId}`);
+        return false;
+      }
+
+      return true;
+    } catch (err) {
+      logger.error(`Error unblocking user: ${err}`);
+      throw err;
     }
   }
 

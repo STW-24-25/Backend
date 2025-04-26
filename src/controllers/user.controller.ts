@@ -39,7 +39,6 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
   try {
     const userId = req.params.id;
     const updateData = req.body;
-
     const updatedUser = await userService.updateUser(userId, updateData);
 
     if (!updatedUser) {
@@ -64,6 +63,9 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
 export const deleteUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.params.id;
+
+    // TODO: Check the user trying to be deleted is the one making the request or admin if it's different
+
     const deleted = await userService.deleteUser(userId);
 
     if (!deleted) {
@@ -179,8 +181,22 @@ export const getAllUsers = async (req: Request, res: Response): Promise<void> =>
  * @returns Promise<void>
  */
 export const requestUnblock = async (req: Request, res: Response): Promise<void> => {
-  res.status(501).json({ message: 'Feature not implemented yet' });
-  logger.warn('requestUnblock endpoint not implemented yet');
+  try {
+    const userId = req.params.id;
+    const unblockAppeal = req.body;
+    const blockedUser = await userService.updateUser(userId, unblockAppeal);
+
+    if (!blockedUser) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    res.status(200).json({ message: `Unblock for user ${userId} registered` });
+    logger.info(`User updated: ${userId}`);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Error requesting to unblock the user', error: err.message });
+    logger.error('Error requesting to unblock the user', err);
+  }
 };
 
 /**
@@ -190,17 +206,43 @@ export const requestUnblock = async (req: Request, res: Response): Promise<void>
  * @returns Promise<void>
  */
 export const blockUser = async (req: Request, res: Response): Promise<void> => {
-  res.status(501).json({ message: 'Feature not implemented yet' });
-  logger.warn('blockUser endpoint not implemented yet');
+  try {
+    const userId = req.params.id;
+    const userBlocked = await userService.blockUser(userId);
+
+    if (!userBlocked) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    res.status(200).json({ message: 'User blocked successfully' });
+    logger.info(`User ${userId} blocked`);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Error blocking the user', error: err.message });
+    logger.error('Error blocking the user', err);
+  }
 };
 
 /**
- * Unblocks a user account.
+ * Unblocks a user account and removes its unblock appeal.
  * @param req Request object.
  * @param res Response object.
  * @returns Promise<void>
  */
-export const unBlockUser = async (req: Request, res: Response): Promise<void> => {
-  res.status(501).json({ message: 'Feature not implemented yet' });
-  logger.warn('unBlockUser endpoint not implemented yet');
+export const unblockUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.params.id;
+    const userUnBlocked = await userService.unblockUser(userId);
+
+    if (!userUnBlocked) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    res.status(200).json({ message: 'User unblocked successfully' });
+    logger.info(`User ${userId} unblocked`);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Error unblocking the user', error: err.message });
+    logger.error('Error unblocking the user', err);
+  }
 };

@@ -3,6 +3,7 @@ import * as userCont from '../controllers/user.controller';
 import { validateSchema } from '../middleware/validator';
 import * as userRequestSchemas from '../middleware/validator/user.schemas';
 import { authenticateJWT } from '../middleware/auth';
+import { isAdmin } from '../middleware/admin';
 
 const router = Router();
 
@@ -289,6 +290,7 @@ router.post(
 router.get(
   '/',
   authenticateJWT(),
+  isAdmin(),
   validateSchema(userRequestSchemas.getAllUsersSchema),
   userCont.getAllUsers,
 );
@@ -320,6 +322,7 @@ router.get(
 router.post(
   '/block',
   authenticateJWT(),
+  isAdmin(),
   validateSchema(userRequestSchemas.blockSchema),
   userCont.blockUser,
 );
@@ -351,8 +354,9 @@ router.post(
 router.post(
   '/unblock',
   authenticateJWT(),
+  isAdmin(),
   validateSchema(userRequestSchemas.unblockSchema),
-  userCont.unBlockUser,
+  userCont.unblockUser,
 );
 
 export default router;

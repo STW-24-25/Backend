@@ -133,6 +133,18 @@ export interface IUser extends Document {
  *            type: string
  *          description: Array of parcel IDs
  *          nullable: true
+ *        loginHistory:
+ *          type: array
+ *          items:
+ *            type: object
+ *            properties:
+ *              timestamp:
+ *                type: string
+ *                format: date
+ *              ipAddress:
+ *                type: string
+ *        unblockAppeal:
+ *          type: string
  */
 
 // User scheema for mongoose
@@ -168,7 +180,7 @@ const userSchema: Schema = new Schema({
     ],
     required: true,
   },
-  unblockTicket: {
+  unblockAppeal: {
     type: {
       content: { type: String },
       createdAt: { type: String, default: Date.now },

@@ -229,10 +229,14 @@ export const getAllUsersSchema = z.object({
  *        id:
  *          type: string
  *          description: ID of the user requesting unblock
+ *        appeal:
+ *          type: string
+ *          description: Appeal description and reasons presented to unblock the user
  */
 export const requestUnblockSchema = z.object({
   body: z.object({
     id: z.string(),
+    appeal: z.string().optional(),
   }),
 });
 

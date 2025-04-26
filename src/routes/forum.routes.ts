@@ -3,6 +3,7 @@ import * as forumCont from '../controllers/forum.controller';
 import { validateSchema } from '../middleware/validator';
 import * as forumRequestSchemas from '../middleware/validator/forum.schemas';
 import { authenticateJWT } from '../middleware/auth';
+import { isAdmin } from '../middleware/admin';
 
 const router = Router();
 
@@ -144,6 +145,7 @@ router.get(
 router.post(
   '/',
   authenticateJWT(),
+  isAdmin(),
   validateSchema(forumRequestSchemas.createForumSchema),
   forumCont.createForum,
 );
@@ -173,6 +175,7 @@ router.post(
 router.post(
   '/',
   authenticateJWT(),
+  isAdmin(),
   validateSchema(forumRequestSchemas.updateForumSchema),
   forumCont.createForum,
 );
@@ -202,6 +205,7 @@ router.post(
 router.post(
   '/',
   authenticateJWT(),
+  isAdmin(),
   validateSchema(forumRequestSchemas.deleteForumSchema),
   forumCont.deleteForum,
 );

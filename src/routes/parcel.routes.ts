@@ -173,6 +173,7 @@ router.get('/', authenticateJWT(), parcelController.getParcel);
  *        description: Error creating parcel
  */
 router.post('/', authenticateJWT(), validateSchema(newParcelSchema), parcelController.createParcel);
+
 /**
  * @swagger
  * /api/parcels/all:

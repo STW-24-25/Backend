@@ -123,6 +123,16 @@ jest.mock('../services/user.service', () => ({
     const user = await User.findById(userId);
     return !!user;
   }),
+  blockUser: jest.fn().mockImplementation(async userId => {
+    const user = await User.findByIdAndUpdate(userId, { isBlocked: true });
+    return !!user;
+  }),
+
+  unblockUser: jest.fn().mockImplementation(async userId => {
+    const user = await User.findByIdAndUpdate(userId, { isBlocked: false, unblockAppeal: null });
+    return !!user;
+  }),
+
   default: {
     createUser: jest.fn(),
     findUserById: jest.fn(),
@@ -134,6 +144,8 @@ jest.mock('../services/user.service', () => ({
     changePassword: jest.fn(),
     findUsersBySearchCriteria: jest.fn(),
     validateUserToken: jest.fn(),
+    blockUser: jest.fn(),
+    unblockUser: jest.fn(),
   },
 }));
 
@@ -457,62 +469,135 @@ describe('UserController', () => {
       expect(res.json).toHaveBeenCalledWith({ message: 'User not found' });
     });
   });
-  it('should get all users with pagination', async () => {
-    // Mock the userService.findAllUsers to return the expected structure
-    const mockUsers: UserDocument[] = [
-      {
-        _id: new mongoose.Types.ObjectId(),
-        username: 'user1',
-        email: 'user1@example.com',
-        role: UserRole.SMALL_FARMER,
-        autonomousCommunity: AutonomousComunity.ARAGON,
-        isAdmin: false,
-        createdAt: new Date(),
-      } as UserDocument,
-      {
-        _id: new mongoose.Types.ObjectId(),
-        username: 'user2',
-        email: 'user2@example.com',
-        role: UserRole.SMALL_FARMER,
-        autonomousCommunity: AutonomousComunity.ARAGON,
-        isAdmin: false,
-        createdAt: new Date(),
-      } as UserDocument,
-      {
-        _id: new mongoose.Types.ObjectId(),
-        username: 'user3',
-        email: 'user3@example.com',
-        role: UserRole.SMALL_FARMER,
-        autonomousCommunity: AutonomousComunity.ARAGON,
-        isAdmin: false,
-        createdAt: new Date(),
-      } as UserDocument,
-    ];
-    const mockTotalPages = 1;
+  describe('getAllUsers', () => {
+    it('should get all users with pagination', async () => {
+      const mockUsers: UserDocument[] = [
+        {
+          _id: new mongoose.Types.ObjectId(),
+          username: 'user1',
+          email: 'user1@example.com',
+          role: UserRole.SMALL_FARMER,
+          autonomousCommunity: AutonomousComunity.ARAGON,
+          isAdmin: false,
+          createdAt: new Date(),
+        } as UserDocument,
+        {
+          _id: new mongoose.Types.ObjectId(),
+          username: 'user2',
+          email: 'user2@example.com',
+          role: UserRole.SMALL_FARMER,
+          autonomousCommunity: AutonomousComunity.ARAGON,
+          isAdmin: false,
+          createdAt: new Date(),
+        } as UserDocument,
+        {
+          _id: new mongoose.Types.ObjectId(),
+          username: 'user3',
+          email: 'user3@example.com',
+          role: UserRole.SMALL_FARMER,
+          autonomousCommunity: AutonomousComunity.ARAGON,
+          isAdmin: false,
+          createdAt: new Date(),
+        } as UserDocument,
+      ];
+      const mockTotalPages = 1;
 
-    jest.spyOn(userService, 'getAllUsers').mockResolvedValue({
-      users: mockUsers,
-      totalPages: mockTotalPages,
+      jest.spyOn(userService, 'getAllUsers').mockResolvedValue({
+        users: mockUsers,
+        totalPages: mockTotalPages,
+      });
+
+      jest.spyOn(userService, 'countUsers').mockResolvedValue(mockUsers.length);
+
+      const req = mockRequest({
+        query: { page: '1', size: '16' },
+      });
+      const res = mockResponse();
+
+      await userController.getAllUsers(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalled();
+
+      const responseData = (res.json as jest.Mock).mock.calls[0][0];
+      expect(responseData.users).toBeDefined();
+      expect(responseData.users.length).toBe(3);
+      expect(responseData.totalPages).toBe(1);
+      expect(responseData.page).toBe(1);
+      expect(responseData.pageSize).toBe(16);
+      expect(responseData.totalUsers).toBe(3);
+    });
+  });
+  describe('blockUser', () => {
+    it('should block the user', async () => {
+      const createdUser = await createTestUser();
+      const userId = createdUser._id.toString();
+
+      const req = mockRequest({ params: { id: userId } });
+      const res = mockResponse();
+
+      await userController.blockUser(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ message: 'User blocked successfully' });
+
+      // Verify
+      const blockedUser = await User.findById(userId);
+      expect(blockedUser?.isBlocked).toBe(true);
     });
 
-    jest.spyOn(userService, 'countUsers').mockResolvedValue(mockUsers.length);
+    it('should fail to block the user', async () => {
+      const createdUser = await createTestUser();
+      const userId = new mongoose.Types.ObjectId().toString();
 
-    const req = mockRequest({
-      query: { page: '1', size: '16' },
+      const req = mockRequest({ params: { id: userId } });
+      const res = mockResponse();
+
+      await userController.blockUser(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({ message: 'User not found' });
+
+      // Verify
+      const blockedUser = await User.findById(createdUser._id);
+      expect(blockedUser?.isBlocked).toBe(false);
     });
-    const res = mockResponse();
+  });
+  describe('unblockUser', () => {
+    it('should unblock the user', async () => {
+      const createdUser = await createTestUser();
+      const userId = createdUser._id.toString();
+      await userService.blockUser(userId);
 
-    await userController.getAllUsers(req, res);
+      const req = mockRequest({ params: { id: userId } });
+      const res = mockResponse();
 
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalled();
+      await userController.unblockUser(req, res);
 
-    const responseData = (res.json as jest.Mock).mock.calls[0][0];
-    expect(responseData.users).toBeDefined();
-    expect(responseData.users.length).toBe(3);
-    expect(responseData.totalPages).toBe(1);
-    expect(responseData.page).toBe(1);
-    expect(responseData.pageSize).toBe(16);
-    expect(responseData.totalUsers).toBe(3);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ message: 'User unblocked successfully' });
+
+      // Verify
+      const blockedUser = await User.findById(userId);
+      expect(blockedUser?.isBlocked).toBe(false);
+    });
+
+    it('should fail to unblock the user', async () => {
+      const createdUser = await createTestUser();
+      const userId = new mongoose.Types.ObjectId().toString();
+      await userService.blockUser(createdUser._id.toString());
+
+      const req = mockRequest({ params: { id: userId } });
+      const res = mockResponse();
+
+      await userController.unblockUser(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({ message: 'User not found' });
+
+      // Verify
+      const blockedUser = await User.findById(createdUser._id);
+      expect(blockedUser?.isBlocked).toBe(true);
+    });
   });
 });
