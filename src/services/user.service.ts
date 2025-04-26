@@ -59,14 +59,14 @@ class UserService {
       const existingUser = await User.findOne({ email: userData.email });
       if (existingUser) {
         logger.warn(`User with email ${userData.email} already exists`);
-        throw new Error('User already exists with this email');
+        throw new Error('A user already exists with this email');
       }
 
       // Verificar también si el username ya existe
       const existingUsername = await User.findOne({ username: userData.username });
       if (existingUsername) {
         logger.warn(`User with username ${userData.username} already exists`);
-        throw new Error('User already exists with this username');
+        throw new Error('A user already exists with this username');
       }
 
       // Hash password
@@ -133,7 +133,7 @@ class UserService {
   }
 
   /**
-   * Finds a user by email
+   * Finds a user by email //! remove
    * @param email User email
    * @param includePassword Whether to include password in the response
    * @returns User if found, null otherwise
@@ -159,7 +159,7 @@ class UserService {
   }
 
   /**
-   * Finds a user by username
+   * Finds a user by username //! remove
    * @param username Username
    * @param includePassword Whether to include password in the response
    * @returns User if found, null otherwise
@@ -415,12 +415,16 @@ class UserService {
   }
 
   /**
-   * Flags a user as blocked.
+   * Flags a user as blocked, saving the reason for it.
    * @param userId The user ID to block
+   * @param reason The reason for the blocking
+   * @returns True if the user was succesfully blocked, false otherwise
    */
-  async blockUser(userId: string): Promise<boolean> {
+  async blockUser(userId: string, reason: string): Promise<boolean> {
     try {
-      const result = await User.findByIdAndUpdate(userId, { isBlocked: true });
+      const result = await User.findByIdAndUpdate(userId, {
+        $set: { isBlocked: true, blockReason: reason },
+      });
 
       if (!result) {
         logger.warn(`Failed to block user with id ${userId}`);
@@ -440,15 +444,14 @@ class UserService {
   async unblockUser(userId: string): Promise<boolean> {
     try {
       const result = await User.findByIdAndUpdate(userId, {
-        isBlocked: false,
-        unblockAppeal: null,
+        $set: { isBlocked: false },
+        $unset: { blockReason: '', unblockAppeal: '' },
       });
 
       if (!result) {
         logger.warn(`Failed to unblock user with id ${userId}`);
         return false;
       }
-
       return true;
     } catch (err) {
       logger.error(`Error unblocking user: ${err}`);
@@ -457,59 +460,23 @@ class UserService {
   }
 
   /**
-   * Changes user password
-   * @param userId User ID
-   * @param currentPassword Current password
-   * @param newPassword New password
-   * @returns Boolean indicating if password was changed
+   * Registers the user appeal to be unblocked
+   * @param userId The user ID requesting to be unblocked
+   * @param appeal Appeal description and reasons presented to unblock the user
+   * @returns Boolean indicating whether the unblock appeal was registered succesfully
    */
-  async changePassword(
-    userId: string,
-    currentPassword: string,
-    newPassword: string,
-  ): Promise<boolean> {
+  async requestUnblock(userId: string, appeal: string): Promise<boolean> {
     try {
-      logger.info(`Changing password for user ${userId}`);
+      const result = await User.findByIdAndUpdate(userId, { $set: { unblockAppeal: appeal } });
 
-      if (!Types.ObjectId.isValid(userId)) {
-        logger.warn(`Invalid user ID format: ${userId}`);
+      if (!result) {
+        logger.warn(`Failed to unblock user with id ${userId}`);
         return false;
       }
-
-      // Find user with password
-      const user = await User.findById(userId).select('+passwordHash');
-
-      if (!user) {
-        logger.info(`No user found with ID: ${userId}`);
-        return false;
-      }
-
-      // Verify that passwordHash exists
-      if (!user.passwordHash) {
-        logger.error(`Password change failed: Password hash not found for user: ${userId}`);
-        return false;
-      }
-
-      // Verify current password
-      const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
-
-      if (!isMatch) {
-        logger.info(`Password change failed: Current password is incorrect for user ${userId}`);
-        return false;
-      }
-
-      // Hash new password
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(newPassword, salt);
-
-      // Update password
-      await User.findByIdAndUpdate(userId, { passwordHash: hashedPassword });
-
-      logger.info(`Password changed successfully for user ${userId}`);
       return true;
-    } catch (error) {
-      logger.error(`Error changing password: ${error}`);
-      throw error;
+    } catch (err) {
+      logger.error(`Error unblocking user: ${err}`);
+      throw err;
     }
   }
 
@@ -552,36 +519,6 @@ class UserService {
     } catch (error) {
       logger.error(`Error searching users: ${error}`);
       throw error;
-    }
-  }
-
-  /**
-   * Checks if a user token is valid
-   * @param userId User ID
-   * @returns Boolean indicating if token is valid
-   */
-  async validateUserToken(userId: string): Promise<boolean> {
-    try {
-      logger.info(`Validating token for user ${userId}`);
-
-      if (!Types.ObjectId.isValid(userId)) {
-        logger.warn(`Invalid user ID format: ${userId}`);
-        return false;
-      }
-
-      // Check if user exists
-      const user = await User.findById(userId);
-
-      if (!user) {
-        logger.info(`Token validation failed: No user found with ID: ${userId}`);
-        return false;
-      }
-
-      logger.info(`Token validated successfully for user ${userId}`);
-      return true;
-    } catch (error) {
-      logger.error(`Error validating token: ${error}`);
-      return false;
     }
   }
 }

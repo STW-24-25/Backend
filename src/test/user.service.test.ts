@@ -132,7 +132,7 @@ describe('UserService', () => {
 
       // Try to create again with the same email
       await expect(userService.createUser(testUserData)).rejects.toThrow(
-        'User already exists with this email',
+        'A user already exists with this email',
       );
     });
 
@@ -144,7 +144,7 @@ describe('UserService', () => {
       const userData = { ...testUserData, email: 'different@example.com' };
 
       await expect(userService.createUser(userData)).rejects.toThrow(
-        'User already exists with this username',
+        'A user already exists with this username',
       );
     });
   });
@@ -367,8 +367,8 @@ describe('UserService', () => {
     });
   });
 
-  describe('findAllUsers', () => {
-    it('should find all users', async () => {
+  describe('getAllUsers', () => {
+    it('should get all users', async () => {
       // Create multiple users
       await createTestUser(testUserData);
       await createTestUser({
@@ -460,64 +460,6 @@ describe('UserService', () => {
     });
   });
 
-  describe('changePassword', () => {
-    it('should change password successfully with correct current password', async () => {
-      const createdUser = await createTestUser();
-
-      const result = await userService.changePassword(
-        (createdUser._id as unknown as Types.ObjectId).toString(),
-        testUserData.password,
-        'NewPassword123',
-      );
-
-      expect(result).toBe(true);
-
-      // Verify password was updated and is valid
-      const updatedUser = await User.findById(createdUser._id).select('+passwordHash');
-      const isMatch = await bcrypt.compare('NewPassword123', updatedUser!.passwordHash);
-      expect(isMatch).toBe(true);
-    });
-
-    it('should return false with incorrect current password', async () => {
-      const createdUser = await createTestUser();
-
-      const result = await userService.changePassword(
-        (createdUser._id as unknown as Types.ObjectId).toString(),
-        'WrongPassword123',
-        'NewPassword123',
-      );
-
-      expect(result).toBe(false);
-
-      // Verify password was not updated
-      const updatedUser = await User.findById(createdUser._id).select('+passwordHash');
-      const isMatch = await bcrypt.compare(testUserData.password, updatedUser!.passwordHash);
-      expect(isMatch).toBe(true);
-    });
-
-    it('should return false for invalid ID format', async () => {
-      const result = await userService.changePassword(
-        'invalid-id',
-        testUserData.password,
-        'NewPassword123',
-      );
-
-      expect(result).toBe(false);
-    });
-
-    it('should return false if user not found', async () => {
-      const validButNonExistentId = new mongoose.Types.ObjectId().toString();
-
-      const result = await userService.changePassword(
-        (validButNonExistentId as unknown as Types.ObjectId).toString(),
-        testUserData.password,
-        'NewPassword123',
-      );
-
-      expect(result).toBe(false);
-    });
-  });
-
   describe('findUsersBySearchCriteria', () => {
     beforeEach(async () => {
       // Create multiple users with different attributes
@@ -603,29 +545,60 @@ describe('UserService', () => {
     });
   });
 
-  describe('validateUserToken', () => {
-    it('should validate token for existing user', async () => {
+  describe('blockUser', () => {
+    it('should block the user', async () => {
       const createdUser = await createTestUser();
 
-      const result = await userService.validateUserToken(
+      const result = await userService.blockUser(
+        (createdUser._id as unknown as Types.ObjectId).toString(),
+        'abc',
+      );
+
+      expect(result).toBe(true);
+      const user = await User.findById(createdUser._id);
+      expect(user?.isBlocked).toBe(true);
+      expect(user?.blockReason).toBe('abc');
+    });
+
+    it('should fail to block the user', async () => {
+      const createdUser = await createTestUser();
+      const userId = new mongoose.Types.ObjectId().toString();
+
+      const result = await userService.blockUser(userId, 'abc');
+
+      expect(result).toBe(false);
+      const user = await User.findById(createdUser._id);
+      expect(user?.isBlocked).toBe(false);
+      expect(user?.blockReason).toBeUndefined();
+    });
+  });
+
+  describe('unblockUser', () => {
+    it('should unblock the user', async () => {
+      const createdUser = await createTestUser();
+      await User.findByIdAndUpdate(createdUser._id, { isBlocked: true });
+
+      const result = await userService.unblockUser(
         (createdUser._id as unknown as Types.ObjectId).toString(),
       );
 
       expect(result).toBe(true);
+      const user = await User.findById(createdUser._id);
+      expect(user?.isBlocked).toBe(false);
+      expect(user?.blockReason).toBeUndefined();
     });
 
-    it('should return false for invalid ID format', async () => {
-      const result = await userService.validateUserToken('invalid-id');
+    it('should fail to unblock the user', async () => {
+      const createdUser = await createTestUser();
+      await User.findByIdAndUpdate(createdUser._id, { isBlocked: true });
+      const userId = new mongoose.Types.ObjectId().toString();
+
+      const result = await userService.blockUser(userId, 'abc');
 
       expect(result).toBe(false);
-    });
-
-    it('should return false if user not found', async () => {
-      const validButNonExistentId = new mongoose.Types.ObjectId().toString();
-
-      const result = await userService.validateUserToken(validButNonExistentId);
-
-      expect(result).toBe(false);
+      const user = await User.findById(createdUser._id);
+      expect(user?.isBlocked).toBe(true);
+      expect(user?.blockReason).toBeUndefined();
     });
   });
 });

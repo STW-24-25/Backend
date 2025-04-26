@@ -87,7 +87,13 @@ export interface IUser extends Document {
   isAdmin: boolean;
   createdAt: Date;
   isBlocked: boolean;
+  blockReason: string;
   parcels?: mongoose.Schema.Types.ObjectId[];
+  loginHistory: [{ timestamp: string; ipAddress: string }];
+  unblockAppeal?: {
+    content: string;
+    createdAt: Date;
+  };
 }
 
 // Swagger schema doc for User
@@ -127,6 +133,8 @@ export interface IUser extends Document {
  *          format: date
  *        isBlocked:
  *          type: boolean
+ *        blockReason:
+ *          type: string
  *        parcels:
  *          type: array
  *          items:
@@ -144,10 +152,14 @@ export interface IUser extends Document {
  *              ipAddress:
  *                type: string
  *        unblockAppeal:
- *          type: string
+ *          type: object
+ *          properties:
+ *            content:
+ *              type: string
+ *            createdAt:
+ *              type: string
+ *              format: date
  */
-
-// User scheema for mongoose
 const userSchema: Schema = new Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
@@ -163,6 +175,7 @@ const userSchema: Schema = new Schema({
   isAdmin: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now(), required: true },
   isBlocked: { type: Boolean, default: false, required: true },
+  blockReason: { type: String, required: false },
   parcels: [
     {
       type: mongoose.Schema.Types.ObjectId,
@@ -182,8 +195,8 @@ const userSchema: Schema = new Schema({
   },
   unblockAppeal: {
     type: {
-      content: { type: String },
-      createdAt: { type: String, default: Date.now },
+      content: { type: String, required: true },
+      createdAt: { type: String, default: Date.now, required: true },
     },
     required: false,
   },

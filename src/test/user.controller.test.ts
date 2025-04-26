@@ -1,22 +1,9 @@
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import bcrypt from 'bcrypt';
 import * as userController from '../controllers/user.controller';
-import User, { UserRole, AutonomousComunity } from '../models/user.model';
-import { genJWT } from '../middleware/auth';
-import dotenv from 'dotenv';
+import { UserRole, AutonomousComunity } from '../models/user.model';
 import { Request, Response } from 'express';
 import userService from '../services/user.service';
 
-// Cargar variables de entorno
-dotenv.config();
-
-// Mock del middleware de autenticación
-jest.mock('../middleware/auth', () => ({
-  genJWT: jest.fn().mockReturnValue('mocked-jwt-token'),
-}));
-
-// Mock del logger para evitar logs durante los tests
 jest.mock('../utils/logger', () => ({
   info: jest.fn(),
   warn: jest.fn(),
@@ -26,127 +13,19 @@ jest.mock('../utils/logger', () => ({
 
 // Mock del servicio de usuario
 jest.mock('../services/user.service', () => ({
-  createUser: jest.fn().mockImplementation(async userData => {
-    // Simular creación de usuario
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(userData.password, salt);
-
-    const user = new User({
-      ...userData,
-      passwordHash,
-      password: undefined,
-    });
-
-    await user.save();
-    return user;
-  }),
-
-  getUserById: jest.fn().mockImplementation(async id => {
-    return User.findById(id);
-  }),
-
-  updateUser: jest.fn().mockImplementation(async (id, updateData) => {
-    return User.findByIdAndUpdate(id, updateData, { new: true });
-  }),
-
-  deleteUser: jest.fn().mockImplementation(async id => {
-    const result = await User.findByIdAndDelete(id);
-    return !!result;
-  }),
-
-  loginUser: jest.fn().mockImplementation(async (usernameOrEmail, password) => {
-    const user = await User.findOne({
-      $or: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
-    }).select('+passwordHash');
-
-    if (!user) return null;
-
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
-    if (!isMatch) return null;
-
-    const token = genJWT({
-      id: user._id,
-      username: user.username,
-      email: user.email,
-      role: user.role,
-      isAdmin: user.isAdmin,
-    });
-    return { user, token };
-  }),
-  getAllUsers: jest.fn().mockImplementation(async (limit, skip) => {
-    let query = User.find();
-    if (skip) query = query.skip(skip);
-    if (limit) query = query.limit(limit);
-    return query.exec();
-  }),
-  countUsers: jest.fn().mockImplementation(async () => {
-    return User.countDocuments();
-  }),
-  changePassword: jest.fn().mockImplementation(async (userId, currentPassword, newPassword) => {
-    const user = await User.findById(userId).select('+passwordHash');
-    if (!user) return false;
-
-    const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
-    if (!isMatch) return false;
-
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
-    await User.findByIdAndUpdate(userId, { passwordHash: hashedPassword });
-    return true;
-  }),
-  findUsersBySearchCriteria: jest.fn().mockImplementation(async searchParams => {
-    const query: any = {};
-
-    if (searchParams.username) {
-      query.username = { $regex: searchParams.username, $options: 'i' };
-    }
-
-    if (searchParams.email) {
-      query.email = { $regex: searchParams.email, $options: 'i' };
-    }
-
-    if (searchParams.role) {
-      query.role = searchParams.role;
-    }
-
-    if (searchParams.autonomousCommunity) {
-      query.autonomousCommunity = searchParams.autonomousCommunity;
-    }
-
-    if (searchParams.isAdmin !== undefined) {
-      query.isAdmin = searchParams.isAdmin;
-    }
-
-    return User.find(query);
-  }),
-  validateUserToken: jest.fn().mockImplementation(async userId => {
-    const user = await User.findById(userId);
-    return !!user;
-  }),
-  blockUser: jest.fn().mockImplementation(async userId => {
-    const user = await User.findByIdAndUpdate(userId, { isBlocked: true });
-    return !!user;
-  }),
-
-  unblockUser: jest.fn().mockImplementation(async userId => {
-    const user = await User.findByIdAndUpdate(userId, { isBlocked: false, unblockAppeal: null });
-    return !!user;
-  }),
-
-  default: {
-    createUser: jest.fn(),
-    findUserById: jest.fn(),
-    updateUser: jest.fn(),
-    deleteUser: jest.fn(),
-    loginUser: jest.fn(),
-    findAllUsers: jest.fn(),
-    countUsers: jest.fn(),
-    changePassword: jest.fn(),
-    findUsersBySearchCriteria: jest.fn(),
-    validateUserToken: jest.fn(),
-    blockUser: jest.fn(),
-    unblockUser: jest.fn(),
-  },
+  createUser: jest.fn(),
+  getUserById: jest.fn(),
+  updateUser: jest.fn(),
+  deleteUser: jest.fn(),
+  loginUser: jest.fn(),
+  getAllUsers: jest.fn(),
+  countUsers: jest.fn(),
+  changePassword: jest.fn(),
+  findUsersBySearchCriteria: jest.fn(),
+  validateUserToken: jest.fn(),
+  blockUser: jest.fn(),
+  unblockUser: jest.fn(),
+  requestUnblock: jest.fn(),
 }));
 
 // Mock para Request y Response de Express
@@ -167,437 +46,580 @@ const mockResponse = () => {
 };
 
 describe('UserController', () => {
-  let mongoServer: MongoMemoryServer;
-
-  // Definir el tipo de documento de usuario
-  interface UserDocument extends mongoose.Document {
-    _id: mongoose.Types.ObjectId;
-    username: string;
-    email: string;
-    passwordHash: string;
-    profilePicture?: string;
-    role: UserRole;
-    autonomousCommunity: AutonomousComunity;
-    isAdmin: boolean;
-    createdAt: Date;
-  }
-
-  // Limpiar completamente todas las colecciones de la base de datos
-  const clearDatabase = async () => {
-    const collections = mongoose.connection.collections;
-
-    for (const key in collections) {
-      const collection = collections[key];
-      await collection.deleteMany({});
-    }
-  };
-
-  // Configuración inicial antes de todos los tests
-  beforeAll(async () => {
-    // Crear una instancia de MongoDB en memoria para testing
-    mongoServer = await MongoMemoryServer.create();
-    const uri = mongoServer.getUri();
-
-    await mongoose.connect(uri);
-    await clearDatabase(); // Asegurar que la base de datos está limpia al inicio
-  });
-
-  // Limpiar antes de cada test para asegurar aislamiento
-  beforeEach(async () => {
-    await clearDatabase();
-  });
-
-  // Limpiar después de cada test para evitar contaminación
-  afterEach(async () => {
-    await clearDatabase();
+  beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  // Cerrar conexiones después de todos los tests
-  afterAll(async () => {
-    await clearDatabase(); // Limpieza final
-    await mongoose.disconnect();
-    await mongoServer.stop();
-  });
-
   // Datos de prueba
-  const testUserData = {
+  const testUserDataInput = {
     username: 'testuser',
     email: 'test@example.com',
     password: 'Password123',
     role: UserRole.SMALL_FARMER,
     autonomousCommunity: AutonomousComunity.ARAGON,
-    isAdmin: false,
   };
 
-  // adminUserData está definido pero no usado en este archivo
-
-  // Helper para crear un usuario directamente en la BD
-  async function createTestUser(userData = testUserData): Promise<UserDocument> {
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(userData.password, salt);
-
-    const user = new User({
-      ...userData,
-      passwordHash,
-    });
-
-    return (await user.save()) as UserDocument;
-  }
+  const testUserId = new mongoose.Types.ObjectId().toString();
+  const mockCreatedUser = {
+    // Data returned by the service (passwordHash instead of password)
+    _id: testUserId,
+    username: 'testuser',
+    email: 'test@example.com',
+    passwordHash: 'hashedPassword123', // Service handles hashing
+    role: UserRole.SMALL_FARMER,
+    autonomousCommunity: AutonomousComunity.ARAGON,
+    isAdmin: false,
+    createdAt: new Date(),
+    isBlocked: false,
+    loginHistory: [],
+  };
 
   describe('createUser', () => {
-    it('should create a new user successfully', async () => {
-      const req = mockRequest({ body: testUserData });
+    it('should call userService.createUser and return 201 on success', async () => {
+      const req = mockRequest({ body: testUserDataInput });
       const res = mockResponse();
 
+      (userService.createUser as jest.Mock).mockResolvedValue(mockCreatedUser);
+
       await userController.createUser(req, res);
+
+      expect(userService.createUser).toHaveBeenCalledWith(testUserDataInput);
 
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalled();
 
-      // Verify user was saved to DB
-      const savedUser = await User.findOne({ email: testUserData.email });
-      expect(savedUser).toBeDefined();
-      expect(savedUser!.email).toBe(testUserData.email);
+      expect(res.json).toHaveBeenCalledWith({ message: 'User created successfully' });
     });
 
-    it('should hash the password when creating a user', async () => {
-      const req = mockRequest({ body: testUserData });
+    it('should return 500 if userService.createUser throws an error', async () => {
+      const req = mockRequest({ body: testUserDataInput });
       const res = mockResponse();
+      const errorMessage = 'A user already exists with this email';
+
+      // Mock service failure (e.g., duplicate entry)
+      (userService.createUser as jest.Mock).mockRejectedValue(new Error(errorMessage));
 
       await userController.createUser(req, res);
 
-      // Get the user with password
-      const savedUser = await User.findOne({ email: testUserData.email }).select('+passwordHash');
-      expect(savedUser).toBeDefined();
-      expect(savedUser!.passwordHash).toBeDefined();
-      expect(savedUser!.passwordHash).not.toBe(testUserData.password); // Password should be hashed
+      // Verify service call
+      expect(userService.createUser).toHaveBeenCalledWith(testUserDataInput);
 
-      // Verify the hashed password is valid
-      const isMatch = await bcrypt.compare(testUserData.password, savedUser!.passwordHash);
-      expect(isMatch).toBe(true);
-    });
-
-    it('should return error if user with email already exists', async () => {
-      // Create user first
-      await createTestUser();
-
-      // Try to create again with the same email
-      const req = mockRequest({ body: testUserData });
-      const res = mockResponse();
-
-      await userController.createUser(req, res);
-
+      // Verify error response
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalled();
-      // El mensaje específico puede variar dependiendo de cómo se maneje en el servicio
-    });
-
-    it('should return error if user with username already exists', async () => {
-      // Create user first
-      await createTestUser();
-
-      // Try to create again with the same username but different email
-      const userData = { ...testUserData, email: 'different@example.com' };
-      const req = mockRequest({ body: userData });
-      const res = mockResponse();
-
-      await userController.createUser(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalled();
-      // El mensaje específico puede variar dependiendo de cómo se maneje en el servicio
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Error creating user', // Adjust message based on controller's catch block
+        error: errorMessage,
+      });
     });
   });
 
   describe('getUser', () => {
-    it('should find a user by ID', async () => {
-      const createdUser = await createTestUser();
-      const userId = createdUser._id.toString();
-
-      const req = mockRequest({ params: { id: userId } });
+    it('should call userService.getUserById and return 200 with user data', async () => {
+      const req = mockRequest({ params: { id: testUserId } });
       const res = mockResponse();
+
+      (userService.getUserById as jest.Mock).mockResolvedValue(mockCreatedUser);
 
       await userController.getUser(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalled();
+      expect(userService.getUserById).toHaveBeenCalledWith(testUserId);
 
-      const responseData = (res.json as jest.Mock).mock.calls[0][0];
-      expect(responseData).toBeDefined();
-      expect(responseData.email).toBe(testUserData.email);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(mockCreatedUser);
     });
 
-    it('should return 404 if user not found', async () => {
+    it('should return 404 if userService.getUserById returns null', async () => {
       const validButNonExistentId = new mongoose.Types.ObjectId().toString();
       const req = mockRequest({ params: { id: validButNonExistentId } });
       const res = mockResponse();
 
+      (userService.getUserById as jest.Mock).mockResolvedValue(null);
+
       await userController.getUser(req, res);
 
+      expect(userService.getUserById).toHaveBeenCalledWith(validButNonExistentId);
+
+      // Verify response
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith({ message: 'User not found' });
+    });
+
+    it('should return 500 if userService.getUserById throws an error', async () => {
+      const req = mockRequest({ params: { id: testUserId } });
+      const res = mockResponse();
+      const errorMessage = 'Database connection error';
+
+      (userService.getUserById as jest.Mock).mockRejectedValue(new Error(errorMessage));
+
+      await userController.getUser(req, res);
+
+      expect(userService.getUserById).toHaveBeenCalledWith(testUserId);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Error retrieving user',
+        error: errorMessage,
+      });
     });
   });
 
   describe('login', () => {
-    it('should login successfully with valid credentials', async () => {
-      await createTestUser();
+    const loginCredentials = {
+      usernameOrEmail: testUserDataInput.email,
+      password: testUserDataInput.password,
+    };
 
-      const req = mockRequest({
-        body: {
-          usernameOrEmail: testUserData.email,
-          password: testUserData.password,
-        },
-      });
+    it('should call userService.loginUser and return 200 with token/user on success', async () => {
+      const req = mockRequest({ body: loginCredentials });
       const res = mockResponse();
+      const loginResult = { token: 'mocked-jwt-token', user: mockCreatedUser };
+
+      (userService.loginUser as jest.Mock).mockResolvedValue(loginResult);
 
       await userController.login(req, res);
+
+      expect(userService.loginUser).toHaveBeenCalledWith(
+        loginCredentials.usernameOrEmail,
+        loginCredentials.password,
+      );
 
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalled();
-
-      const responseData = (res.json as jest.Mock).mock.calls[0][0];
-      expect(responseData.token).toBe('mocked-jwt-token');
-      expect(responseData.user).toBeDefined();
+      expect(res.json).toHaveBeenCalledWith(loginResult);
     });
 
-    it('should fail with 401 for invalid email/username', async () => {
-      const req = mockRequest({
-        body: {
-          usernameOrEmail: 'nonexistent@example.com',
-          password: 'anypassword',
-        },
-      });
+    it('should return 401 if userService.loginUser returns null (invalid credentials)', async () => {
+      const req = mockRequest({ body: loginCredentials });
       const res = mockResponse();
 
+      (userService.loginUser as jest.Mock).mockResolvedValue(null);
+
       await userController.login(req, res);
+
+      expect(userService.loginUser).toHaveBeenCalledWith(
+        loginCredentials.usernameOrEmail,
+        loginCredentials.password,
+      );
 
       expect(res.status).toHaveBeenCalledWith(401);
       expect(res.json).toHaveBeenCalledWith({ message: 'Invalid credentials' });
     });
 
-    it('should fail with 401 for invalid password', async () => {
-      await createTestUser();
-
-      const req = mockRequest({
-        body: {
-          usernameOrEmail: testUserData.email,
-          password: 'wrongpassword',
-        },
-      });
+    it('should return 500 if userService.loginUser throws an error', async () => {
+      const req = mockRequest({ body: loginCredentials });
       const res = mockResponse();
+      const errorMessage = 'Authentication service unavailable';
+
+      (userService.loginUser as jest.Mock).mockRejectedValue(new Error(errorMessage));
 
       await userController.login(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Invalid credentials' });
+      expect(userService.loginUser).toHaveBeenCalledWith(
+        loginCredentials.usernameOrEmail,
+        loginCredentials.password,
+      );
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Login error',
+        error: errorMessage,
+      });
     });
   });
 
   describe('updateUser', () => {
-    it('should update a user successfully', async () => {
-      const createdUser = await createTestUser();
-      const userId = createdUser._id.toString();
+    const updateData = {
+      username: 'updatedusername',
+      email: 'updated@example.com',
+    };
+    const updatedUserResult = { ...mockCreatedUser, ...updateData };
 
-      const updateData = {
-        username: 'updatedusername',
-        email: 'updated@example.com',
-      };
-
+    it('should call userService.updateUser and return 200 with updated user', async () => {
       const req = mockRequest({
-        params: { id: userId },
+        params: { id: testUserId },
         body: updateData,
       });
       const res = mockResponse();
 
+      (userService.updateUser as jest.Mock).mockResolvedValue(updatedUserResult);
+
       await userController.updateUser(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalled();
+      expect(userService.updateUser).toHaveBeenCalledWith(testUserId, updateData);
 
-      // Check the user was updated in DB
-      const updatedUser = await User.findById(userId);
-      expect(updatedUser).toBeDefined();
-      expect(updatedUser!.username).toBe(updateData.username);
-      expect(updatedUser!.email).toBe(updateData.email);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'User updated successfully',
+        user: updatedUserResult,
+      });
     });
 
-    it('should return 404 if user not found', async () => {
+    it('should return 404 if userService.updateUser returns null', async () => {
       const validButNonExistentId = new mongoose.Types.ObjectId().toString();
-
       const req = mockRequest({
         params: { id: validButNonExistentId },
-        body: { username: 'newname' },
+        body: updateData,
       });
       const res = mockResponse();
 
+      (userService.updateUser as jest.Mock).mockResolvedValue(null);
+
       await userController.updateUser(req, res);
+
+      expect(userService.updateUser).toHaveBeenCalledWith(validButNonExistentId, updateData);
 
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith({ message: 'User not found' });
+    });
+
+    it('should return 500 if userService.updateUser throws an error', async () => {
+      const req = mockRequest({
+        params: { id: testUserId },
+        body: updateData,
+      });
+      const res = mockResponse();
+      const errorMessage = 'Database update conflict';
+
+      // Mock service failure
+      (userService.updateUser as jest.Mock).mockRejectedValue(new Error(errorMessage));
+
+      await userController.updateUser(req, res);
+
+      // Verify service call
+      expect(userService.updateUser).toHaveBeenCalledWith(testUserId, updateData);
+
+      // Verify error response
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Error updating user',
+        error: errorMessage,
+      });
     });
   });
 
   describe('deleteUser', () => {
-    it('should delete a user successfully', async () => {
-      const createdUser = await createTestUser();
-      const userId = createdUser._id.toString();
-
-      const req = mockRequest({ params: { id: userId } });
+    it('should call userService.deleteUser and return 200 on success', async () => {
+      const req = mockRequest({ params: { id: testUserId } });
       const res = mockResponse();
 
+      (userService.deleteUser as jest.Mock).mockResolvedValue(true);
+
       await userController.deleteUser(req, res);
+
+      expect(userService.deleteUser).toHaveBeenCalledWith(testUserId);
 
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({ message: 'User deleted successfully' });
-
-      // Verify user was deleted from DB
-      const deletedUser = await User.findById(userId);
-      expect(deletedUser).toBeNull();
     });
 
-    it('should return 404 if user not found', async () => {
+    it('should return 404 if userService.deleteUser returns false', async () => {
       const validButNonExistentId = new mongoose.Types.ObjectId().toString();
-
       const req = mockRequest({ params: { id: validButNonExistentId } });
       const res = mockResponse();
 
+      (userService.deleteUser as jest.Mock).mockResolvedValue(false);
+
       await userController.deleteUser(req, res);
+
+      expect(userService.deleteUser).toHaveBeenCalledWith(validButNonExistentId);
 
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith({ message: 'User not found' });
     });
+
+    it('should return 500 if userService.deleteUser throws an error', async () => {
+      const req = mockRequest({ params: { id: testUserId } });
+      const res = mockResponse();
+      const errorMessage = 'Database constraint violation';
+
+      (userService.deleteUser as jest.Mock).mockRejectedValue(new Error(errorMessage));
+
+      await userController.deleteUser(req, res);
+
+      expect(userService.deleteUser).toHaveBeenCalledWith(testUserId);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Error deleting user',
+        error: errorMessage,
+      });
+    });
   });
+
   describe('getAllUsers', () => {
-    it('should get all users with pagination', async () => {
-      const mockUsers: UserDocument[] = [
-        {
-          _id: new mongoose.Types.ObjectId(),
-          username: 'user1',
-          email: 'user1@example.com',
-          role: UserRole.SMALL_FARMER,
-          autonomousCommunity: AutonomousComunity.ARAGON,
-          isAdmin: false,
-          createdAt: new Date(),
-        } as UserDocument,
-        {
-          _id: new mongoose.Types.ObjectId(),
-          username: 'user2',
-          email: 'user2@example.com',
-          role: UserRole.SMALL_FARMER,
-          autonomousCommunity: AutonomousComunity.ARAGON,
-          isAdmin: false,
-          createdAt: new Date(),
-        } as UserDocument,
-        {
-          _id: new mongoose.Types.ObjectId(),
-          username: 'user3',
-          email: 'user3@example.com',
-          role: UserRole.SMALL_FARMER,
-          autonomousCommunity: AutonomousComunity.ARAGON,
-          isAdmin: false,
-          createdAt: new Date(),
-        } as UserDocument,
+    it('should call userService.getAllUsers/countUsers and return 200 with pagination', async () => {
+      const mockUsers = [
+        mockCreatedUser,
+        { ...mockCreatedUser, _id: new mongoose.Types.ObjectId().toString() },
       ];
       const mockTotalPages = 1;
+      const mockTotalUsers = mockUsers.length;
+      const page = 1;
+      const size = 16;
 
-      jest.spyOn(userService, 'getAllUsers').mockResolvedValue({
+      (userService.getAllUsers as jest.Mock).mockResolvedValue({
         users: mockUsers,
         totalPages: mockTotalPages,
       });
-
-      jest.spyOn(userService, 'countUsers').mockResolvedValue(mockUsers.length);
+      (userService.countUsers as jest.Mock).mockResolvedValue(mockTotalUsers);
 
       const req = mockRequest({
-        query: { page: '1', size: '16' },
+        query: { page: page.toString(), size: size.toString() },
       });
       const res = mockResponse();
 
       await userController.getAllUsers(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalled();
+      expect(userService.getAllUsers).toHaveBeenCalledWith(
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        page,
+        size,
+      );
+      expect(userService.countUsers).toHaveBeenCalled();
 
-      const responseData = (res.json as jest.Mock).mock.calls[0][0];
-      expect(responseData.users).toBeDefined();
-      expect(responseData.users.length).toBe(3);
-      expect(responseData.totalPages).toBe(1);
-      expect(responseData.page).toBe(1);
-      expect(responseData.pageSize).toBe(16);
-      expect(responseData.totalUsers).toBe(3);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        users: mockUsers,
+        page: page,
+        pageSize: size,
+        totalUsers: mockTotalUsers,
+        totalPages: mockTotalPages,
+      });
+    });
+
+    it('should return 500 if userService.getAllUsers throws an error', async () => {
+      const req = mockRequest({ query: { page: '1', size: '10' } });
+      const res = mockResponse();
+      const errorMessage = 'Database query failed';
+
+      (userService.getAllUsers as jest.Mock).mockRejectedValue(new Error(errorMessage));
+      (userService.countUsers as jest.Mock).mockResolvedValue(0);
+
+      await userController.getAllUsers(req, res);
+
+      expect(userService.getAllUsers).toHaveBeenCalledWith(
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        1,
+        10,
+      );
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Error retrieving users',
+        error: errorMessage,
+      });
+    });
+
+    it('should return 500 if userService.countUsers throws an error', async () => {
+      const req = mockRequest({ query: { page: '1', size: '10' } });
+      const res = mockResponse();
+      const errorMessage = 'Database count failed';
+
+      (userService.getAllUsers as jest.Mock).mockResolvedValue({ users: [], totalPages: 0 });
+      (userService.countUsers as jest.Mock).mockRejectedValue(new Error(errorMessage));
+
+      await userController.getAllUsers(req, res);
+
+      expect(userService.getAllUsers).toHaveBeenCalledWith(
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        1,
+        10,
+      );
+      expect(userService.countUsers).toHaveBeenCalled();
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Error retrieving users',
+        error: errorMessage,
+      });
     });
   });
-  describe('blockUser', () => {
-    it('should block the user', async () => {
-      const createdUser = await createTestUser();
-      const userId = createdUser._id.toString();
 
-      const req = mockRequest({ params: { id: userId } });
+  describe('blockUser', () => {
+    const reason = 'abc';
+
+    it('should call userService.blockUser and return 200 on success', async () => {
+      const req = mockRequest({ body: { id: testUserId, reason: reason } });
       const res = mockResponse();
+
+      // Mock service success
+      (userService.blockUser as jest.Mock).mockResolvedValue(true);
 
       await userController.blockUser(req, res);
 
+      // Verify service call
+      expect(userService.blockUser).toHaveBeenCalledWith(testUserId, reason);
+
+      // Verify response
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({ message: 'User blocked successfully' });
-
-      // Verify
-      const blockedUser = await User.findById(userId);
-      expect(blockedUser?.isBlocked).toBe(true);
     });
 
-    it('should fail to block the user', async () => {
-      const createdUser = await createTestUser();
-      const userId = new mongoose.Types.ObjectId().toString();
-
-      const req = mockRequest({ params: { id: userId } });
+    it('should return 404 if userService.blockUser returns false', async () => {
+      const validButNonExistentId = new mongoose.Types.ObjectId().toString();
+      const req = mockRequest({ body: { id: validButNonExistentId, reason: reason } });
       const res = mockResponse();
+
+      // Mock service not finding the user
+      (userService.blockUser as jest.Mock).mockResolvedValue(false);
 
       await userController.blockUser(req, res);
 
+      // Verify service call
+      expect(userService.blockUser).toHaveBeenCalledWith(validButNonExistentId, reason);
+
+      // Verify response
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith({ message: 'User not found' });
+    });
 
-      // Verify
-      const blockedUser = await User.findById(createdUser._id);
-      expect(blockedUser?.isBlocked).toBe(false);
+    it('should return 500 if userService.blockUser throws an error', async () => {
+      const req = mockRequest({ body: { id: testUserId, reason: reason } });
+      const res = mockResponse();
+      const errorMessage = 'Database error during block';
+
+      // Mock service failure
+      (userService.blockUser as jest.Mock).mockRejectedValue(new Error(errorMessage));
+
+      await userController.blockUser(req, res);
+
+      // Verify service call
+      expect(userService.blockUser).toHaveBeenCalledWith(testUserId, reason);
+
+      // Verify error response
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Error blocking user', // Adjust based on controller
+        error: errorMessage,
+      });
     });
   });
-  describe('unblockUser', () => {
-    it('should unblock the user', async () => {
-      const createdUser = await createTestUser();
-      const userId = createdUser._id.toString();
-      await userService.blockUser(userId);
 
-      const req = mockRequest({ params: { id: userId } });
+  describe('unblockUser', () => {
+    it('should call userService.unblockUser and return 200 on success', async () => {
+      const req = mockRequest({ body: { id: testUserId } });
       const res = mockResponse();
+
+      // Mock service success
+      (userService.unblockUser as jest.Mock).mockResolvedValue(true);
 
       await userController.unblockUser(req, res);
 
+      // Verify service call
+      expect(userService.unblockUser).toHaveBeenCalledWith(testUserId);
+
+      // Verify response
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({ message: 'User unblocked successfully' });
-
-      // Verify
-      const blockedUser = await User.findById(userId);
-      expect(blockedUser?.isBlocked).toBe(false);
     });
 
-    it('should fail to unblock the user', async () => {
-      const createdUser = await createTestUser();
-      const userId = new mongoose.Types.ObjectId().toString();
-      await userService.blockUser(createdUser._id.toString());
-
-      const req = mockRequest({ params: { id: userId } });
+    it('should return 404 if userService.unblockUser returns false', async () => {
+      const validButNonExistentId = new mongoose.Types.ObjectId().toString();
+      const req = mockRequest({ body: { id: validButNonExistentId } });
       const res = mockResponse();
+
+      // Mock service not finding the user
+      (userService.unblockUser as jest.Mock).mockResolvedValue(false);
 
       await userController.unblockUser(req, res);
 
+      // Verify service call
+      expect(userService.unblockUser).toHaveBeenCalledWith(validButNonExistentId);
+
+      // Verify response
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith({ message: 'User not found' });
+    });
 
-      // Verify
-      const blockedUser = await User.findById(createdUser._id);
-      expect(blockedUser?.isBlocked).toBe(true);
+    it('should return 500 if userService.unblockUser throws an error', async () => {
+      const req = mockRequest({ body: { id: testUserId } });
+      const res = mockResponse();
+      const errorMessage = 'Database error during unblock';
+
+      // Mock service failure
+      (userService.unblockUser as jest.Mock).mockRejectedValue(new Error(errorMessage));
+
+      await userController.unblockUser(req, res);
+
+      // Verify service call
+      expect(userService.unblockUser).toHaveBeenCalledWith(testUserId);
+
+      // Verify error response
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Error unblocking user', // Adjust based on controller
+        error: errorMessage,
+      });
+    });
+  });
+
+  describe('requestUnblock', () => {
+    const appeal = 'def';
+
+    it('should call userService.requestUnblock and return 200 on success', async () => {
+      const req = mockRequest({ body: { id: testUserId, appeal: appeal } });
+      const res = mockResponse();
+
+      (userService.requestUnblock as jest.Mock).mockResolvedValue(true);
+
+      await userController.requestUnblock(req, res);
+
+      expect(userService.requestUnblock).toHaveBeenCalledWith(testUserId, appeal);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ message: 'Unblock appeal registered successfully' });
+    });
+
+    it('should return 404 if userService.requestUnblock returns false', async () => {
+      const validButNonExistentId = new mongoose.Types.ObjectId().toString();
+      // Assuming appeal comes from req.body
+      const req = mockRequest({ body: { id: validButNonExistentId, appeal: appeal } });
+      const res = mockResponse();
+
+      // Mock service not finding the user
+      (userService.requestUnblock as jest.Mock).mockResolvedValue(false);
+
+      await userController.requestUnblock(req, res);
+
+      // Verify service call
+      expect(userService.requestUnblock).toHaveBeenCalledWith(validButNonExistentId, appeal);
+
+      // Verify response
+      expect(res.status).toHaveBeenCalledWith(404); // Changed from 200 based on typical REST patterns
+      expect(res.json).toHaveBeenCalledWith({ message: 'User not found' });
+    });
+
+    it('should return 500 if userService.requestUnblock throws an error', async () => {
+      // Assuming appeal comes from req.body
+      const req = mockRequest({ body: { id: testUserId, appeal: appeal } });
+      const res = mockResponse();
+      const errorMessage = 'Database error during appeal';
+
+      // Mock service failure
+      (userService.requestUnblock as jest.Mock).mockRejectedValue(new Error(errorMessage));
+
+      await userController.requestUnblock(req, res);
+
+      // Verify service call
+      expect(userService.requestUnblock).toHaveBeenCalledWith(testUserId, appeal);
+
+      // Verify error response
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Error requesting to unblock user', // Adjust based on controller
+        error: errorMessage,
+      });
     });
   });
 });

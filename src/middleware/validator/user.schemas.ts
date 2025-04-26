@@ -15,6 +15,7 @@ import { AutonomousComunity, UserRole } from '../../models/user.model';
  *        - email
  *        - password
  *        - role
+ *        - autonomousCommunity
  *      properties:
  *        username:
  *          type: string

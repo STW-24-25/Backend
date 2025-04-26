@@ -20,8 +20,8 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       autonomousCommunity: req.body.autonomousCommunity,
     };
 
-    const user = await userService.createUser(userData);
-    res.status(201).json({ message: 'User created successfully', userId: user._id });
+    await userService.createUser(userData);
+    res.status(201).json({ message: 'User created successfully' });
     logger.info(`User created: ${req.body.username}`);
   } catch (err: any) {
     res.status(500).json({ message: 'Error creating user', error: err.message });
@@ -101,7 +101,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     res.status(200).json({ token, user });
     logger.info(`User ${user.username} logged in`);
   } catch (err: any) {
-    res.status(500).json({ message: 'Login failed', error: err.message });
+    res.status(500).json({ message: 'Login error', error: err.message });
     logger.error('Login error', err);
   }
 };
@@ -122,7 +122,7 @@ export const getUser = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    res.status(200).json({ ...user.toObject() });
+    res.status(200).json(user);
     logger.info(`User retrieved: ${userId}`);
   } catch (err: any) {
     res.status(500).json({ message: 'Error retrieving user', error: err.message });
@@ -171,9 +171,6 @@ export const getAllUsers = async (req: Request, res: Response): Promise<void> =>
   }
 };
 
-// Note: these functions are placeholders for future implementation
-// or are not needed with the current service layer approach
-
 /**
  * Requests to unblock a user account.
  * @param req Request object.
@@ -182,20 +179,20 @@ export const getAllUsers = async (req: Request, res: Response): Promise<void> =>
  */
 export const requestUnblock = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.params.id;
-    const unblockAppeal = req.body;
-    const blockedUser = await userService.updateUser(userId, unblockAppeal);
+    const userId = req.body.id;
+    const unblockAppeal = req.body.appeal;
+    const blockedUser = await userService.requestUnblock(userId, unblockAppeal);
 
     if (!blockedUser) {
       res.status(404).json({ message: 'User not found' });
       return;
     }
 
-    res.status(200).json({ message: `Unblock for user ${userId} registered` });
+    res.status(200).json({ message: 'Unblock appeal registered successfully' });
     logger.info(`User updated: ${userId}`);
   } catch (err: any) {
-    res.status(500).json({ message: 'Error requesting to unblock the user', error: err.message });
-    logger.error('Error requesting to unblock the user', err);
+    res.status(500).json({ message: 'Error requesting to unblock user', error: err.message });
+    logger.error('Error requesting to unblock user', err);
   }
 };
 
@@ -207,8 +204,8 @@ export const requestUnblock = async (req: Request, res: Response): Promise<void>
  */
 export const blockUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.params.id;
-    const userBlocked = await userService.blockUser(userId);
+    const userId = req.body.id;
+    const userBlocked = await userService.blockUser(userId, req.body.reason);
 
     if (!userBlocked) {
       res.status(404).json({ message: 'User not found' });
@@ -218,8 +215,8 @@ export const blockUser = async (req: Request, res: Response): Promise<void> => {
     res.status(200).json({ message: 'User blocked successfully' });
     logger.info(`User ${userId} blocked`);
   } catch (err: any) {
-    res.status(500).json({ message: 'Error blocking the user', error: err.message });
-    logger.error('Error blocking the user', err);
+    res.status(500).json({ message: 'Error blocking user', error: err.message });
+    logger.error('Error blocking user', err);
   }
 };
 
@@ -231,7 +228,7 @@ export const blockUser = async (req: Request, res: Response): Promise<void> => {
  */
 export const unblockUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.params.id;
+    const userId = req.body.id;
     const userUnBlocked = await userService.unblockUser(userId);
 
     if (!userUnBlocked) {
@@ -242,7 +239,7 @@ export const unblockUser = async (req: Request, res: Response): Promise<void> =>
     res.status(200).json({ message: 'User unblocked successfully' });
     logger.info(`User ${userId} unblocked`);
   } catch (err: any) {
-    res.status(500).json({ message: 'Error unblocking the user', error: err.message });
-    logger.error('Error unblocking the user', err);
+    res.status(500).json({ message: 'Error unblocking user', error: err.message });
+    logger.error('Error unblocking user', err);
   }
 };

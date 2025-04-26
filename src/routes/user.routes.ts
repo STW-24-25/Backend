@@ -210,7 +210,7 @@ router.get(
  *            $ref: '#/components/requestBodies/requestUnblock'
  *    responses:
  *      200:
- *        description: Unblock request submitted successfully
+ *        description: Unblock appeal registered successfully
  *      400:
  *        description: Bad request, invalid data
  *      404:

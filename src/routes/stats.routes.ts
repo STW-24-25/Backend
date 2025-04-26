@@ -12,7 +12,7 @@ const router = Router();
  * /api/stats:
  *  get:
  *    summary: Retrieve general statistics of the application (admin only).
- *    tags: [Stats]
+ *    tags: [Admin]
  *    responses:
  *      200:
  *        description: Statistics retrieved succesfully
