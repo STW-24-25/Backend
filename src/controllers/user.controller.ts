@@ -243,3 +243,21 @@ export const unblockUser = async (req: Request, res: Response): Promise<void> =>
     logger.error('Error unblocking user', err);
   }
 };
+
+export const makeAdmin = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.body.id;
+    const promotedUser = await userService.makeAdmin(userId);
+
+    if (!promotedUser) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    res.status(200).json({ message: 'User promoted to admin successfully' });
+    logger.info(`User ${userId} promoted to admin`);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Error promoting user to admin', error: err.message });
+    logger.error('Error promoting user to admin', err);
+  }
+};

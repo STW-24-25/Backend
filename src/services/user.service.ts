@@ -24,7 +24,6 @@ interface CreateUserParams {
   profilePicture?: string;
   role?: UserRole;
   autonomousCommunity?: AutonomousComunity;
-  isAdmin?: boolean;
 }
 
 interface UpdateUserParams {
@@ -34,7 +33,6 @@ interface UpdateUserParams {
   profilePicture?: string;
   role?: UserRole;
   autonomousCommunity?: AutonomousComunity;
-  isAdmin?: boolean;
 }
 
 interface SearchUserParams {
@@ -81,7 +79,6 @@ class UserService {
         profilePicture: userData.profilePicture,
         role: userData.role || UserRole.SMALL_FARMER,
         autonomousCommunity: userData.autonomousCommunity || AutonomousComunity.ARAGON,
-        isAdmin: userData.isAdmin || false,
       };
 
       const user = new User(userToCreate);
@@ -194,11 +191,6 @@ class UserService {
     try {
       logger.info(`Updating user with ID: ${userId}`);
 
-      if (!Types.ObjectId.isValid(userId)) {
-        logger.warn(`Invalid user ID format: ${userId}`);
-        return null;
-      }
-
       // Preparar datos para actualizar
       const updateFields: any = { ...updateData };
 
@@ -262,11 +254,6 @@ class UserService {
   async deleteUser(userId: string): Promise<boolean> {
     try {
       logger.info(`Deleting user with ID: ${userId}`);
-
-      if (!Types.ObjectId.isValid(userId)) {
-        logger.warn(`Invalid user ID format: ${userId}`);
-        return false;
-      }
 
       const result = await User.findByIdAndDelete(userId);
 
@@ -481,7 +468,7 @@ class UserService {
   }
 
   /**
-   * Finds users by search criteria
+   * Finds users by search criteria //! remove
    * @param searchParams Search parameters
    * @returns Array of matching users
    */
@@ -519,6 +506,21 @@ class UserService {
     } catch (error) {
       logger.error(`Error searching users: ${error}`);
       throw error;
+    }
+  }
+
+  async makeAdmin(userId: string): Promise<boolean> {
+    try {
+      const result = await User.findByIdAndUpdate(userId, { $set: { isAdmin: true } });
+
+      if (!result) {
+        logger.warn(`Failed to promote user with id ${userId}`);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      logger.error(`Error promoting user to admin: ${err}`);
+      throw err;
     }
   }
 }

@@ -290,12 +290,6 @@ describe('UserService', () => {
       expect(isMatch).toBe(true);
     });
 
-    it('should return null for invalid ID format', async () => {
-      const result = await userService.updateUser('invalid-id', { username: 'test' });
-
-      expect(result).toBeNull();
-    });
-
     it('should return null if user not found', async () => {
       const validButNonExistentId = new mongoose.Types.ObjectId().toString();
 
@@ -350,12 +344,6 @@ describe('UserService', () => {
       // Verify user was deleted from DB
       const deletedUser = await User.findById(createdUser._id);
       expect(deletedUser).toBeNull();
-    });
-
-    it('should return false for invalid ID format', async () => {
-      const result = await userService.deleteUser('invalid-id');
-
-      expect(result).toBe(false);
     });
 
     it('should return false if user not found', async () => {
@@ -599,6 +587,31 @@ describe('UserService', () => {
       const user = await User.findById(createdUser._id);
       expect(user?.isBlocked).toBe(true);
       expect(user?.blockReason).toBeUndefined();
+    });
+  });
+
+  describe('makeAdmin', () => {
+    it('should promote the user to admin', async () => {
+      const createdUser = await createTestUser();
+
+      const result = await userService.makeAdmin(
+        (createdUser._id as unknown as Types.ObjectId).toString(),
+      );
+
+      expect(result).toBe(true);
+      const user = await User.findById(createdUser._id);
+      expect(user?.isAdmin).toBe(true);
+    });
+
+    it('should fail to promote the user to admin', async () => {
+      const createdUser = await createTestUser();
+      const userId = new mongoose.Types.ObjectId().toString();
+
+      const result = await userService.makeAdmin(userId);
+
+      expect(result).toBe(false);
+      const user = await User.findById(createdUser._id);
+      expect(user?.isAdmin).toBe(false);
     });
   });
 });

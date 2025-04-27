@@ -82,6 +82,7 @@ export const updateUserSchema = z.object({
   body: z.object({
     username: z.string().min(3).optional(),
     email: z.string().email().optional(),
+    password: z.string().optional(),
     profilePicture: z.string().optional(),
     role: z.nativeEnum(UserRole).optional(),
     autonomousCommunity: z.nativeEnum(AutonomousComunity).optional(),
@@ -278,6 +279,25 @@ export const blockSchema = z.object({
  *          description: ID of the user to be unblocked
  */
 export const unblockSchema = z.object({
+  body: z.object({
+    id: z.string(),
+  }),
+});
+
+/**
+ * @swagger
+ * components:
+ *  requestBodies:
+ *    makeAdmin:
+ *      type: object
+ *      required:
+ *        - id
+ *      properties:
+ *        id:
+ *          type: string
+ *          description: ID of the user to be promoted to admin
+ */
+export const makeAdminSchema = z.object({
   body: z.object({
     id: z.string(),
   }),
