@@ -1,0 +1,278 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Configuración de Balanceadores de Carga para AgroNet - 2025'
+
+Parameters:
+  EnvironmentName:
+    Description: Nombre del entorno
+    Type: String
+    Default: prod
+
+Resources:
+  # Application Load Balancer principal (entrada)
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub '${EnvironmentName}-AgroNet-ALB'
+      Type: application
+      Scheme: internet-facing
+      SecurityGroups:
+        - !ImportValue 
+          Fn::Sub: "${EnvironmentName}-ALB-SecurityGroup"
+      Subnets:
+        - !ImportValue 
+          Fn::Sub: "${EnvironmentName}-Frontend-Public-Subnet-1-ID"
+        - !ImportValue 
+          Fn::Sub: "${EnvironmentName}-Frontend-Public-Subnet-2-ID"
+        - !ImportValue 
+          Fn::Sub: "${EnvironmentName}-Frontend-Public-Subnet-3-ID"
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-AgroNet-ALB'
+
+  # Network Load Balancer 1 (Frontend a Backend, AZ 1)
+  NetworkLoadBalancer1:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub '${EnvironmentName}-AgroNet-NLB1'
+      Type: network
+      Scheme: internal
+      Subnets:
+        - !ImportValue 
+          Fn::Sub: "${EnvironmentName}-Backend-Public-Subnet-1-ID"
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-AgroNet-NLB1'
+
+  # Network Load Balancer 2 (Frontend a Backend, AZ 2)
+  NetworkLoadBalancer2:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub '${EnvironmentName}-AgroNet-NLB2'
+      Type: network
+      Scheme: internal
+      Subnets:
+        - !ImportValue 
+          Fn::Sub: "${EnvironmentName}-Backend-Public-Subnet-2-ID"
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-AgroNet-NLB2'
+
+  # Network Load Balancer 3 (Frontend a Backend, AZ 3)
+  NetworkLoadBalancer3:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub '${EnvironmentName}-AgroNet-NLB3'
+      Type: network
+      Scheme: internal
+      Subnets:
+        - !ImportValue 
+          Fn::Sub: "${EnvironmentName}-Backend-Public-Subnet-3-ID"
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-AgroNet-NLB3'
+
+  # Target Groups para el ALB
+  FrontendTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub '${EnvironmentName}-Frontend-TG'
+      Port: 4321
+      Protocol: HTTP
+      TargetType: instance
+      VpcId: !ImportValue 
+        Fn::Sub: "${EnvironmentName}-Frontend-VPC-ID"
+      HealthCheckPath: /health
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 5
+      TargetGroupAttributes:
+        - Key: stickiness.enabled
+          Value: true
+        - Key: stickiness.type
+          Value: lb_cookie
+        - Key: stickiness.lb_cookie.duration_seconds
+          Value: 86400
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Frontend-TG'
+
+  # Target Groups para los NLBs
+  BackendTargetGroup1:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub '${EnvironmentName}-Backend-TG1'
+      Port: 80
+      Protocol: TCP
+      TargetType: instance
+      VpcId: !ImportValue 
+        Fn::Sub: "${EnvironmentName}-Backend-VPC-ID"
+      HealthCheckProtocol: HTTP
+      HealthCheckPort: "80"
+      HealthCheckPath: /health
+      HealthCheckIntervalSeconds: 30
+      HealthyThresholdCount: 3
+      UnhealthyThresholdCount: 3
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Backend-TG1'
+
+  BackendTargetGroup2:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub '${EnvironmentName}-Backend-TG2'
+      Port: 80
+      Protocol: TCP
+      TargetType: instance
+      VpcId: !ImportValue 
+        Fn::Sub: "${EnvironmentName}-Backend-VPC-ID"
+      HealthCheckProtocol: HTTP
+      HealthCheckPort: "80"
+      HealthCheckPath: /health
+      HealthCheckIntervalSeconds: 30
+      HealthyThresholdCount: 3
+      UnhealthyThresholdCount: 3
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Backend-TG2'
+
+  BackendTargetGroup3:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub '${EnvironmentName}-Backend-TG3'
+      Port: 80
+      Protocol: TCP
+      TargetType: instance
+      VpcId: !ImportValue 
+        Fn::Sub: "${EnvironmentName}-Backend-VPC-ID"
+      HealthCheckProtocol: HTTP
+      HealthCheckPort: "80"
+      HealthCheckPath: /health
+      HealthCheckIntervalSeconds: 30
+      HealthyThresholdCount: 3
+      UnhealthyThresholdCount: 3
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Backend-TG3'
+
+  # Listeners para el ALB
+  ALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref FrontendTargetGroup
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+  # Listeners para los NLBs
+  NLB1Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref BackendTargetGroup1
+      LoadBalancerArn: !Ref NetworkLoadBalancer1
+      Port: 80
+      Protocol: TCP
+
+  NLB2Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref BackendTargetGroup2
+      LoadBalancerArn: !Ref NetworkLoadBalancer2
+      Port: 80
+      Protocol: TCP
+
+  NLB3Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref BackendTargetGroup3
+      LoadBalancerArn: !Ref NetworkLoadBalancer3
+      Port: 80
+      Protocol: TCP
+
+  # Almacenar los nombres DNS de los NLB como parámetros SSM para que las instancias puedan acceder a ellos
+  NLB1DNSParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${EnvironmentName}/network/nlb1-dns"
+      Type: String
+      Value: !GetAtt NetworkLoadBalancer1.DNSName
+      Description: DNS del Network Load Balancer 1
+
+  NLB2DNSParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${EnvironmentName}/network/nlb2-dns"
+      Type: String
+      Value: !GetAtt NetworkLoadBalancer2.DNSName
+      Description: DNS del Network Load Balancer 2
+
+  NLB3DNSParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${EnvironmentName}/network/nlb3-dns"
+      Type: String
+      Value: !GetAtt NetworkLoadBalancer3.DNSName
+      Description: DNS del Network Load Balancer 3
+
+Outputs:
+  ALBDNSName:
+    Description: DNS del Application Load Balancer principal
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
+    Export:
+      Name: !Sub "${EnvironmentName}-ALB-DNS"
+
+  ALBArn:
+    Description: ARN del Application Load Balancer principal
+    Value: !Ref ApplicationLoadBalancer
+    Export:
+      Name: !Sub "${EnvironmentName}-ALB-ARN"
+
+  NLB1DNSName:
+    Description: DNS del Network Load Balancer 1
+    Value: !GetAtt NetworkLoadBalancer1.DNSName
+    Export:
+      Name: !Sub "${EnvironmentName}-NLB1-DNS"
+
+  NLB2DNSName:
+    Description: DNS del Network Load Balancer 2
+    Value: !GetAtt NetworkLoadBalancer2.DNSName
+    Export:
+      Name: !Sub "${EnvironmentName}-NLB2-DNS"
+
+  NLB3DNSName:
+    Description: DNS del Network Load Balancer 3
+    Value: !GetAtt NetworkLoadBalancer3.DNSName
+    Export:
+      Name: !Sub "${EnvironmentName}-NLB3-DNS"
+
+  FrontendTargetGroupArn:
+    Description: ARN del Target Group de Frontend
+    Value: !Ref FrontendTargetGroup
+    Export:
+      Name: !Sub "${EnvironmentName}-Frontend-TG-ARN"
+
+  BackendTargetGroup1Arn:
+    Description: ARN del Target Group 1 de Backend
+    Value: !Ref BackendTargetGroup1
+    Export:
+      Name: !Sub "${EnvironmentName}-Backend-TG1-ARN"
+
+  BackendTargetGroup2Arn:
+    Description: ARN del Target Group 2 de Backend
+    Value: !Ref BackendTargetGroup2
+    Export:
+      Name: !Sub "${EnvironmentName}-Backend-TG2-ARN"
+
+  BackendTargetGroup3Arn:
+    Description: ARN del Target Group 3 de Backend
+    Value: !Ref BackendTargetGroup3
+    Export:
+      Name: !Sub "${EnvironmentName}-Backend-TG3-ARN" 

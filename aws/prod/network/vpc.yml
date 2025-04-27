@@ -1,0 +1,636 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Configuración de VPC para AgroNet - 2025'
+
+Parameters:
+  EnvironmentName:
+    Description: Nombre del entorno
+    Type: String
+    Default: prod
+  
+  VPCFrontendCIDR:
+    Description: CIDR para la VPC Frontend
+    Type: String
+    Default: 10.0.0.0/16
+
+  VPCBackendCIDR:
+    Description: CIDR para la VPC Backend
+    Type: String
+    Default: 10.1.0.0/16
+
+  PublicSubnet1CIDRFrontend:
+    Type: String
+    Default: 10.0.0.0/24
+    Description: CIDR para la primera subred pública de Frontend
+
+  PublicSubnet2CIDRFrontend:
+    Type: String
+    Default: 10.0.1.0/24
+    Description: CIDR para la segunda subred pública de Frontend
+
+  PublicSubnet3CIDRFrontend:
+    Type: String
+    Default: 10.0.2.0/24
+    Description: CIDR para la tercera subred pública de Frontend
+
+  PrivateSubnet1CIDRFrontend:
+    Type: String
+    Default: 10.0.3.0/24
+    Description: CIDR para la primera subred privada de Frontend
+
+  PrivateSubnet2CIDRFrontend:
+    Type: String
+    Default: 10.0.4.0/24
+    Description: CIDR para la segunda subred privada de Frontend
+
+  PrivateSubnet3CIDRFrontend:
+    Type: String
+    Default: 10.0.5.0/24
+    Description: CIDR para la tercera subred privada de Frontend
+
+  PublicSubnet1CIDRBackend:
+    Type: String
+    Default: 10.1.0.0/24
+    Description: CIDR para la primera subred pública de Backend
+
+  PublicSubnet2CIDRBackend:
+    Type: String
+    Default: 10.1.1.0/24
+    Description: CIDR para la segunda subred pública de Backend
+
+  PublicSubnet3CIDRBackend:
+    Type: String
+    Default: 10.1.2.0/24
+    Description: CIDR para la tercera subred pública de Backend
+
+  PrivateSubnet1CIDRBackend:
+    Type: String
+    Default: 10.1.3.0/24
+    Description: CIDR para la primera subred privada de Backend
+
+  PrivateSubnet2CIDRBackend:
+    Type: String
+    Default: 10.1.4.0/24
+    Description: CIDR para la segunda subred privada de Backend
+
+  PrivateSubnet3CIDRBackend:
+    Type: String
+    Default: 10.1.5.0/24
+    Description: CIDR para la tercera subred privada de Backend
+
+Resources:
+  # VPCs
+  VPCFrontend:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VPCFrontendCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Frontend-VPC'
+
+  VPCBackend:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VPCBackendCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Backend-VPC'
+
+  # VPC Peering - Conectar Frontend con Backend
+  VPCPeeringConnection:
+    Type: AWS::EC2::VPCPeeringConnection
+    Properties:
+      VpcId: !Ref VPCFrontend
+      PeerVpcId: !Ref VPCBackend
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-FrontendToBackend-Peering'
+
+  # Internet Gateways
+  InternetGatewayFrontend:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Frontend-IGW'
+
+  InternetGatewayBackend:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Backend-IGW'
+
+  # Attachments de Internet Gateways
+  IGWAttachmentFrontend:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPCFrontend
+      InternetGatewayId: !Ref InternetGatewayFrontend
+
+  IGWAttachmentBackend:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPCBackend
+      InternetGatewayId: !Ref InternetGatewayBackend
+
+  # Subredes para Frontend
+  PublicSubnet1Frontend:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPCFrontend
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: !Ref PublicSubnet1CIDRFrontend
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Frontend-Public-Subnet-1'
+
+  PublicSubnet2Frontend:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPCFrontend
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: !Ref PublicSubnet2CIDRFrontend
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Frontend-Public-Subnet-2'
+
+  PublicSubnet3Frontend:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPCFrontend
+      AvailabilityZone: !Select [2, !GetAZs '']
+      CidrBlock: !Ref PublicSubnet3CIDRFrontend
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Frontend-Public-Subnet-3'
+
+  PrivateSubnet1Frontend:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPCFrontend
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: !Ref PrivateSubnet1CIDRFrontend
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Frontend-Private-Subnet-1'
+
+  PrivateSubnet2Frontend:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPCFrontend
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: !Ref PrivateSubnet2CIDRFrontend
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Frontend-Private-Subnet-2'
+
+  PrivateSubnet3Frontend:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPCFrontend
+      AvailabilityZone: !Select [2, !GetAZs '']
+      CidrBlock: !Ref PrivateSubnet3CIDRFrontend
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Frontend-Private-Subnet-3'
+
+  # Subredes para Backend
+  PublicSubnet1Backend:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPCBackend
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: !Ref PublicSubnet1CIDRBackend
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Backend-Public-Subnet-1'
+
+  PublicSubnet2Backend:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPCBackend
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: !Ref PublicSubnet2CIDRBackend
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Backend-Public-Subnet-2'
+
+  PublicSubnet3Backend:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPCBackend
+      AvailabilityZone: !Select [2, !GetAZs '']
+      CidrBlock: !Ref PublicSubnet3CIDRBackend
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Backend-Public-Subnet-3'
+
+  PrivateSubnet1Backend:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPCBackend
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: !Ref PrivateSubnet1CIDRBackend
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Backend-Private-Subnet-1'
+
+  PrivateSubnet2Backend:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPCBackend
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: !Ref PrivateSubnet2CIDRBackend
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Backend-Private-Subnet-2'
+
+  PrivateSubnet3Backend:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPCBackend
+      AvailabilityZone: !Select [2, !GetAZs '']
+      CidrBlock: !Ref PrivateSubnet3CIDRBackend
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Backend-Private-Subnet-3'
+
+  # Tablas de rutas públicas
+  PublicRouteTableFrontend:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPCFrontend
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Frontend-Public-Routes'
+
+  PublicRouteTableBackend:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPCBackend
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Backend-Public-Routes'
+
+  # Tablas de rutas privadas
+  PrivateRouteTableFrontend1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPCFrontend
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Frontend-Private-Routes-1'
+
+  PrivateRouteTableFrontend2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPCFrontend
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Frontend-Private-Routes-2'
+
+  PrivateRouteTableFrontend3:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPCFrontend
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Frontend-Private-Routes-3'
+
+  PrivateRouteTableBackend1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPCBackend
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Backend-Private-Routes-1'
+
+  PrivateRouteTableBackend2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPCBackend
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Backend-Private-Routes-2'
+
+  PrivateRouteTableBackend3:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPCBackend
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Backend-Private-Routes-3'
+
+  # Rutas en tablas públicas para Internet Gateway
+  PublicRouteFrontend:
+    Type: AWS::EC2::Route
+    DependsOn: IGWAttachmentFrontend
+    Properties:
+      RouteTableId: !Ref PublicRouteTableFrontend
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGatewayFrontend
+
+  PublicRouteBackend:
+    Type: AWS::EC2::Route
+    DependsOn: IGWAttachmentBackend
+    Properties:
+      RouteTableId: !Ref PublicRouteTableBackend
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGatewayBackend
+
+  # Rutas para VPC Peering
+  PeeringRouteFrontendToBackend:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTableFrontend
+      DestinationCidrBlock: !Ref VPCBackendCIDR
+      VpcPeeringConnectionId: !Ref VPCPeeringConnection
+
+  PeeringRouteBackendToFrontend:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTableBackend
+      DestinationCidrBlock: !Ref VPCFrontendCIDR
+      VpcPeeringConnectionId: !Ref VPCPeeringConnection
+
+  # Asociación de tablas de rutas con subredes públicas de Frontend
+  PublicSubnet1FrontendRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1Frontend
+      RouteTableId: !Ref PublicRouteTableFrontend
+
+  PublicSubnet2FrontendRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2Frontend
+      RouteTableId: !Ref PublicRouteTableFrontend
+
+  PublicSubnet3FrontendRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet3Frontend
+      RouteTableId: !Ref PublicRouteTableFrontend
+
+  # Asociación de tablas de rutas con subredes privadas de Frontend
+  PrivateSubnet1FrontendRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1Frontend
+      RouteTableId: !Ref PrivateRouteTableFrontend1
+
+  PrivateSubnet2FrontendRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet2Frontend
+      RouteTableId: !Ref PrivateRouteTableFrontend2
+
+  PrivateSubnet3FrontendRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet3Frontend
+      RouteTableId: !Ref PrivateRouteTableFrontend3
+
+  # Asociación de tablas de rutas con subredes públicas de Backend
+  PublicSubnet1BackendRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1Backend
+      RouteTableId: !Ref PublicRouteTableBackend
+
+  PublicSubnet2BackendRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2Backend
+      RouteTableId: !Ref PublicRouteTableBackend
+
+  PublicSubnet3BackendRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet3Backend
+      RouteTableId: !Ref PublicRouteTableBackend
+
+  # Asociación de tablas de rutas con subredes privadas de Backend
+  PrivateSubnet1BackendRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1Backend
+      RouteTableId: !Ref PrivateRouteTableBackend1
+
+  PrivateSubnet2BackendRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet2Backend
+      RouteTableId: !Ref PrivateRouteTableBackend2
+
+  PrivateSubnet3BackendRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet3Backend
+      RouteTableId: !Ref PrivateRouteTableBackend3
+
+  # NAT Gateways y EIPs para Backend (permitir salida a Internet desde subredes privadas)
+  NatGatewayEIP1:
+    Type: AWS::EC2::EIP
+    DependsOn: IGWAttachmentBackend
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-NAT-Gateway-EIP-1'
+
+  NatGatewayEIP2:
+    Type: AWS::EC2::EIP
+    DependsOn: IGWAttachmentBackend
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-NAT-Gateway-EIP-2'
+
+  NatGatewayEIP3:
+    Type: AWS::EC2::EIP
+    DependsOn: IGWAttachmentBackend
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-NAT-Gateway-EIP-3'
+
+  NatGateway1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGatewayEIP1.AllocationId
+      SubnetId: !Ref PublicSubnet1Backend
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-NAT-Gateway-1'
+
+  NatGateway2:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGatewayEIP2.AllocationId
+      SubnetId: !Ref PublicSubnet2Backend
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-NAT-Gateway-2'
+
+  NatGateway3:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGatewayEIP3.AllocationId
+      SubnetId: !Ref PublicSubnet3Backend
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-NAT-Gateway-3'
+
+  # Rutas para NAT Gateways
+  PrivateRouteToNat1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableBackend1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway1
+
+  PrivateRouteToNat2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableBackend2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway2
+
+  PrivateRouteToNat3:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableBackend3
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway3
+
+Outputs:
+  # Outputs de VPC Frontend
+  VPCFrontendId:
+    Description: ID de la VPC Frontend
+    Value: !Ref VPCFrontend
+    Export:
+      Name: !Sub "${EnvironmentName}-Frontend-VPC-ID"
+      
+  VPCFrontendCIDROutput:
+    Description: CIDR de la VPC Frontend
+    Value: !Ref VPCFrontendCIDR
+    Export:
+      Name: !Sub "${EnvironmentName}-Frontend-VPC-CIDR"
+
+  # Outputs de VPC Backend
+  VPCBackendId:
+    Description: ID de la VPC Backend
+    Value: !Ref VPCBackend
+    Export:
+      Name: !Sub "${EnvironmentName}-Backend-VPC-ID"
+      
+  VPCBackendCIDROutput:
+    Description: CIDR de la VPC Backend
+    Value: !Ref VPCBackendCIDR
+    Export:
+      Name: !Sub "${EnvironmentName}-Backend-VPC-CIDR"
+
+  VPCPeeringConnectionId:
+    Description: ID de la conexión de VPC Peering
+    Value: !Ref VPCPeeringConnection
+    Export:
+      Name: !Sub '${EnvironmentName}-VPC-Peering-ID'
+
+  # Outputs de subredes públicas Frontend
+  PublicSubnet1FrontendId:
+    Description: ID de la primera subred pública de Frontend
+    Value: !Ref PublicSubnet1Frontend
+    Export:
+      Name: !Sub "${EnvironmentName}-Frontend-Public-Subnet-1-ID"
+
+  PublicSubnet2FrontendId:
+    Description: ID de la segunda subred pública de Frontend
+    Value: !Ref PublicSubnet2Frontend
+    Export:
+      Name: !Sub "${EnvironmentName}-Frontend-Public-Subnet-2-ID"
+
+  PublicSubnet3FrontendId:
+    Description: ID de la tercera subred pública de Frontend
+    Value: !Ref PublicSubnet3Frontend
+    Export:
+      Name: !Sub "${EnvironmentName}-Frontend-Public-Subnet-3-ID"
+
+  PrivateSubnet1FrontendId:
+    Description: ID de la primera subred privada de Frontend
+    Value: !Ref PrivateSubnet1Frontend
+    Export:
+      Name: !Sub "${EnvironmentName}-Frontend-Private-Subnet-1-ID"
+
+  PrivateSubnet2FrontendId:
+    Description: ID de la segunda subred privada de Frontend
+    Value: !Ref PrivateSubnet2Frontend
+    Export:
+      Name: !Sub "${EnvironmentName}-Frontend-Private-Subnet-2-ID"
+
+  PrivateSubnet3FrontendId:
+    Description: ID de la tercera subred privada de Frontend
+    Value: !Ref PrivateSubnet3Frontend
+    Export:
+      Name: !Sub "${EnvironmentName}-Frontend-Private-Subnet-3-ID"
+
+  # Outputs de subredes públicas Backend
+  PublicSubnet1BackendId:
+    Description: ID de la primera subred pública de Backend
+    Value: !Ref PublicSubnet1Backend
+    Export:
+      Name: !Sub "${EnvironmentName}-Backend-Public-Subnet-1-ID"
+
+  PublicSubnet2BackendId:
+    Description: ID de la segunda subred pública de Backend
+    Value: !Ref PublicSubnet2Backend
+    Export:
+      Name: !Sub "${EnvironmentName}-Backend-Public-Subnet-2-ID"
+
+  PublicSubnet3BackendId:
+    Description: ID de la tercera subred pública de Backend
+    Value: !Ref PublicSubnet3Backend
+    Export:
+      Name: !Sub "${EnvironmentName}-Backend-Public-Subnet-3-ID"
+
+  PrivateSubnet1BackendId:
+    Description: ID de la primera subred privada de Backend
+    Value: !Ref PrivateSubnet1Backend
+    Export:
+      Name: !Sub "${EnvironmentName}-Backend-Private-Subnet-1-ID"
+
+  PrivateSubnet2BackendId:
+    Description: ID de la segunda subred privada de Backend
+    Value: !Ref PrivateSubnet2Backend
+    Export:
+      Name: !Sub "${EnvironmentName}-Backend-Private-Subnet-2-ID"
+
+  PrivateSubnet3BackendId:
+    Description: ID de la tercera subred privada de Backend
+    Value: !Ref PrivateSubnet3Backend
+    Export:
+      Name: !Sub "${EnvironmentName}-Backend-Private-Subnet-3-ID"
+
+  PublicRouteTableFrontendId:
+    Description: ID de la tabla de rutas pública de Frontend
+    Value: !Ref PublicRouteTableFrontend
+    Export:
+      Name: !Sub "${EnvironmentName}-Frontend-Public-RouteTable-ID"
+
+  PublicRouteTableBackendId:
+    Description: ID de la tabla de rutas pública de Backend
+    Value: !Ref PublicRouteTableBackend
+    Export:
+      Name: !Sub "${EnvironmentName}-Backend-Public-RouteTable-ID" 
