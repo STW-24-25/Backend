@@ -363,6 +363,49 @@ Resources:
       DestinationCidrBlock: !Ref VPCFrontendCIDR
       VpcPeeringConnectionId: !Ref VPCPeeringConnection
 
+  # Rutas para VPC Peering en tablas privadas
+  PeeringRouteFrontendToBackendPrivate1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableFrontend1
+      DestinationCidrBlock: !Ref VPCBackendCIDR
+      VpcPeeringConnectionId: !Ref VPCPeeringConnection
+
+  PeeringRouteFrontendToBackendPrivate2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableFrontend2
+      DestinationCidrBlock: !Ref VPCBackendCIDR
+      VpcPeeringConnectionId: !Ref VPCPeeringConnection
+
+  PeeringRouteFrontendToBackendPrivate3:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableFrontend3
+      DestinationCidrBlock: !Ref VPCBackendCIDR
+      VpcPeeringConnectionId: !Ref VPCPeeringConnection
+
+  PeeringRouteBackendToFrontendPrivate1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableBackend1
+      DestinationCidrBlock: !Ref VPCFrontendCIDR
+      VpcPeeringConnectionId: !Ref VPCPeeringConnection
+
+  PeeringRouteBackendToFrontendPrivate2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableBackend2
+      DestinationCidrBlock: !Ref VPCFrontendCIDR
+      VpcPeeringConnectionId: !Ref VPCPeeringConnection
+
+  PeeringRouteBackendToFrontendPrivate3:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableBackend3
+      DestinationCidrBlock: !Ref VPCFrontendCIDR
+      VpcPeeringConnectionId: !Ref VPCPeeringConnection
+
   # Asociación de tablas de rutas con subredes públicas de Frontend
   PublicSubnet1FrontendRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation

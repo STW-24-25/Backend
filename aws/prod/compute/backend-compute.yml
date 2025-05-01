@@ -10,8 +10,9 @@ Parameters:
   BackendInstanceType:
     Description: Tipo de instancia EC2 para Backend
     Type: String
-    Default: t3.small
+    Default: t3.micro
     AllowedValues:
+      - t3.micro
       - t3.small
       - t3.medium
       - t3.large
@@ -36,6 +37,7 @@ Parameters:
     Type: String
     Default: "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"
     NoEcho: true
+    
 
   MinSize:
     Description: Número mínimo de instancias en Auto Scaling Group
@@ -201,9 +203,6 @@ Resources:
             # Instalar dependencias necesarias
             dnf install -y git nodejs npm jq aws-cli wget libcap
 
-            # Permitir que Node.js se vincule a puertos privilegiados sin ser root
-            setcap 'cap_net_bind_service=+ep' $(which node)
-            setcap 'cap_net_bind_service=+ep' /usr/bin/node-18
 
             # Instalar PM2 globalmente para gestionar el proceso
             npm install -g pm2
@@ -242,9 +241,9 @@ Resources:
 
             # Configurar variables de entorno
             cat > .env << EOL
-            PORT=80
+            PORT=3000
             NODE_ENV=production
-            MONGODB_URI=${MongoDBConnectionString}
+            MONGO_URI=${MongoDBConnectionString}
             JWT_SECRET=8b7932e4bb244a689bb47a1c7572582a
             AEMET_API_KEY=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZ3JvbmV0QGVqZW1wbG8uY29tIiwianRpIjoiMTM0MjNhYzktNTIzYi00YzFkLThkMjYtOWVhZWIzYTljZTIzIiwiaXNzIjoiQUVNRVQiLCJpYXQiOjE3MTM3OTk5NzksInVzZXJJZCI6IjEzNDIzYWM5LTUyM2ItNGMxZC04ZDI2LTllYWViM2E5Y2UyMyIsInJvbGUiOiIifQ.Dau0-Z6Qk_G7cSQR9UHKHvMc_uxrI_awz-xvYFtL_50
             EOL
@@ -252,8 +251,26 @@ Resources:
             # Construir la aplicación
             sudo -u ec2-user npm run build
             
+            # Crear configuración de PM2
+            cat > ecosystem.config.js << 'EOL'
+            module.exports = {
+              apps: [{
+                name: 'backend',
+                script: 'npm',
+                args: 'run start',
+                env: {
+                  HOST: '0.0.0.0',
+                  PORT: 3000,
+                  NODE_OPTIONS: '--dns-result-order=ipv4first --no-warnings',
+                  UV_THREADPOOL_SIZE: 128,
+                  UV_USE_IPV6: 0
+                }
+              }]
+            }
+            EOL
+            
             # Iniciar con PM2 como usuario ec2-user
-            sudo -u ec2-user pm2 start npm --name "backend" -- run start
+            sudo -u ec2-user pm2 start ecosystem.config.js
             
             # Configurar PM2 para iniciar con el sistema
             pm2 startup -u ec2-user

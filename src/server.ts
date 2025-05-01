@@ -31,7 +31,7 @@ connectDB().then(() => {
       logger.error(`Error in HTTPS configuration: ${error.message}`);
     }
   } else {
-    server.listen(PORT, () => {
+    server.listen(parseInt(PORT.toString()), '0.0.0.0', () => {
       logger.info(`HTTP server runing on port ${PORT}`);
     });
     logger.warn(
