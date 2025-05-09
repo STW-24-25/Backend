@@ -94,6 +94,9 @@ export const getForumById = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
+    logger.debug(`Forum: ${forum}`);
+    logger.debug(`Messages: ${messages}`);
+
     res.status(200).json({ ...forum.toObject(), messages });
     logger.info(`Forum retrieved: ${forumId}`);
   } catch (err: any) {

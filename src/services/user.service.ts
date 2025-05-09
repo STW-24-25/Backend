@@ -2,7 +2,7 @@ import User, { UserRole, AutonomousComunity } from '../models/user.model';
 import { Types, Document } from 'mongoose';
 import logger from '../utils/logger';
 import bcrypt from 'bcrypt';
-import { genJWT } from '../middleware/auth';
+import { genJWT, JWTPayload } from '../middleware/auth';
 
 // Definimos una interfaz para el usuario basada en el modelo
 interface UserDocument extends Document {
@@ -125,58 +125,6 @@ class UserService {
       return user as UserDocument;
     } catch (error) {
       logger.error(`Error finding user by ID: ${error}`);
-      throw error;
-    }
-  }
-
-  /**
-   * Finds a user by email //! remove
-   * @param email User email
-   * @param includePassword Whether to include password in the response
-   * @returns User if found, null otherwise
-   */
-  async getUserByEmail(email: string, includePassword = false): Promise<UserDocument | null> {
-    try {
-      logger.info(`Finding user by email: ${email}`);
-      const user = await User.findOne({ email }).select(
-        includePassword ? '+passwordHash' : '-passwordHash',
-      );
-
-      if (!user) {
-        logger.info(`No user found with email: ${email}`);
-        return null;
-      }
-
-      logger.info(`User found with email: ${email}`);
-      return user as UserDocument;
-    } catch (error) {
-      logger.error(`Error finding user by email: ${error}`);
-      throw error;
-    }
-  }
-
-  /**
-   * Finds a user by username //! remove
-   * @param username Username
-   * @param includePassword Whether to include password in the response
-   * @returns User if found, null otherwise
-   */
-  async getUserByUsername(username: string, includePassword = false): Promise<UserDocument | null> {
-    try {
-      logger.info(`Finding user by username: ${username}`);
-      const user = await User.findOne({ username }).select(
-        includePassword ? '+passwordHash' : '-passwordHash',
-      );
-
-      if (!user) {
-        logger.info(`No user found with username: ${username}`);
-        return null;
-      }
-
-      logger.info(`User found with username: ${username}`);
-      return user as UserDocument;
-    } catch (error) {
-      logger.error(`Error finding user by username: ${error}`);
       throw error;
     }
   }
@@ -386,7 +334,7 @@ class UserService {
         email: user.email,
         role: user.role,
         isAdmin: user.isAdmin,
-      });
+      } as JWTPayload);
 
       // Remove password from user object
       const loginUserResponse = user.toObject();
@@ -464,48 +412,6 @@ class UserService {
     } catch (err) {
       logger.error(`Error unblocking user: ${err}`);
       throw err;
-    }
-  }
-
-  /**
-   * Finds users by search criteria //! remove
-   * @param searchParams Search parameters
-   * @returns Array of matching users
-   */
-  async getUsersBySearchCriteria(searchParams: SearchUserParams): Promise<UserDocument[]> {
-    try {
-      logger.info(`Searching users with criteria: ${JSON.stringify(searchParams)}`);
-
-      // Build query based on provided parameters
-      const query: any = {};
-
-      if (searchParams.username) {
-        query.username = { $regex: searchParams.username, $options: 'i' }; // Case-insensitive search
-      }
-
-      if (searchParams.email) {
-        query.email = { $regex: searchParams.email, $options: 'i' };
-      }
-
-      if (searchParams.role) {
-        query.role = searchParams.role;
-      }
-
-      if (searchParams.autonomousCommunity) {
-        query.autonomousCommunity = searchParams.autonomousCommunity;
-      }
-
-      if (searchParams.isAdmin !== undefined) {
-        query.isAdmin = searchParams.isAdmin;
-      }
-
-      const users = await User.find(query).select('-passwordHash');
-
-      logger.info(`Found ${users.length} users matching criteria`);
-      return users as UserDocument[];
-    } catch (error) {
-      logger.error(`Error searching users: ${error}`);
-      throw error;
     }
   }
 

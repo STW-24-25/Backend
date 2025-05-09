@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import userService from '../services/user.service';
 import logger from '../utils/logger';
 import { AutonomousComunity, UserRole } from '../models/user.model';
+import { AuthRequest } from '../types/auth';
 
 /**
  * Creates a user and saves it in the DB.
@@ -60,11 +61,20 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
  * @param res Response object, will have 200 if deletion was successful, 404 if user not found, or 500 if an error occurred.
  * @returns Promise<void>
  */
-export const deleteUser = async (req: Request, res: Response): Promise<void> => {
+export const deleteUser = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.params.id;
+    const authenticatedUserId = req.auth?.id;
+    const authenticatedIsAdmin = req.auth?.isAdmin; // Assuming `req.user.role` contains the role of the authenticated user
 
-    // TODO: Check the user trying to be deleted is the one making the request or admin if it's different
+    // Check if the user being deleted is the authenticated or the one deleting is an admin
+    if (userId !== authenticatedUserId || authenticatedIsAdmin) {
+      res
+        .status(403)
+        .json({ message: 'Forbidden: You do not have permission to delete this user' });
+      logger.warn(`Unauthorized delete attempt by user: ${authenticatedUserId}`);
+      return;
+    }
 
     const deleted = await userService.deleteUser(userId);
 

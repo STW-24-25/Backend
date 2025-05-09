@@ -51,6 +51,7 @@ export const getAllMessagesSchema = z.object({
   }),
 });
 
+// todo: change to parameter section
 /**
  * @swagger
  * components:

@@ -156,6 +156,7 @@ export const joinForumSchema = z.object({
     .string()
     .trim()
     .refine(val => isValidObjectId(val)),
+  token: z.string().min(1),
 });
 
 export const postMessageSchema = z.object({
@@ -173,4 +174,5 @@ export const postMessageSchema = z.object({
     .trim()
     .refine(val => isValidObjectId(val))
     .optional(),
+  token: z.string().min(1),
 });
