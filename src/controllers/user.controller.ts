@@ -68,7 +68,7 @@ export const deleteUser = async (req: AuthRequest, res: Response): Promise<void>
     const authenticatedIsAdmin = req.auth?.isAdmin; // Assuming `req.user.role` contains the role of the authenticated user
 
     // Check if the user being deleted is the authenticated or the one deleting is an admin
-    if (userId !== authenticatedUserId || authenticatedIsAdmin) {
+    if (userId !== authenticatedUserId && authenticatedIsAdmin) {
       res
         .status(403)
         .json({ message: 'Forbidden: You do not have permission to delete this user' });

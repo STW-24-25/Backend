@@ -28,12 +28,28 @@ jest.mock('../services/user.service', () => ({
   requestUnblock: jest.fn(),
 }));
 
+interface MockAuthPayload {
+  id: string;
+  username?: string;
+  email?: string;
+  role?: string;
+  isAdmin: boolean;
+}
+
 // Mock para Request y Response de Express
-const mockRequest = (data: any = {}): Request => {
-  const req: Partial<Request> = {};
+const mockRequest = (
+  data: {
+    body?: any;
+    params?: any;
+    query?: any;
+    auth?: MockAuthPayload;
+  } = {},
+): Request => {
+  const req: Partial<Request & { auth?: MockAuthPayload }> = {};
   req.body = data.body || {};
   req.params = data.params || {};
   req.query = data.query || {};
+  req.auth = data.auth;
 
   return req as Request;
 };
@@ -298,7 +314,10 @@ describe('UserController', () => {
 
   describe('deleteUser', () => {
     it('should call userService.deleteUser and return 200 on success', async () => {
-      const req = mockRequest({ params: { id: testUserId } });
+      const req = mockRequest({
+        params: { id: testUserId },
+        auth: { id: testUserId, isAdmin: false },
+      });
       const res = mockResponse();
 
       (userService.deleteUser as jest.Mock).mockResolvedValue(true);
@@ -313,7 +332,10 @@ describe('UserController', () => {
 
     it('should return 404 if userService.deleteUser returns false', async () => {
       const validButNonExistentId = new mongoose.Types.ObjectId().toString();
-      const req = mockRequest({ params: { id: validButNonExistentId } });
+      const req = mockRequest({
+        params: { id: validButNonExistentId },
+        auth: { id: validButNonExistentId, isAdmin: false },
+      });
       const res = mockResponse();
 
       (userService.deleteUser as jest.Mock).mockResolvedValue(false);
@@ -327,7 +349,10 @@ describe('UserController', () => {
     });
 
     it('should return 500 if userService.deleteUser throws an error', async () => {
-      const req = mockRequest({ params: { id: testUserId } });
+      const req = mockRequest({
+        params: { id: testUserId },
+        auth: { id: testUserId, isAdmin: false },
+      });
       const res = mockResponse();
       const errorMessage = 'Database constraint violation';
 
