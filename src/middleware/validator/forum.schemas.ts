@@ -171,6 +171,6 @@ export const postMessageSchema = z.object({
   parentMessage: z
     .string()
     .trim()
-    .optional()
-    .refine(val => isValidObjectId(val)),
+    .refine(val => isValidObjectId(val))
+    .optional(),
 });
