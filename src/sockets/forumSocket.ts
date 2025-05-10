@@ -7,7 +7,10 @@ import {
   postMessageSchema,
 } from '../middleware/validator/forum.schemas';
 import { MessageModel } from '../models/message.model';
-import { verifyJWT } from '../middleware/auth';
+import { JWTPayload, verifyJWT } from '../middleware/auth';
+import messageService from '../services/message.service';
+
+const ADMIN_UPDATES_ROOM = 'admin_all_messages_feed';
 
 function setupForumSockets(io: Server) {
   io.on('connection', socket => {
@@ -47,7 +50,7 @@ function setupForumSockets(io: Server) {
       }) => {
         try {
           const validatedData = await validate(postMessageSchema, data);
-          const decodedToken = verifyJWT(data.token);
+          const decodedToken = verifyJWT(data.token) as JWTPayload;
 
           // Check the author is the authenticated user
           if (decodedToken.id !== validatedData.author) {
@@ -65,6 +68,7 @@ function setupForumSockets(io: Server) {
           );
 
           io.to(validatedData.forum).emit('newMessage', populatedNewMessage);
+          io.to(ADMIN_UPDATES_ROOM).emit('newMessage', populatedNewMessage?.id);
           logger.info(`Message posted in forum ${data.forum}: ${data.content} by ${data.author}`);
         } catch (err) {
           logger.error(`Error posting message: ${err} from ${socket.id}`);
@@ -76,7 +80,7 @@ function setupForumSockets(io: Server) {
     socket.on('deleteMessage', async (messageId: string, token: string) => {
       try {
         await validate(deleteMessageSchema, { messageId, token });
-        const decodedToken = verifyJWT(token);
+        const decodedToken = verifyJWT(token) as JWTPayload;
         const msg = await MessageModel.findById(messageId);
 
         if (!msg) {
@@ -97,10 +101,31 @@ function setupForumSockets(io: Server) {
 
         await MessageModel.findByIdAndUpdate(messageId, { isDeleted: true });
         io.to(msg.forum.toString()).emit('messageDeleted', messageId);
+        io.to(ADMIN_UPDATES_ROOM).emit('messageDeleted', messageId);
         logger.info(`Message ${messageId} deleted by user ${decodedToken.id} (${socket.id})`);
       } catch (err) {
         logger.error(`Error deleting message ${messageId}: ${err} from ${socket.id}`);
         socket.emit('error', 'Error deleting message');
+      }
+    });
+
+    socket.on('joinAdminFeed', async (token: string) => {
+      try {
+        const decodedToken = verifyJWT(token) as JWTPayload;
+        if (decodedToken && decodedToken.isAdmin) {
+          socket.join(ADMIN_UPDATES_ROOM);
+          socket.emit('adminFeedJoined', 'Succesfully joined admin feed');
+          logger.info(`Admin user ${decodedToken.id} (${socket.id}) joined the admin updates feed`);
+
+          const { messages } = await messageService.getAllMessages(undefined, 1, 1000);
+          socket.emit('adminInitialMessages', messages);
+        } else {
+          logger.warn(`User ${socket.id} attempted to join admin feed without admin rights.`);
+          socket.emit('error', 'Unauthorized to join admin feed.');
+        }
+      } catch (err) {
+        logger.error(`Error joining admin feed for ${socket.id}: ${err}`);
+        socket.emit('error', 'Error joining admin feed and fetching messages');
       }
     });
   });
