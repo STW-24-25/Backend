@@ -227,6 +227,7 @@ router.post(
 
 // ##### ADMIN #####
 
+// todo: add parcels and loginHistory
 /**
  * @swagger
  * /api/users:
@@ -256,6 +257,9 @@ router.post(
  *                  items:
  *                    type: object
  *                    properties:
+ *                      _id:
+ *                        type: string
+ *                        format: MongoId
  *                      username:
  *                        type: string
  *                      email:

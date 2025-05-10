@@ -37,53 +37,17 @@ export const getAllMessagesSchema = z.object({
   query: z.object({
     page: z
       .string()
-      .optional()
       .refine(val => !isNaN(Number(val)) && Number(val) > 0, {
         message: 'Page must be a positive number',
-      }),
+      })
+      .optional(),
     size: z
       .string()
-      .optional()
       .refine(val => !isNaN(Number(val)) && Number(val) > 0, {
         message: 'Size must be a positive number',
-      }),
-    sort: z.enum(['newest', 'oldest', 'mostVoted']).optional(),
-  }),
-});
-
-// todo: change to parameter section
-/**
- * @swagger
- * components:
- *  schemas:
- *    CreateMessageRequest:
- *      type: object
- *      required:
- *        - content
- *        - forumId
- *      properties:
- *        content:
- *          type: string
- *          minLength: 1
- *          maxLength: 1000
- *          example: "This is an important discussion topic"
- *        forumId:
- *          type: string
- *          format: mongoId
- *          example: "507f1f77bcf86cd799439011"
- *        parentMessageId:
- *          type: string
- *          format: mongoId
- *          example: "6621f78b5d4ff1736f4abc14"
- */
-export const createMessageSchema = z.object({
-  body: z.object({
-    content: z.string().min(1).max(1000),
-    forumId: z.string().refine(val => isValidObjectId(val)),
-    parentMessageId: z
-      .string()
-      .refine(val => isValidObjectId(val))
+      })
       .optional(),
+    sort: z.enum(['newest', 'oldest', 'mostVoted']).optional(),
   }),
 });
 
@@ -91,16 +55,16 @@ export const createMessageSchema = z.object({
  * @swagger
  * components:
  *  parameters:
- *    getMessageByIdParameterSchema:
+ *    deleteMessageByIdParameterSchema:
  *      in: path
  *      name: id
  *      schema:
  *        type: string
- *        format: mongoId
+ *        format: MongoId
  *      required: true
- *      description: The ID of the message to retrieve
+ *      description: ID of the message to be deleted
  */
-export const getMessageByIdSchema = z.object({
+export const deleteMessageByIdSchema = z.object({
   params: z.object({
     id: z.string().refine(val => isValidObjectId(val)),
   }),

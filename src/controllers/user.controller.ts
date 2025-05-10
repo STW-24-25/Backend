@@ -68,7 +68,7 @@ export const deleteUser = async (req: AuthRequest, res: Response): Promise<void>
     const authenticatedIsAdmin = req.auth?.isAdmin; // Assuming `req.user.role` contains the role of the authenticated user
 
     // Check if the user being deleted is the authenticated or the one deleting is an admin
-    if (userId !== authenticatedUserId && authenticatedIsAdmin) {
+    if (userId !== authenticatedUserId && !authenticatedIsAdmin) {
       res
         .status(403)
         .json({ message: 'Forbidden: You do not have permission to delete this user' });
@@ -154,7 +154,7 @@ export const getAllUsers = async (req: Request, res: Response): Promise<void> =>
     const autCom = req.query.autCom as AutonomousComunity | undefined;
     const isAdmin = req.query.isAdmin as boolean | undefined;
     const page = parseInt(req.query.page as string) || 1; // Default to page 1
-    const size = parseInt(req.query.size as string) || 10; // Default to size 16
+    const size = parseInt(req.query.size as string) || 16; // Default to size 16
 
     const { users, totalPages } = await userService.getAllUsers(
       username,

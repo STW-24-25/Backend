@@ -1,3 +1,4 @@
+import { isValidObjectId } from 'mongoose';
 import { z } from 'zod';
 
 /**
@@ -52,6 +53,6 @@ export const getAllProductsSchema = z.object({
  */
 export const getProductByIdSchema = z.object({
   params: z.object({
-    id: z.string(),
+    id: z.string().refine(val => isValidObjectId(val)),
   }),
 });

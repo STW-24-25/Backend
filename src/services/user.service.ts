@@ -35,14 +35,6 @@ interface UpdateUserParams {
   autonomousCommunity?: AutonomousComunity;
 }
 
-interface SearchUserParams {
-  username?: string;
-  email?: string;
-  role?: UserRole;
-  autonomousCommunity?: AutonomousComunity;
-  isAdmin?: boolean;
-}
-
 class UserService {
   /**
    * Creates a new user
@@ -234,8 +226,6 @@ class UserService {
     size: number,
   ): Promise<{ users: UserDocument[]; totalPages: number }> {
     try {
-      logger.info(`Finding all users with pagination (page: ${page}, size: ${size})`);
-
       const query: any = {};
 
       if (username) {
@@ -268,9 +258,9 @@ class UserService {
 
       logger.info(`Found ${users.length} users`);
       return { users: users as UserDocument[], totalPages };
-    } catch (error) {
-      logger.error(`Error finding all users: ${error}`);
-      throw error;
+    } catch (err) {
+      logger.error(`Error finding all users: ${err}`);
+      throw err;
     }
   }
 
@@ -280,13 +270,12 @@ class UserService {
    */
   async countUsers(): Promise<number> {
     try {
-      logger.info('Counting total users');
       const count = await User.countDocuments();
       logger.info(`Total users count: ${count}`);
       return count;
-    } catch (error) {
-      logger.error(`Error counting users: ${error}`);
-      throw error;
+    } catch (err) {
+      logger.error(`Error counting users: ${err}`);
+      throw err;
     }
   }
 
