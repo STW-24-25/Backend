@@ -1,6 +1,4 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
-import type { IUser } from './user.model';
-import { IForum } from './forum.model';
 
 /**
  * @swagger
@@ -42,11 +40,12 @@ import { IForum } from './forum.model';
  */
 export interface IMessage extends Document {
   content: string;
-  author: Types.ObjectId | IUser;
-  forumId: Types.ObjectId | IForum;
-  parentMessage?: Types.ObjectId | IMessage;
+  author: Types.ObjectId;
+  forum: Types.ObjectId;
+  parentMessage?: Types.ObjectId;
   upvotes: Types.ObjectId[];
   isPinned: boolean;
+  isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -54,12 +53,13 @@ export interface IMessage extends Document {
 const messageSchema = new Schema<IMessage>({
   content: { type: String, required: true },
   author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  forumId: { type: Schema.Types.ObjectId, ref: 'Forum', required: true },
+  forum: { type: Schema.Types.ObjectId, ref: 'Forum', required: true },
   parentMessage: { type: Schema.Types.ObjectId, ref: 'Message' },
-  upvotes: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-  isPinned: { type: Boolean, default: false },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
+  upvotes: [{ type: Schema.Types.ObjectId, ref: 'User', required: true }],
+  isPinned: { type: Boolean, default: false, required: true },
+  isDeleted: { type: Boolean, default: false, required: true },
+  createdAt: { type: Date, default: Date.now, required: true },
+  updatedAt: { type: Date, default: Date.now, required: true },
 });
 
 messageSchema.pre<IMessage>(['save', 'updateOne'], function (next) {

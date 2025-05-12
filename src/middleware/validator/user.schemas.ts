@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { AutonomousComunity, UserRole } from '../../models/user.model';
+import { isValidObjectId } from 'mongoose';
 
 // Zod validation schemas and their corresponsing swagger docs (referenced
 // by the endpoints that use them).
@@ -82,6 +83,7 @@ export const updateUserSchema = z.object({
   body: z.object({
     username: z.string().min(3).optional(),
     email: z.string().email().optional(),
+    password: z.string().optional(),
     profilePicture: z.string().optional(),
     role: z.nativeEnum(UserRole).optional(),
     autonomousCommunity: z.nativeEnum(AutonomousComunity).optional(),
@@ -102,7 +104,7 @@ export const updateUserSchema = z.object({
  */
 export const deleteUserSchema = z.object({
   params: z.object({
-    id: z.string(),
+    id: z.string().refine(val => isValidObjectId(val)),
   }),
 });
 
@@ -145,7 +147,7 @@ export const loginSchema = z.object({
  */
 export const getUserSchema = z.object({
   params: z.object({
-    id: z.string(),
+    id: z.string().refine(val => isValidObjectId(val)),
   }),
 });
 
@@ -215,6 +217,8 @@ export const getAllUsersSchema = z.object({
     role: z.nativeEnum(UserRole).optional(),
     autonomousCommunity: z.nativeEnum(AutonomousComunity).optional(),
     isAdmin: z.boolean().optional(),
+    page: z.string().optional(),
+    size: z.string().optional(),
   }),
 });
 
@@ -236,7 +240,7 @@ export const getAllUsersSchema = z.object({
  */
 export const requestUnblockSchema = z.object({
   body: z.object({
-    id: z.string(),
+    id: z.string().refine(val => isValidObjectId(val)),
     appeal: z.string().optional(),
   }),
 });
@@ -259,7 +263,7 @@ export const requestUnblockSchema = z.object({
  */
 export const blockSchema = z.object({
   body: z.object({
-    id: z.string(),
+    id: z.string().refine(val => isValidObjectId(val)),
     reason: z.string().optional(),
   }),
 });
@@ -279,6 +283,25 @@ export const blockSchema = z.object({
  */
 export const unblockSchema = z.object({
   body: z.object({
-    id: z.string(),
+    id: z.string().refine(val => isValidObjectId(val)),
+  }),
+});
+
+/**
+ * @swagger
+ * components:
+ *  requestBodies:
+ *    makeAdmin:
+ *      type: object
+ *      required:
+ *        - id
+ *      properties:
+ *        id:
+ *          type: string
+ *          description: ID of the user to be promoted to admin
+ */
+export const makeAdminSchema = z.object({
+  body: z.object({
+    id: z.string().refine(val => isValidObjectId(val)),
   }),
 });

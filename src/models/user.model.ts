@@ -172,7 +172,7 @@ const userSchema: Schema = new Schema({
     default: AutonomousComunity.ARAGON,
     required: true,
   },
-  isAdmin: { type: Boolean, default: false },
+  isAdmin: { type: Boolean, default: false, required: true },
   createdAt: { type: Date, default: Date.now(), required: true },
   isBlocked: { type: Boolean, default: false, required: true },
   blockReason: { type: String, required: false },

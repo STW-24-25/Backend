@@ -152,10 +152,11 @@ export const getForumByIdSchema = z.object({
 });
 
 export const joinForumSchema = z.object({
-  forumId: z
+  forum: z
     .string()
     .trim()
     .refine(val => isValidObjectId(val)),
+  token: z.string().min(1),
 });
 
 export const postMessageSchema = z.object({
@@ -164,13 +165,22 @@ export const postMessageSchema = z.object({
     .string()
     .trim()
     .refine(val => isValidObjectId(val)),
-  forumId: z
+  forum: z
     .string()
     .trim()
     .refine(val => isValidObjectId(val)),
   parentMessage: z
     .string()
     .trim()
-    .optional()
+    .refine(val => isValidObjectId(val))
+    .optional(),
+  token: z.string().min(1),
+});
+
+export const deleteMessageSchema = z.object({
+  messageId: z
+    .string()
+    .trim()
     .refine(val => isValidObjectId(val)),
+  token: z.string().min(1),
 });

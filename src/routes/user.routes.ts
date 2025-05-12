@@ -227,6 +227,7 @@ router.post(
 
 // ##### ADMIN #####
 
+// todo: add parcels and loginHistory
 /**
  * @swagger
  * /api/users:
@@ -256,6 +257,9 @@ router.post(
  *                  items:
  *                    type: object
  *                    properties:
+ *                      _id:
+ *                        type: string
+ *                        format: MongoId
  *                      username:
  *                        type: string
  *                      email:
@@ -357,6 +361,38 @@ router.post(
   isAdmin(),
   validateSchema(userRequestSchemas.unblockSchema),
   userCont.unblockUser,
+);
+
+/**
+ * @swagger
+ * /api/users/make-admin:
+ *  post:
+ *    summary: Promote a user to administrator privileges (Admin only)
+ *    security:
+ *      - bearerAuth: []
+ *    tags: [Admin]
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/requestBodies/makeAdmin'
+ *    responses:
+ *      200:
+ *        description: User promoted to admin successfully
+ *      400:
+ *        description: Bad request, invalid data
+ *      404:
+ *        description: User not found
+ *      500:
+ *        description: Error processing the request
+ */
+router.post(
+  '/make-admin',
+  authenticateJWT(),
+  isAdmin(),
+  validateSchema(userRequestSchemas.makeAdminSchema),
+  userCont.makeAdmin,
 );
 
 export default router;

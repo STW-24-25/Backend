@@ -2,7 +2,7 @@ import User, { UserRole, AutonomousComunity } from '../models/user.model';
 import { Types, Document } from 'mongoose';
 import logger from '../utils/logger';
 import bcrypt from 'bcrypt';
-import { genJWT } from '../middleware/auth';
+import { genJWT, JWTPayload } from '../middleware/auth';
 
 // Definimos una interfaz para el usuario basada en el modelo
 interface UserDocument extends Document {
@@ -24,7 +24,6 @@ interface CreateUserParams {
   profilePicture?: string;
   role?: UserRole;
   autonomousCommunity?: AutonomousComunity;
-  isAdmin?: boolean;
 }
 
 interface UpdateUserParams {
@@ -34,15 +33,6 @@ interface UpdateUserParams {
   profilePicture?: string;
   role?: UserRole;
   autonomousCommunity?: AutonomousComunity;
-  isAdmin?: boolean;
-}
-
-interface SearchUserParams {
-  username?: string;
-  email?: string;
-  role?: UserRole;
-  autonomousCommunity?: AutonomousComunity;
-  isAdmin?: boolean;
 }
 
 class UserService {
@@ -81,7 +71,6 @@ class UserService {
         profilePicture: userData.profilePicture,
         role: userData.role || UserRole.SMALL_FARMER,
         autonomousCommunity: userData.autonomousCommunity || AutonomousComunity.ARAGON,
-        isAdmin: userData.isAdmin || false,
       };
 
       const user = new User(userToCreate);
@@ -133,58 +122,6 @@ class UserService {
   }
 
   /**
-   * Finds a user by email //! remove
-   * @param email User email
-   * @param includePassword Whether to include password in the response
-   * @returns User if found, null otherwise
-   */
-  async getUserByEmail(email: string, includePassword = false): Promise<UserDocument | null> {
-    try {
-      logger.info(`Finding user by email: ${email}`);
-      const user = await User.findOne({ email }).select(
-        includePassword ? '+passwordHash' : '-passwordHash',
-      );
-
-      if (!user) {
-        logger.info(`No user found with email: ${email}`);
-        return null;
-      }
-
-      logger.info(`User found with email: ${email}`);
-      return user as UserDocument;
-    } catch (error) {
-      logger.error(`Error finding user by email: ${error}`);
-      throw error;
-    }
-  }
-
-  /**
-   * Finds a user by username //! remove
-   * @param username Username
-   * @param includePassword Whether to include password in the response
-   * @returns User if found, null otherwise
-   */
-  async getUserByUsername(username: string, includePassword = false): Promise<UserDocument | null> {
-    try {
-      logger.info(`Finding user by username: ${username}`);
-      const user = await User.findOne({ username }).select(
-        includePassword ? '+passwordHash' : '-passwordHash',
-      );
-
-      if (!user) {
-        logger.info(`No user found with username: ${username}`);
-        return null;
-      }
-
-      logger.info(`User found with username: ${username}`);
-      return user as UserDocument;
-    } catch (error) {
-      logger.error(`Error finding user by username: ${error}`);
-      throw error;
-    }
-  }
-
-  /**
    * Updates a user
    * @param userId User ID
    * @param updateData Data to update
@@ -193,11 +130,6 @@ class UserService {
   async updateUser(userId: string, updateData: UpdateUserParams): Promise<UserDocument | null> {
     try {
       logger.info(`Updating user with ID: ${userId}`);
-
-      if (!Types.ObjectId.isValid(userId)) {
-        logger.warn(`Invalid user ID format: ${userId}`);
-        return null;
-      }
 
       // Preparar datos para actualizar
       const updateFields: any = { ...updateData };
@@ -263,11 +195,6 @@ class UserService {
     try {
       logger.info(`Deleting user with ID: ${userId}`);
 
-      if (!Types.ObjectId.isValid(userId)) {
-        logger.warn(`Invalid user ID format: ${userId}`);
-        return false;
-      }
-
       const result = await User.findByIdAndDelete(userId);
 
       if (!result) {
@@ -299,8 +226,6 @@ class UserService {
     size: number,
   ): Promise<{ users: UserDocument[]; totalPages: number }> {
     try {
-      logger.info(`Finding all users with pagination (page: ${page}, size: ${size})`);
-
       const query: any = {};
 
       if (username) {
@@ -333,9 +258,9 @@ class UserService {
 
       logger.info(`Found ${users.length} users`);
       return { users: users as UserDocument[], totalPages };
-    } catch (error) {
-      logger.error(`Error finding all users: ${error}`);
-      throw error;
+    } catch (err) {
+      logger.error(`Error finding all users: ${err}`);
+      throw err;
     }
   }
 
@@ -345,13 +270,12 @@ class UserService {
    */
   async countUsers(): Promise<number> {
     try {
-      logger.info('Counting total users');
       const count = await User.countDocuments();
       logger.info(`Total users count: ${count}`);
       return count;
-    } catch (error) {
-      logger.error(`Error counting users: ${error}`);
-      throw error;
+    } catch (err) {
+      logger.error(`Error counting users: ${err}`);
+      throw err;
     }
   }
 
@@ -399,7 +323,7 @@ class UserService {
         email: user.email,
         role: user.role,
         isAdmin: user.isAdmin,
-      });
+      } as JWTPayload);
 
       // Remove password from user object
       const loginUserResponse = user.toObject();
@@ -480,45 +404,18 @@ class UserService {
     }
   }
 
-  /**
-   * Finds users by search criteria
-   * @param searchParams Search parameters
-   * @returns Array of matching users
-   */
-  async getUsersBySearchCriteria(searchParams: SearchUserParams): Promise<UserDocument[]> {
+  async makeAdmin(userId: string): Promise<boolean> {
     try {
-      logger.info(`Searching users with criteria: ${JSON.stringify(searchParams)}`);
+      const result = await User.findByIdAndUpdate(userId, { $set: { isAdmin: true } });
 
-      // Build query based on provided parameters
-      const query: any = {};
-
-      if (searchParams.username) {
-        query.username = { $regex: searchParams.username, $options: 'i' }; // Case-insensitive search
+      if (!result) {
+        logger.warn(`Failed to promote user with id ${userId}`);
+        return false;
       }
-
-      if (searchParams.email) {
-        query.email = { $regex: searchParams.email, $options: 'i' };
-      }
-
-      if (searchParams.role) {
-        query.role = searchParams.role;
-      }
-
-      if (searchParams.autonomousCommunity) {
-        query.autonomousCommunity = searchParams.autonomousCommunity;
-      }
-
-      if (searchParams.isAdmin !== undefined) {
-        query.isAdmin = searchParams.isAdmin;
-      }
-
-      const users = await User.find(query).select('-passwordHash');
-
-      logger.info(`Found ${users.length} users matching criteria`);
-      return users as UserDocument[];
-    } catch (error) {
-      logger.error(`Error searching users: ${error}`);
-      throw error;
+      return true;
+    } catch (err) {
+      logger.error(`Error promoting user to admin: ${err}`);
+      throw err;
     }
   }
 }

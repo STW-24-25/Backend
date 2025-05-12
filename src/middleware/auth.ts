@@ -1,7 +1,15 @@
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import { expressjwt } from 'express-jwt';
 import dotenv from 'dotenv';
 dotenv.config();
+
+export interface JWTPayload extends JwtPayload {
+  id: string;
+  username: string;
+  email: string;
+  role: string;
+  isAdmin: boolean;
+}
 
 /**
  * Generates a JWT token for the given payload.
@@ -25,4 +33,18 @@ export const authenticateJWT = () => {
     credentialsRequired: true,
     requestProperty: 'auth',
   });
+};
+
+/**
+ * Verifies a JWT token and returns an object with the decoded payload.
+ * @param token JWT token string to verify
+ * @returns Object containing the decoded payload if the token is valid
+ * @throws Error if the token is invalid or verification fails
+ */
+export const verifyJWT = (token: string) => {
+  try {
+    return jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as JWTPayload;
+  } catch (err) {
+    throw new Error('Invalid or expired token');
+  }
 };

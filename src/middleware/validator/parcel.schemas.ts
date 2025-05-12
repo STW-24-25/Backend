@@ -79,7 +79,6 @@ export const updateParcelSchema = z.object({
  *
  *
  */
-
 export const getAllParcelsSchema = z.object({
   query: z.object({
     crop: z.nativeEnum(CropType).optional(),

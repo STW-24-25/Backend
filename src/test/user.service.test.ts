@@ -190,62 +190,6 @@ describe('UserService', () => {
     });
   });
 
-  describe('findUserByEmail', () => {
-    it('should find a user by email', async () => {
-      await createTestUser();
-
-      const result = await userService.getUserByEmail(testUserData.email);
-
-      expect(result).toBeDefined();
-      expect(result!.email).toBe(testUserData.email);
-      expect(result!.passwordHash).toBeUndefined(); // Password should not be included
-    });
-
-    it('should find a user by email with password when includePassword is true', async () => {
-      await createTestUser();
-
-      const result = await userService.getUserByEmail(testUserData.email, true);
-
-      expect(result).toBeDefined();
-      expect(result!.email).toBe(testUserData.email);
-      expect(result!.passwordHash).toBeDefined(); // Password should be included
-    });
-
-    it('should return null if user not found by email', async () => {
-      const result = await userService.getUserByEmail('nonexistent@example.com');
-
-      expect(result).toBeNull();
-    });
-  });
-
-  describe('findUserByUsername', () => {
-    it('should find a user by username', async () => {
-      await createTestUser();
-
-      const result = await userService.getUserByUsername(testUserData.username);
-
-      expect(result).toBeDefined();
-      expect(result!.username).toBe(testUserData.username);
-      expect(result!.passwordHash).toBeUndefined(); // Password should not be included
-    });
-
-    it('should find a user by username with password when includePassword is true', async () => {
-      await createTestUser();
-
-      const result = await userService.getUserByUsername(testUserData.username, true);
-
-      expect(result).toBeDefined();
-      expect(result!.username).toBe(testUserData.username);
-      expect(result!.passwordHash).toBeDefined(); // Password should be included
-    });
-
-    it('should return null if user not found by username', async () => {
-      const result = await userService.getUserByUsername('nonexistentuser');
-
-      expect(result).toBeNull();
-    });
-  });
-
   describe('updateUser', () => {
     it('should update a user successfully', async () => {
       const createdUser = await createTestUser();
@@ -288,12 +232,6 @@ describe('UserService', () => {
       // Verify the password was hashed
       const isMatch = await bcrypt.compare(updateData.password, updatedUser!.passwordHash);
       expect(isMatch).toBe(true);
-    });
-
-    it('should return null for invalid ID format', async () => {
-      const result = await userService.updateUser('invalid-id', { username: 'test' });
-
-      expect(result).toBeNull();
     });
 
     it('should return null if user not found', async () => {
@@ -350,12 +288,6 @@ describe('UserService', () => {
       // Verify user was deleted from DB
       const deletedUser = await User.findById(createdUser._id);
       expect(deletedUser).toBeNull();
-    });
-
-    it('should return false for invalid ID format', async () => {
-      const result = await userService.deleteUser('invalid-id');
-
-      expect(result).toBe(false);
     });
 
     it('should return false if user not found', async () => {
@@ -460,91 +392,6 @@ describe('UserService', () => {
     });
   });
 
-  describe('findUsersBySearchCriteria', () => {
-    beforeEach(async () => {
-      // Create multiple users with different attributes
-      await createTestUser(testUserData);
-      await createTestUser({
-        username: 'johnsmith',
-        email: 'john@example.com',
-        password: 'Password123',
-        role: UserRole.SMALL_FARMER,
-        autonomousCommunity: AutonomousComunity.VALENCIA,
-        isAdmin: false,
-      });
-      await createTestUser({
-        username: 'janedoe',
-        email: 'jane@example.com',
-        password: 'Password123',
-        role: UserRole.EXPERT,
-        autonomousCommunity: AutonomousComunity.MADRID,
-        isAdmin: true,
-      });
-    });
-
-    it('should find users by username (case insensitive)', async () => {
-      const result = await userService.getUsersBySearchCriteria({ username: 'john' });
-
-      expect(result).toBeDefined();
-      expect(result.length).toBe(1);
-      expect(result[0].username).toBe('johnsmith');
-    });
-
-    it('should find users by email (case insensitive)', async () => {
-      const result = await userService.getUsersBySearchCriteria({ email: 'JANE' });
-
-      expect(result).toBeDefined();
-      expect(result.length).toBe(1);
-      expect(result[0].email).toBe('jane@example.com');
-    });
-
-    it('should find users by role', async () => {
-      const result = await userService.getUsersBySearchCriteria({ role: UserRole.EXPERT });
-
-      expect(result).toBeDefined();
-      expect(result.length).toBe(1); // Solo hay un usuario con rol EXPERT en el beforeEach (janedoe)
-      expect(result.some(user => user.username === 'janedoe')).toBe(true);
-    });
-
-    it('should find users by autonomousCommunity', async () => {
-      const result = await userService.getUsersBySearchCriteria({
-        autonomousCommunity: AutonomousComunity.VALENCIA,
-      });
-
-      expect(result).toBeDefined();
-      expect(result.length).toBe(1);
-      expect(result[0].username).toBe('johnsmith');
-    });
-
-    it('should find users by multiple criteria', async () => {
-      await createTestUser({
-        username: 'expertinadmin',
-        email: 'expertinadmin@example.com',
-        password: 'Password123',
-        role: UserRole.EXPERT,
-        autonomousCommunity: AutonomousComunity.CATALUGNA,
-        isAdmin: true,
-      });
-
-      const result = await userService.getUsersBySearchCriteria({
-        role: UserRole.EXPERT,
-        isAdmin: true,
-      });
-
-      expect(result).toBeDefined();
-      expect(result.length).toBe(2);
-      expect(result.some(user => user.username === 'janedoe')).toBe(true);
-      expect(result.some(user => user.username === 'expertinadmin')).toBe(true);
-    });
-
-    it('should return empty array when no users match criteria', async () => {
-      const result = await userService.getUsersBySearchCriteria({ username: 'nonexistent' });
-
-      expect(result).toBeDefined();
-      expect(result.length).toBe(0);
-    });
-  });
-
   describe('blockUser', () => {
     it('should block the user', async () => {
       const createdUser = await createTestUser();
@@ -599,6 +446,31 @@ describe('UserService', () => {
       const user = await User.findById(createdUser._id);
       expect(user?.isBlocked).toBe(true);
       expect(user?.blockReason).toBeUndefined();
+    });
+  });
+
+  describe('makeAdmin', () => {
+    it('should promote the user to admin', async () => {
+      const createdUser = await createTestUser();
+
+      const result = await userService.makeAdmin(
+        (createdUser._id as unknown as Types.ObjectId).toString(),
+      );
+
+      expect(result).toBe(true);
+      const user = await User.findById(createdUser._id);
+      expect(user?.isAdmin).toBe(true);
+    });
+
+    it('should fail to promote the user to admin', async () => {
+      const createdUser = await createTestUser();
+      const userId = new mongoose.Types.ObjectId().toString();
+
+      const result = await userService.makeAdmin(userId);
+
+      expect(result).toBe(false);
+      const user = await User.findById(createdUser._id);
+      expect(user?.isAdmin).toBe(false);
     });
   });
 });

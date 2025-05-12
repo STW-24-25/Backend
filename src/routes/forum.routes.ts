@@ -42,7 +42,7 @@ const router = Router();
  *                        type: string
  *                      createdBy:
  *                        type: string
- *                        format: mongoId
+ *                        format: MongoId
  *                      createdAt:
  *                        type: string
  *                        format: date
@@ -95,7 +95,7 @@ router.get(
  *                  type: string
  *                createdBy:
  *                  type: string
- *                  format: mongoId
+ *                  format: MongoId
  *                createdAt:
  *                  type: string
  *                  format: date
