@@ -69,7 +69,7 @@ router.put(
  * /api/users/{id}:
  *  delete:
  *    summary: Delete a user account
- *    description: >
+ *    description:
  *      Deletes a user account, if the authenticated user is not admin only their own, otherwise
  *      any account may be deleted.
  *    security:

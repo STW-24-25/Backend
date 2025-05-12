@@ -1,7 +1,6 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import messageService from '../services/message.service';
 import logger from '../utils/logger';
-import { AuthRequest } from '../types/auth';
 
 /**
  * Retrieves all messages in the platform, assumes the authenticated user has admin rights
@@ -9,7 +8,7 @@ import { AuthRequest } from '../types/auth';
  * @param res The response object
  * @returns Promise<void>
  */
-export const getAllMessages = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getAllMessages = async (req: Request, res: Response): Promise<void> => {
   try {
     const content = req.query.content as string | undefined;
     const page = parseInt(req.query.page as string) || 1; // Default to page 1
@@ -36,7 +35,7 @@ export const getAllMessages = async (req: AuthRequest, res: Response): Promise<v
  * @param res The Response object
  * @returns Promise<void>
  */
-export const deleteMessage = async (req: AuthRequest, res: Response): Promise<void> => {
+export const deleteMessage = async (req: Request, res: Response): Promise<void> => {
   try {
     const deleted = await messageService.deleteMessageById(req.params.id);
 

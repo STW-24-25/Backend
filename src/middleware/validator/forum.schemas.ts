@@ -36,17 +36,21 @@ export const createForumSchema = z.object({
 /**
  * @swagger
  * components:
+ *  parameters:
+ *    updateForumIdParameterSchema:
+ *      in: path
+ *      name: id
+ *      schema:
+ *        type: string
+ *        format: MongoId
+ *      required: true
  *  requestBodies:
  *    updateForum:
  *      type: object
  *      required:
- *        - id
  *        - title
  *        - description
  *      properties:
- *        id:
- *          type: string
- *          format: MongoId
  *        title:
  *          type: string
  *          minLength: 3
@@ -58,8 +62,10 @@ export const createForumSchema = z.object({
  *          example: "Discussion about eco-friendly farming methods"
  */
 export const updateForumSchema = z.object({
-  body: z.object({
+  path: z.object({
     id: z.string().refine(val => isValidObjectId(val)),
+  }),
+  body: z.object({
     title: z.string().min(3).max(100),
     description: z.string().max(500),
   }),
@@ -68,18 +74,17 @@ export const updateForumSchema = z.object({
 /**
  * @swagger
  * components:
- *  requestBodies:
- *    deleteForum:
- *      type: object
- *      required:
- *        - id
- *      properties:
- *        id:
- *          type: string
- *          format: MongoId
+ *  parameters:
+ *    deleteForumIdParameterSchema:
+ *      in: path
+ *      name: id
+ *      schema:
+ *        type: string
+ *        format: MongoId
+ *      required: true
  */
 export const deleteForumSchema = z.object({
-  body: z.object({
+  path: z.object({
     id: z.string().refine(val => isValidObjectId(val)),
   }),
 });

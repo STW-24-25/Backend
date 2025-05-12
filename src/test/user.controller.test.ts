@@ -28,24 +28,16 @@ jest.mock('../services/user.service', () => ({
   requestUnblock: jest.fn(),
 }));
 
-interface MockAuthPayload {
-  id: string;
-  username?: string;
-  email?: string;
-  role?: string;
-  isAdmin: boolean;
-}
-
 // Mock para Request y Response de Express
 const mockRequest = (
   data: {
     body?: any;
     params?: any;
     query?: any;
-    auth?: MockAuthPayload;
+    auth?: any;
   } = {},
 ): Request => {
-  const req: Partial<Request & { auth?: MockAuthPayload }> = {};
+  const req: Partial<Request> = {};
   req.body = data.body || {};
   req.params = data.params || {};
   req.query = data.query || {};

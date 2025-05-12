@@ -152,12 +152,14 @@ router.post(
 
 /**
  * @swagger
- * /api/forums:
+ * /api/forums/{id}:
  *  put:
  *    summary: Update a forum (admin only)
  *    security:
  *      - bearerAuth: []
  *    tags: [Admin]
+ *    parameters:
+ *      - $ref: '#/components/parameters/updateForumIdParameterSchema'
  *    requestBody:
  *      required: true
  *      content:
@@ -172,8 +174,8 @@ router.post(
  *      500:
  *        description: Error processing request
  */
-router.post(
-  '/',
+router.put(
+  '/:id',
   authenticateJWT(),
   isAdmin(),
   validateSchema(forumRequestSchemas.updateForumSchema),
@@ -182,18 +184,14 @@ router.post(
 
 /**
  * @swagger
- * /api/forums:
+ * /api/forums/{id}:
  *  delete:
  *    summary: Delete a forum and all its messages (admin only)
  *    security:
  *      - bearerAuth: []
  *    tags: [Admin]
- *    requestBody:
- *      required: true
- *      content:
- *        application/json:
- *          schema:
- *            $ref: '#/components/requestBodies/deleteForum'
+ *    parameters:
+ *      - $ref: '#/components/parameters/deleteForumIdParameterSchema'
  *    responses:
  *      201:
  *        description: Forum and messages deleted succesfully
@@ -202,7 +200,7 @@ router.post(
  *      500:
  *        description: Error processing request
  */
-router.post(
+router.delete(
   '/',
   authenticateJWT(),
   isAdmin(),
