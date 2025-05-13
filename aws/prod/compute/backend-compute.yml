@@ -176,7 +176,7 @@ Resources:
         KeyName: !Ref KeyName
         SecurityGroupIds:
           - !ImportValue 
-            Fn::Sub: "${EnvironmentName}-Backend-SecurityGroup"
+            Fn::Sub: "${EnvironmentName}-Backend-Instance-SecurityGroup"
         IamInstanceProfile:
           Name: !Ref BackendInstanceProfile
         UserData:

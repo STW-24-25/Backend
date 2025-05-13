@@ -1,4 +1,8 @@
 import ProductModel from '../models/product.model';
+import { S3Service } from '../services/s3.service';
+import sharp from 'sharp';
+import { S3_CONFIG } from '../config/s3.config';
+import logger from '../utils/logger';
 
 class ProductService {
   async getProductsByName(name: string, pageNumber?: number, pageSize?: number) {
@@ -13,16 +17,24 @@ class ProductService {
 
     const products = await productsQuery;
 
-    const productsWithLastPrice = products.map(product => {
-      const lastPrice = product.prices[product.prices.length - 1].price;
-      return {
-        id: product._id,
-        name: product.name,
-        sector: product.sector,
-        lastPrice,
-        image: product.image,
-      };
-    });
+    const productsWithLastPrice = await Promise.all(
+      products.map(async product => {
+        const lastPrice = product.prices[product.prices.length - 1].price;
+        let signedImageUrl = null;
+
+        if (product.image) {
+          signedImageUrl = await S3Service.getSignedUrl(product.image);
+        }
+
+        return {
+          id: product._id,
+          name: product.name,
+          sector: product.sector,
+          lastPrice,
+          image: signedImageUrl,
+        };
+      }),
+    );
 
     const totalProducts = await ProductModel.countDocuments(filter);
     return {
@@ -61,11 +73,17 @@ class ProductService {
       return new Date(priceEntry.date).getFullYear() === currentYear;
     });
 
+    let signedImageUrl = null;
+    if (product.image) {
+      signedImageUrl = await S3Service.getSignedUrl(product.image);
+    }
+
     return {
       id: product._id,
       name: product.name,
       sector: product.sector,
       prices: product.prices.map(({ date, price }) => ({ date, price })),
+      image: signedImageUrl,
       priceChange: {
         one_month: this.getPriceDiff(product.prices, 1),
         six_month: this.getPriceDiff(product.prices, 6),
@@ -75,6 +93,67 @@ class ProductService {
           ((currentYearPrices[currentYearPrices.length - 1].price - firstPrice) / firstPrice) * 100,
       },
     };
+  }
+
+  /**
+   * Refreshes signed URLs for product images
+   * @param productIds Array of product IDs to refresh images for
+   * @returns Object containing product IDs mapped to their signed image URLs
+   */
+  async refreshProductImages(productIds: string[]): Promise<Record<string, string>> {
+    const images: Record<string, string> = {};
+
+    await Promise.all(
+      productIds.map(async (productId: string) => {
+        const product = await ProductModel.findById(productId);
+        if (product?.image) {
+          images[productId] = await S3Service.getSignedUrl(product.image);
+        }
+      }),
+    );
+
+    return images;
+  }
+
+  /**
+   * Uploads and processes a product image
+   * @param productId - The ID of the product
+   * @param file - The image file to upload
+   * @returns The S3 key of the uploaded image
+   */
+  async uploadProductImage(productId: string, file: Express.Multer.File): Promise<string> {
+    try {
+      logger.info(`Uploading image for product: ${productId}`);
+
+      // Process image with sharp
+      const processedImageBuffer = await sharp(file.buffer)
+        .resize(S3_CONFIG.IMAGE_DIMENSIONS.WIDTH, S3_CONFIG.IMAGE_DIMENSIONS.HEIGHT, {
+          fit: 'cover',
+          position: 'center',
+        })
+        .jpeg({ quality: 80 }) // Convert to JPEG with 80% quality
+        .toBuffer();
+
+      const key = S3Service.generateProductImageKey(productId, 'jpg');
+      const s3Key = await S3Service.uploadFile(processedImageBuffer, key, 'image/jpeg');
+
+      const product = await ProductModel.findByIdAndUpdate(
+        productId,
+        { image: s3Key },
+        { new: true },
+      );
+
+      if (!product) {
+        logger.warn(`Product not found: ${productId}`);
+        throw new Error('Product not found');
+      }
+
+      logger.info(`Image successfully uploaded for product: ${productId}`);
+      return s3Key;
+    } catch (error) {
+      logger.error(`Error uploading product image: ${error}`);
+      throw error;
+    }
   }
 }
 

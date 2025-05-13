@@ -4,8 +4,11 @@ import { validateSchema } from '../middleware/validator';
 import * as userRequestSchemas from '../middleware/validator/user.schemas';
 import { authenticateJWT } from '../middleware/auth';
 import { isAdmin } from '../middleware/admin';
+import multer from 'multer';
+import { validateImage } from '../middleware/image.middleware';
 
 const router = Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 // ##### PUBLIC #####
 
@@ -116,16 +119,20 @@ router.delete(
  *              properties:
  *                token:
  *                  type: string
+ *                  description: JWT token for authentication
  *                user:
  *                  type: object
  *                  properties:
  *                    username:
  *                      type: string
+ *                      description: User's username
  *                    email:
  *                      type: string
+ *                      description: User's email address
  *                    profilePicture:
  *                      type: string
  *                      nullable: true
+ *                      description: Signed URL for the user's profile picture (valid for 1 hour)
  *                    role:
  *                      $ref: '#/components/schemas/UserRole'
  *                    autonomousCommunity:
@@ -224,6 +231,108 @@ router.post(
   validateSchema(userRequestSchemas.requestUnblockSchema),
   userCont.requestUnblock,
 );
+
+/**
+ * @swagger
+ * /api/users/profile-picture:
+ *  post:
+ *    summary: Sube una foto de perfil para el usuario autenticado
+ *    security:
+ *      - bearerAuth: []
+ *    tags: [User]
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        multipart/form-data:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              image:
+ *                type: string
+ *                format: binary
+ *                description: Archivo de imagen de perfil (JPEG o PNG, máximo 2MB)
+ *    responses:
+ *      200:
+ *        description: Foto de perfil subida exitosamente
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                message:
+ *                  type: string
+ *                imageUrl:
+ *                  type: string
+ *      400:
+ *        description: Tipo o tamaño de archivo inválido
+ *      401:
+ *        description: Usuario no autenticado
+ *      500:
+ *        description: Error al subir la foto de perfil
+ */
+router.post(
+  '/profile-picture',
+  authenticateJWT(),
+  upload.single('image'),
+  validateImage,
+  userCont.uploadProfilePicture,
+);
+
+/**
+ * @swagger
+ * /api/users/profile-picture:
+ *  delete:
+ *    summary: Elimina la foto de perfil del usuario autenticado
+ *    security:
+ *      - bearerAuth: []
+ *    tags: [User]
+ *    responses:
+ *      200:
+ *        description: Foto de perfil eliminada exitosamente
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                message:
+ *                  type: string
+ *      401:
+ *        description: Usuario no autenticado
+ *      404:
+ *        description: No se encontró el usuario o no tiene foto de perfil
+ *      500:
+ *        description: Error al eliminar la foto de perfil
+ */
+router.delete('/profile-picture', authenticateJWT(), userCont.deleteProfilePicture);
+
+/**
+ * @swagger
+ * /api/users/refresh-images:
+ *  post:
+ *    summary: Refresh user profile images
+ *    security:
+ *      - bearerAuth: []
+ *    tags: [User]
+ *    responses:
+ *      200:
+ *        description: User images refreshed successfully
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                message:
+ *                  type: string
+ *                updatedImages:
+ *                  type: array
+ *                  items:
+ *                    type: string
+ *      401:
+ *        description: User not authenticated
+ *      500:
+ *        description: Error processing the request
+ */
+router.post('/refresh-images', authenticateJWT(), userCont.refreshUserImages);
 
 // ##### ADMIN #####
 

@@ -3,6 +3,8 @@ import { Types, Document } from 'mongoose';
 import logger from '../utils/logger';
 import bcrypt from 'bcrypt';
 import { genJWT, JWTPayload } from '../middleware/auth';
+import { S3Service } from '../services/s3.service';
+import sharp from 'sharp';
 
 // Definimos una interfaz para el usuario basada en el modelo
 interface UserDocument extends Document {
@@ -330,6 +332,11 @@ class UserService {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { passwordHash: loginPasswordHash, ...loginUserData } = loginUserResponse;
 
+      // Get signed URL for profile picture if it exists
+      if (user.profilePicture) {
+        loginUserData.profilePicture = await S3Service.getSignedUrl(user.profilePicture);
+      }
+
       logger.info(`User authenticated successfully: ${emailOrUsername}`);
       return { user: loginUserData as unknown as UserDocument, token };
     } catch (err) {
@@ -416,6 +423,99 @@ class UserService {
     } catch (err) {
       logger.error(`Error promoting user to admin: ${err}`);
       throw err;
+    }
+  }
+
+  /**
+   * Refreshes signed URLs for user profile pictures
+   * @param userIds Array of user IDs to refresh images for
+   * @returns Object containing user IDs mapped to their signed image URLs
+   */
+  async refreshUserImages(userIds: string[]): Promise<Record<string, string>> {
+    const images: Record<string, string> = {};
+
+    await Promise.all(
+      userIds.map(async (userId: string) => {
+        const user = await User.findById(userId);
+        if (user?.profilePicture) {
+          images[userId] = await S3Service.getSignedUrl(user.profilePicture);
+        }
+      }),
+    );
+
+    return images;
+  }
+
+  /**
+   * Uploads a profile picture for a user
+   * @param userId User ID
+   * @param file Image file
+   * @returns The S3 key of the uploaded image
+   */
+  async uploadProfilePicture(userId: string, file: Express.Multer.File): Promise<string> {
+    try {
+      logger.info(`Uploading profile picture for user: ${userId}`);
+
+      // Process image with sharp
+      const processedImageBuffer = await sharp(file.buffer)
+        .resize(500, 500, {
+          // Resize to 500x500
+          fit: 'cover', // Maintain aspect ratio and crop if necessary
+          position: 'center', // Center the crop
+        })
+        .jpeg({ quality: 80 }) // Convert to JPEG with 80% quality
+        .toBuffer();
+
+      const fileExtension = 'jpg'; // Always use jpg after processing
+      const key = S3Service.generateUserProfileKey(userId, fileExtension);
+
+      const s3Key = await S3Service.uploadFile(processedImageBuffer, key, 'image/jpeg');
+
+      const user = await User.findByIdAndUpdate(userId, { profilePicture: s3Key }, { new: true });
+
+      if (!user) {
+        logger.warn(`User not found: ${userId}`);
+        throw new Error('User not found');
+      }
+
+      logger.info(`Profile picture successfully uploaded for user: ${userId}`);
+      return s3Key;
+    } catch (error) {
+      logger.error(`Error uploading profile picture: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Deletes a user's profile picture
+   * @param userId User ID
+   * @returns true if successfully deleted, false if user not found
+   */
+  async deleteProfilePicture(userId: string): Promise<boolean> {
+    try {
+      logger.info(`Deleting profile picture for user: ${userId}`);
+
+      const user = await User.findById(userId);
+      if (!user) {
+        logger.warn(`User not found: ${userId}`);
+        return false;
+      }
+
+      if (!user.profilePicture) {
+        logger.warn(`User ${userId} has no profile picture to delete`);
+        return false;
+      }
+
+      await S3Service.deleteFile(user.profilePicture);
+
+      user.profilePicture = undefined;
+      await user.save();
+
+      logger.info(`Profile picture successfully deleted for user: ${userId}`);
+      return true;
+    } catch (error) {
+      logger.error(`Error deleting profile picture: ${error}`);
+      throw error;
     }
   }
 }

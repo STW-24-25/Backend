@@ -8,7 +8,7 @@ Parameters:
     Default: prod
 
 Resources:
-  # Grupo de Seguridad para el ALB
+  # Security Groups para Frontend VPC
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -30,8 +30,7 @@ Resources:
         - Key: Name
           Value: !Sub '${EnvironmentName}-ALB-SG'
 
-  # Grupo de Seguridad para instancias Frontend
-  FrontendSecurityGroup:
+  FrontendInstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Security group para las instancias Frontend
@@ -39,8 +38,8 @@ Resources:
         Fn::Sub: "${EnvironmentName}-Frontend-VPC-ID"
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
+          FromPort: 4321
+          ToPort: 4321
           SourceSecurityGroupId: !Ref ALBSecurityGroup
           Description: Acceso HTTP desde ALB
         - IpProtocol: tcp
@@ -50,27 +49,10 @@ Resources:
           Description: Acceso SSH para administracion
       Tags:
         - Key: Name
-          Value: !Sub '${EnvironmentName}-Frontend-SG'
+          Value: !Sub '${EnvironmentName}-Frontend-Instance-SG'
 
-  # Grupo de Seguridad para los NLBs
-  NLBSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Security group para los Network Load Balancers
-      VpcId: !ImportValue 
-        Fn::Sub: "${EnvironmentName}-Frontend-VPC-ID"
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 3000
-          ToPort: 3000
-          SourceSecurityGroupId: !Ref FrontendSecurityGroup
-          Description: Acceso desde Frontend a Backend
-      Tags:
-        - Key: Name
-          Value: !Sub '${EnvironmentName}-NLB-SG'
-
-  # Grupo de Seguridad para instancias Backend
-  BackendSecurityGroup:
+  # Security Groups para Backend VPC
+  BackendInstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Security group para las instancias Backend
@@ -82,7 +64,13 @@ Resources:
           ToPort: 3000
           CidrIp: !ImportValue 
             Fn::Sub: "${EnvironmentName}-Frontend-VPC-CIDR"
-          Description: Acceso desde NLBs
+          Description: Acceso desde Frontend VPC
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          CidrIp: !ImportValue 
+            Fn::Sub: "${EnvironmentName}-Backend-VPC-CIDR"
+          Description: Acceso interno a la VPC Backend
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
@@ -90,35 +78,7 @@ Resources:
           Description: Acceso SSH para administracion
       Tags:
         - Key: Name
-          Value: !Sub '${EnvironmentName}-Backend-SG'
-
-  # Regla para permitir que ALB acceda a Frontend
-  ALBToFrontendEgress:
-    Type: AWS::EC2::SecurityGroupEgress
-    DependsOn: 
-      - ALBSecurityGroup
-      - FrontendSecurityGroup
-    Properties:
-      GroupId: !Ref ALBSecurityGroup
-      IpProtocol: tcp
-      FromPort: 80
-      ToPort: 80
-      DestinationSecurityGroupId: !Ref FrontendSecurityGroup
-      Description: Trafico desde ALB hacia Frontend
-
-  # Regla para permitir que Frontend acceda a NLBs
-  FrontendToNLBEgress:
-    Type: AWS::EC2::SecurityGroupEgress
-    DependsOn: 
-      - FrontendSecurityGroup
-      - NLBSecurityGroup
-    Properties:
-      GroupId: !Ref FrontendSecurityGroup
-      IpProtocol: tcp
-      FromPort: 3000
-      ToPort: 3000
-      DestinationSecurityGroupId: !Ref NLBSecurityGroup
-      Description: Trafico desde Frontend hacia NLBs
+          Value: !Sub '${EnvironmentName}-Backend-Instance-SG'
 
 Outputs:
   ALBSecurityGroupId:
@@ -127,20 +87,14 @@ Outputs:
     Export:
       Name: !Sub '${EnvironmentName}-ALB-SecurityGroup'
 
-  FrontendSecurityGroupId:
-    Description: ID del Security Group de Frontend
-    Value: !Ref FrontendSecurityGroup
+  FrontendInstanceSecurityGroupId:
+    Description: ID del Security Group de instancias Frontend
+    Value: !Ref FrontendInstanceSecurityGroup
     Export:
-      Name: !Sub '${EnvironmentName}-Frontend-SecurityGroup'
+      Name: !Sub '${EnvironmentName}-Frontend-Instance-SecurityGroup'
 
-  NLBSecurityGroupId:
-    Description: ID del Security Group de los NLBs
-    Value: !Ref NLBSecurityGroup
+  BackendInstanceSecurityGroupId:
+    Description: ID del Security Group de instancias Backend
+    Value: !Ref BackendInstanceSecurityGroup
     Export:
-      Name: !Sub '${EnvironmentName}-NLB-SecurityGroup'
-
-  BackendSecurityGroupId:
-    Description: ID del Security Group de Backend
-    Value: !Ref BackendSecurityGroup
-    Export:
-      Name: !Sub '${EnvironmentName}-Backend-SecurityGroup' 
+      Name: !Sub '${EnvironmentName}-Backend-Instance-SecurityGroup' 

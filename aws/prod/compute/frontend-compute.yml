@@ -10,8 +10,9 @@ Parameters:
   FrontendInstanceType:
     Description: Tipo de instancia EC2 para Frontend
     Type: String
-    Default: t3.small
+    Default: t3.micro
     AllowedValues:
+      - t3.micro
       - t3.small
       - t3.medium
       - t3.large
@@ -60,6 +61,10 @@ Resources:
                   - ssm:GetParameter
                   - ssm:GetParameters
                   - ssm:GetParametersByPath
+                  - elasticloadbalancing:DescribeLoadBalancers
+                  - elasticloadbalancing:DescribeTargetGroups
+                  - elasticloadbalancing:DescribeTargetHealth
+                  - elasticloadbalancing:DescribeLoadBalancerAttributes
                 Resource: '*'
 
   FrontendInstanceProfile:
@@ -68,202 +73,339 @@ Resources:
       Roles:
         - !Ref FrontendInstanceRole
 
-  # Launch Template para instancias de Frontend
-  FrontendLaunchTemplate:
-    Type: AWS::EC2::LaunchTemplate
-    Properties:
-      LaunchTemplateName: !Sub ${EnvironmentName}-frontend-launch-template
-      VersionDescription: Initial version
-      LaunchTemplateData:
-        ImageId: !Ref LatestAmiId
-        InstanceType: !Ref FrontendInstanceType
-        KeyName: !Ref KeyName
-        SecurityGroupIds:
-          - !ImportValue 
-            Fn::Sub: "${EnvironmentName}-Frontend-SecurityGroup"
-        IamInstanceProfile:
-          Name: !Ref FrontendInstanceProfile
-        UserData:
-          Fn::Base64: !Sub |
-            #!/bin/bash -xe
-            # Configuración para Amazon Linux 2023
-            # Esperar a tener conexión con los repositorios antes de continuar
-            attempts=0
-            max_attempts=5
-            
-            until dnf list installed &> /dev/null || [ $attempts -eq $max_attempts ]
-            do
-              echo "Intento $((attempts+1))/$max_attempts para conectar con repositorios..."
-              sleep 10
-              attempts=$((attempts+1))
-            done
-            
-            if [ $attempts -eq $max_attempts ]; then
-              echo "No se pudo conectar con los repositorios. Continuando con la instalación sin actualizar."
-            else
-              dnf update -y
-            fi
-            
-            # Instalar dependencias necesarias
-            dnf install -y git nodejs npm jq aws-cli libcap
-
-            # Permitir que Node.js se vincule a puertos privilegiados sin ser root
-            setcap 'cap_net_bind_service=+ep' $(which node)
-            
-            # Instalar PM2 globalmente para gestionar el proceso
-            npm install -g pm2
-            
-            # Obtener el token de GitHub desde Secrets Manager
-            GITHUB_TOKEN=$(aws secretsmanager get-secret-value \
-              --secret-id ${EnvironmentName}-github-token \
-              --region ${AWS::Region} \
-              --query SecretString --output text)
-
-            # Configurar credenciales de Git para clonar repositorio
-            echo "Configurando credenciales de Git..."
-            export HOME=/home/ec2-user
-            git config --global credential.helper store
-            echo "https://oauth2:$GITHUB_TOKEN@github.com" > /home/ec2-user/.git-credentials
-            chown ec2-user:ec2-user /home/ec2-user/.git-credentials
-            chmod 600 /home/ec2-user/.git-credentials
-
-            # Instalar dependencias y configurar
-            cd /home/ec2-user
-            echo "Clonando repositorio con token..."
-            # Usar autenticación con token para clonar el repositorio
-            sudo -u ec2-user git clone https://oauth2:$GITHUB_TOKEN@github.com/STW-24-25/Frontend.git
-            cd Frontend
-            sudo -u ec2-user npm install
-
-            # Variable de instancia que será sustituida para cada instancia específica
-            INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
-            
-            # Configurar PM2 para iniciar con el sistema y ejecutar como ec2-user
-            pm2 startup -u ec2-user
-            env PATH=$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user
-            
-            # Crear un script para ver los logs fácilmente
-            cat > /usr/local/bin/check-frontend-logs << 'EOL'
-              #!/bin/bash
-              # Script para facilitar la revisión de logs
-              echo "===== PM2 Status ====="
-              su - ec2-user -c "pm2 status"
-              echo ""
-              echo "===== Frontend Logs ====="
-              echo "Últimas 50 líneas del log de salida:"
-              tail -n 50 /home/ec2-user/.pm2/logs/frontend-out.log
-              echo ""
-              echo "Últimas 50 líneas del log de error:"
-              tail -n 50 /home/ec2-user/.pm2/logs/frontend-error.log
-            EOL
-            chmod +x /usr/local/bin/check-frontend-logs
-            
-            # Limpieza de credenciales
-            rm /home/ec2-user/.git-credentials
-        TagSpecifications:
-          - ResourceType: instance
-            Tags:
-              - Key: Name
-                Value: !Sub ${EnvironmentName}-Frontend-Instance
-              - Key: Environment
-                Value: !Ref EnvironmentName
-
   # Frontend Instances en cada zona de disponibilidad
   FrontendInstance1:
     Type: AWS::EC2::Instance
     Properties:
-      LaunchTemplate:
-        LaunchTemplateId: !Ref FrontendLaunchTemplate
-        Version: !GetAtt FrontendLaunchTemplate.LatestVersionNumber
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref FrontendInstanceType
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !ImportValue 
+          Fn::Sub: "${EnvironmentName}-Frontend-Instance-SecurityGroup"
+      IamInstanceProfile: !Ref FrontendInstanceProfile
       SubnetId: !ImportValue 
         Fn::Sub: "${EnvironmentName}-Frontend-Public-Subnet-1-ID"
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
-          # Configurar variables de entorno específicas para instancia 1
-          cd /home/ec2-user/Frontend
+          # Configuración para Amazon Linux 2023
+          # Esperar a tener conexión con los repositorios antes de continuar
+          attempts=0
+          max_attempts=5
+          
+          until dnf list installed &> /dev/null || [ $attempts -eq $max_attempts ]
+          do
+            echo "Intento $((attempts+1))/$max_attempts para conectar con repositorios..."
+            sleep 10
+            attempts=$((attempts+1))
+          done
+          
+          if [ $attempts -eq $max_attempts ]; then
+            echo "No se pudo conectar con los repositorios. Continuando con la instalación sin actualizar."
+          else
+            dnf update -y
+          fi
+          
+          # Instalar dependencias necesarias
+          dnf install -y git nodejs npm jq aws-cli
+          
+          # Instalar PM2 globalmente para gestionar el proceso
+          npm install -g pm2
+          
+          # Obtener el token de GitHub desde Secrets Manager
+          GITHUB_TOKEN=$(aws secretsmanager get-secret-value \
+            --secret-id ${EnvironmentName}-github-token \
+            --region ${AWS::Region} \
+            --query SecretString --output text)
+
+          # Configurar credenciales de Git para clonar repositorio
+          echo "Configurando credenciales de Git..."
+          export HOME=/home/ec2-user
+          git config --global credential.helper store
+          echo "https://oauth2:$GITHUB_TOKEN@github.com" > /home/ec2-user/.git-credentials
+          chown ec2-user:ec2-user /home/ec2-user/.git-credentials
+          chmod 600 /home/ec2-user/.git-credentials
+
+          # Instalar dependencias y configurar
+          cd /home/ec2-user
+          echo "Clonando repositorio con token..."
+          # Usar autenticación con token para clonar el repositorio
+          sudo -u ec2-user git clone https://oauth2:$GITHUB_TOKEN@github.com/STW-24-25/Frontend.git
+          cd Frontend
           
           # Obtener el DNS del NLB1 desde SSM Parameter Store
           NLB1_DNS=$(aws ssm get-parameter --name /${EnvironmentName}/network/nlb1-dns --region ${AWS::Region} --query "Parameter.Value" --output text)
           
           cat > .env << EOL
-          PUBLIC_API_URL=http://$NLB1_DNS:80/api/
+          API_URL=http://$NLB1_DNS:3000/api
           PORT=4321
           EOL
           
-          # Construir la aplicación
-          sudo -u ec2-user npm run build
+          # Instalar dependencias
+          sudo -u ec2-user npm install
+          
+          # Crear configuración de PM2 para Astro
+          cat > ecosystem.config.cjs << 'EOL'
+          module.exports = {
+            apps: [{
+              name: 'frontend',
+              script: 'npm',
+              args: 'run dev',
+              env: {
+                HOST: '0.0.0.0',
+                PORT: 4321,
+                NODE_OPTIONS: '--dns-result-order=ipv4first --no-warnings',
+                UV_THREADPOOL_SIZE: 128,
+                UV_USE_IPV6: 0
+              }
+            }]
+          }
+          EOL
           
           # Iniciar con PM2 como usuario ec2-user
-          sudo -u ec2-user pm2 start npm --name "frontend" -- run start
+          sudo -u ec2-user pm2 delete all || true
+          sudo -u ec2-user pm2 start ecosystem.config.cjs
+          
+          # Configurar PM2 para iniciar con el sistema
+          pm2 startup -u ec2-user
+          env PATH=$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user
           sudo -u ec2-user pm2 save
+          
+          # Verificar que la aplicación está corriendo
+          sleep 10
+          sudo -u ec2-user pm2 status
+          sudo -u ec2-user pm2 logs frontend --lines 20
+          
+          # Limpiar credenciales después del despliegue
+          rm /home/ec2-user/.git-credentials
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-Frontend-Instance-1
+        - Key: Environment
+          Value: !Ref EnvironmentName
 
   FrontendInstance2:
     Type: AWS::EC2::Instance
     Properties:
-      LaunchTemplate:
-        LaunchTemplateId: !Ref FrontendLaunchTemplate
-        Version: !GetAtt FrontendLaunchTemplate.LatestVersionNumber
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref FrontendInstanceType
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !ImportValue 
+          Fn::Sub: "${EnvironmentName}-Frontend-Instance-SecurityGroup"
+      IamInstanceProfile: !Ref FrontendInstanceProfile
       SubnetId: !ImportValue 
         Fn::Sub: "${EnvironmentName}-Frontend-Public-Subnet-2-ID"
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
-          # Configurar variables de entorno específicas para instancia 2
-          cd /home/ec2-user/Frontend
+          # Configuración para Amazon Linux 2023
+          # Esperar a tener conexión con los repositorios antes de continuar
+          attempts=0
+          max_attempts=5
+          
+          until dnf list installed &> /dev/null || [ $attempts -eq $max_attempts ]
+          do
+            echo "Intento $((attempts+1))/$max_attempts para conectar con repositorios..."
+            sleep 10
+            attempts=$((attempts+1))
+          done
+          
+          if [ $attempts -eq $max_attempts ]; then
+            echo "No se pudo conectar con los repositorios. Continuando con la instalación sin actualizar."
+          else
+            dnf update -y
+          fi
+          
+          # Instalar dependencias necesarias
+          dnf install -y git nodejs npm jq aws-cli
+          
+          # Instalar PM2 globalmente para gestionar el proceso
+          npm install -g pm2
+          
+          # Obtener el token de GitHub desde Secrets Manager
+          GITHUB_TOKEN=$(aws secretsmanager get-secret-value \
+            --secret-id ${EnvironmentName}-github-token \
+            --region ${AWS::Region} \
+            --query SecretString --output text)
+
+          # Configurar credenciales de Git para clonar repositorio
+          echo "Configurando credenciales de Git..."
+          export HOME=/home/ec2-user
+          git config --global credential.helper store
+          echo "https://oauth2:$GITHUB_TOKEN@github.com" > /home/ec2-user/.git-credentials
+          chown ec2-user:ec2-user /home/ec2-user/.git-credentials
+          chmod 600 /home/ec2-user/.git-credentials
+
+          # Instalar dependencias y configurar
+          cd /home/ec2-user
+          echo "Clonando repositorio con token..."
+          # Usar autenticación con token para clonar el repositorio
+          sudo -u ec2-user git clone https://oauth2:$GITHUB_TOKEN@github.com/STW-24-25/Frontend.git
+          cd Frontend
           
           # Obtener el DNS del NLB2 desde SSM Parameter Store
           NLB2_DNS=$(aws ssm get-parameter --name /${EnvironmentName}/network/nlb2-dns --region ${AWS::Region} --query "Parameter.Value" --output text)
           
           cat > .env << EOL
-          PUBLIC_API_URL=http://$NLB2_DNS:80/api/
+          API_URL=http://$NLB2_DNS:3000/api
           PORT=4321
           EOL
           
-          # Construir la aplicación
-          sudo -u ec2-user npm run build
+          # Instalar dependencias
+          sudo -u ec2-user npm install
+          
+          # Crear configuración de PM2 para Astro
+          cat > ecosystem.config.cjs << 'EOL'
+          module.exports = {
+            apps: [{
+              name: 'frontend',
+              script: 'npm',
+              args: 'run dev',
+              env: {
+                HOST: '0.0.0.0',
+                PORT: 4321,
+                NODE_OPTIONS: '--dns-result-order=ipv4first --no-warnings',
+                UV_THREADPOOL_SIZE: 128,
+                UV_USE_IPV6: 0
+              }
+            }]
+          }
+          EOL
           
           # Iniciar con PM2 como usuario ec2-user
-          sudo -u ec2-user pm2 start npm --name "frontend" -- run start
+          sudo -u ec2-user pm2 delete all || true
+          sudo -u ec2-user pm2 start ecosystem.config.cjs
+          
+          # Configurar PM2 para iniciar con el sistema
+          pm2 startup -u ec2-user
+          env PATH=$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user
           sudo -u ec2-user pm2 save
+          
+          # Verificar que la aplicación está corriendo
+          sleep 10
+          sudo -u ec2-user pm2 status
+          sudo -u ec2-user pm2 logs frontend --lines 20
+          
+          # Limpiar credenciales después del despliegue
+          rm /home/ec2-user/.git-credentials
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-Frontend-Instance-2
+        - Key: Environment
+          Value: !Ref EnvironmentName
 
   FrontendInstance3:
     Type: AWS::EC2::Instance
     Properties:
-      LaunchTemplate:
-        LaunchTemplateId: !Ref FrontendLaunchTemplate
-        Version: !GetAtt FrontendLaunchTemplate.LatestVersionNumber
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref FrontendInstanceType
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !ImportValue 
+          Fn::Sub: "${EnvironmentName}-Frontend-Instance-SecurityGroup"
+      IamInstanceProfile: !Ref FrontendInstanceProfile
       SubnetId: !ImportValue 
         Fn::Sub: "${EnvironmentName}-Frontend-Public-Subnet-3-ID"
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
-          # Configurar variables de entorno específicas para instancia 3
-          cd /home/ec2-user/Frontend
+          # Configuración para Amazon Linux 2023
+          # Esperar a tener conexión con los repositorios antes de continuar
+          attempts=0
+          max_attempts=5
+          
+          until dnf list installed &> /dev/null || [ $attempts -eq $max_attempts ]
+          do
+            echo "Intento $((attempts+1))/$max_attempts para conectar con repositorios..."
+            sleep 10
+            attempts=$((attempts+1))
+          done
+          
+          if [ $attempts -eq $max_attempts ]; then
+            echo "No se pudo conectar con los repositorios. Continuando con la instalación sin actualizar."
+          else
+            dnf update -y
+          fi
+          
+          # Instalar dependencias necesarias
+          dnf install -y git nodejs npm jq aws-cli
+          
+          # Instalar PM2 globalmente para gestionar el proceso
+          npm install -g pm2
+          
+          # Obtener el token de GitHub desde Secrets Manager
+          GITHUB_TOKEN=$(aws secretsmanager get-secret-value \
+            --secret-id ${EnvironmentName}-github-token \
+            --region ${AWS::Region} \
+            --query SecretString --output text)
+
+          # Configurar credenciales de Git para clonar repositorio
+          echo "Configurando credenciales de Git..."
+          export HOME=/home/ec2-user
+          git config --global credential.helper store
+          echo "https://oauth2:$GITHUB_TOKEN@github.com" > /home/ec2-user/.git-credentials
+          chown ec2-user:ec2-user /home/ec2-user/.git-credentials
+          chmod 600 /home/ec2-user/.git-credentials
+
+          # Instalar dependencias y configurar
+          cd /home/ec2-user
+          echo "Clonando repositorio con token..."
+          # Usar autenticación con token para clonar el repositorio
+          sudo -u ec2-user git clone https://oauth2:$GITHUB_TOKEN@github.com/STW-24-25/Frontend.git
+          cd Frontend
           
           # Obtener el DNS del NLB3 desde SSM Parameter Store
           NLB3_DNS=$(aws ssm get-parameter --name /${EnvironmentName}/network/nlb3-dns --region ${AWS::Region} --query "Parameter.Value" --output text)
           
           cat > .env << EOL
-          PUBLIC_API_URL=http://$NLB3_DNS:80/api/
+          API_URL=http://$NLB3_DNS:3000/api
           PORT=4321
           EOL
           
-          # Construir la aplicación
-          sudo -u ec2-user npm run build
+          # Instalar dependencias
+          sudo -u ec2-user npm install
+          
+          # Crear configuración de PM2 para Astro
+          cat > ecosystem.config.cjs << 'EOL'
+          module.exports = {
+            apps: [{
+              name: 'frontend',
+              script: 'npm',
+              args: 'run dev',
+              env: {
+                HOST: '0.0.0.0',
+                PORT: 4321,
+                NODE_OPTIONS: '--dns-result-order=ipv4first --no-warnings',
+                UV_THREADPOOL_SIZE: 128,
+                UV_USE_IPV6: 0
+              }
+            }]
+          }
+          EOL
           
           # Iniciar con PM2 como usuario ec2-user
-          sudo -u ec2-user pm2 start npm --name "frontend" -- run start
+          sudo -u ec2-user pm2 delete all || true
+          sudo -u ec2-user pm2 start ecosystem.config.cjs
+          
+          # Configurar PM2 para iniciar con el sistema
+          pm2 startup -u ec2-user
+          env PATH=$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user
           sudo -u ec2-user pm2 save
+          
+          # Verificar que la aplicación está corriendo
+          sleep 10
+          sudo -u ec2-user pm2 status
+          sudo -u ec2-user pm2 logs frontend --lines 20
+          
+          # Limpiar credenciales después del despliegue
+          rm /home/ec2-user/.git-credentials
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-Frontend-Instance-3
+        - Key: Environment
+          Value: !Ref EnvironmentName
 
   # Registrar instancias en el Target Group existente
   FrontendTargetGroupAttachment1:
@@ -273,7 +415,7 @@ Resources:
       TargetGroupArn: !ImportValue 
         Fn::Sub: "${EnvironmentName}-Frontend-TG-ARN"
       TargetId: !Ref FrontendInstance1
-      Port: 80
+      Port: 4321
 
   FrontendTargetGroupAttachment2:
     Type: Custom::TargetGroupAttachment
@@ -282,7 +424,7 @@ Resources:
       TargetGroupArn: !ImportValue 
         Fn::Sub: "${EnvironmentName}-Frontend-TG-ARN"
       TargetId: !Ref FrontendInstance2
-      Port: 80
+      Port: 4321
 
   FrontendTargetGroupAttachment3:
     Type: Custom::TargetGroupAttachment
@@ -291,7 +433,7 @@ Resources:
       TargetGroupArn: !ImportValue 
         Fn::Sub: "${EnvironmentName}-Frontend-TG-ARN"
       TargetId: !Ref FrontendInstance3
-      Port: 80
+      Port: 4321
 
   # Lambda para registrar instancias en el target group
   TargetGroupAttachmentLambdaRole:
@@ -439,10 +581,4 @@ Outputs:
     Description: ID de la instancia Frontend 3
     Value: !Ref FrontendInstance3
     Export:
-      Name: !Sub "${EnvironmentName}-Frontend-Instance-3-ID"
-
-  FrontendLaunchTemplateId:
-    Description: ID de la Launch Template del Frontend
-    Value: !Ref FrontendLaunchTemplate
-    Export:
-      Name: !Sub "${EnvironmentName}-Frontend-LaunchTemplate-ID" 
+      Name: !Sub "${EnvironmentName}-Frontend-Instance-3-ID" 
