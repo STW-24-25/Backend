@@ -29,7 +29,6 @@ export const createForumSchema = z.object({
   body: z.object({
     title: z.string().min(3).max(100),
     description: z.string().max(500),
-    createdBy: z.string().refine(val => isValidObjectId(val)),
   }),
 });
 
