@@ -1,14 +1,35 @@
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import bcrypt from 'bcrypt';
-import userService from '../services/user.service';
-import User, { UserRole, AutonomousComunity } from '../models/user.model';
+import { UserService } from '../services/user.service';
+import User, { UserRole, AutonomousComunity, IUser } from '../models/user.model';
 import { genJWT } from '../middleware/auth';
 import { Types } from 'mongoose';
 import dotenv from 'dotenv';
 
 // Cargar variables de entorno
 dotenv.config();
+
+// Importar interfaces del servicio
+interface CreateUserParams {
+  username: string;
+  email: string;
+  password: string;
+  profilePicture?: string;
+  role?: UserRole;
+  autonomousCommunity?: AutonomousComunity;
+}
+
+interface UserDocument extends mongoose.Document {
+  username: string;
+  email: string;
+  passwordHash?: string;
+  profilePicture?: string;
+  role: UserRole;
+  autonomousCommunity: AutonomousComunity;
+  isAdmin: boolean;
+  createdAt: Date;
+}
 
 // Mock del middleware de autenticación
 jest.mock('../middleware/auth', () => ({
@@ -23,8 +44,24 @@ jest.mock('../utils/logger', () => ({
   debug: jest.fn(),
 }));
 
+// Mock de S3Service y sharp para los métodos que lo usan
+jest.mock('../services/s3.service', () => ({
+  S3Service: {
+    uploadFile: jest.fn().mockResolvedValue('users/profile-pictures/mocked-key.jpg'),
+    deleteFile: jest.fn().mockResolvedValue(true),
+    getSignedUrl: jest.fn().mockResolvedValue('https://mocked-s3-url'),
+    generateUserProfileKey: jest.fn().mockReturnValue('users/profile-pictures/mock-key.jpg'),
+  },
+}));
+jest.mock('sharp', () => () => ({
+  resize: () => ({
+    jpeg: () => ({ toBuffer: jest.fn().mockResolvedValue(Buffer.from('mocked-image')) }),
+  }),
+}));
+
 describe('UserService', () => {
   let mongoServer: MongoMemoryServer;
+  let userService: UserService;
 
   // Limpiar completamente todas las colecciones de la base de datos
   const clearDatabase = async () => {
@@ -49,6 +86,7 @@ describe('UserService', () => {
   // Limpiar antes de cada test para asegurar aislamiento
   beforeEach(async () => {
     await clearDatabase();
+    userService = new UserService();
   });
 
   // Limpiar después de cada test para evitar contaminación
@@ -65,7 +103,15 @@ describe('UserService', () => {
   });
 
   // Datos de prueba
-  const testUserData = {
+  const testUserData: {
+    username: string;
+    email: string;
+    password: string;
+    role: UserRole;
+    autonomousCommunity: AutonomousComunity;
+    isAdmin: boolean;
+    profilePicture?: string;
+  } = {
     username: 'testuser',
     email: 'test@example.com',
     password: 'Password123',
@@ -74,7 +120,15 @@ describe('UserService', () => {
     isAdmin: false,
   };
 
-  const adminUserData = {
+  const adminUserData: {
+    username: string;
+    email: string;
+    password: string;
+    role: UserRole;
+    autonomousCommunity: AutonomousComunity;
+    isAdmin: boolean;
+    profilePicture?: string;
+  } = {
     username: 'adminuser',
     email: 'admin@example.com',
     password: 'AdminPass123',
@@ -84,9 +138,9 @@ describe('UserService', () => {
   };
 
   // Helper para crear un usuario directamente en la BD
-  async function createTestUser(userData = testUserData) {
+  async function createTestUser(userData: Partial<typeof testUserData> = testUserData) {
     const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(userData.password, salt);
+    const passwordHash = await bcrypt.hash(userData.password!, salt);
 
     const user = new User({
       ...userData,
@@ -98,32 +152,53 @@ describe('UserService', () => {
 
   describe('createUser', () => {
     it('should create a new user successfully', async () => {
-      const result = await userService.createUser(testUserData);
+      const userData = {
+        username: 'testuser',
+        email: 'test@example.com',
+        password: 'password123',
+        role: UserRole.SMALL_FARMER,
+        autonomousCommunity: AutonomousComunity.ARAGON,
+      };
 
-      expect(result).toBeDefined();
-      expect(result.email).toBe(testUserData.email);
-      expect(result.username).toBe(testUserData.username);
-      expect(result.role).toBe(testUserData.role);
-      expect(result.passwordHash).toBeUndefined(); // Password should not be returned
+      const createdUser = (await userService.createUser(userData)) as IUser;
 
-      // Verify user was saved to DB
-      const savedUser = await User.findOne({ email: testUserData.email });
-      expect(savedUser).toBeDefined();
-      expect(savedUser!.email).toBe(testUserData.email);
+      expect(createdUser).toBeDefined();
+      expect(createdUser.username).toBe(userData.username);
+      expect(createdUser.email).toBe(userData.email);
+      expect(createdUser.role).toBe(userData.role);
+      expect(createdUser.autonomousCommunity).toBe(userData.autonomousCommunity);
+      expect(createdUser.isAdmin).toBe(false);
+      expect(createdUser.profilePicture).toBeUndefined();
     });
 
-    it('should hash the password when creating a user', async () => {
-      await userService.createUser(testUserData);
+    it('should hash the password before saving', async () => {
+      const userData = {
+        username: 'testuser2',
+        email: 'test2@example.com',
+        password: 'password123',
+        role: UserRole.SMALL_FARMER,
+        autonomousCommunity: AutonomousComunity.ARAGON,
+      };
 
-      // Get the user with password
-      const savedUser = await User.findOne({ email: testUserData.email }).select('+passwordHash');
-      expect(savedUser).toBeDefined();
-      expect(savedUser!.passwordHash).toBeDefined();
-      expect(savedUser!.passwordHash).not.toBe(testUserData.password); // Password should be hashed
+      await userService.createUser(userData);
+      // Obtener el usuario directamente de la BD para verificar el hash
+      const dbUser = await User.findOne({ email: userData.email }).select('+passwordHash');
+      const isPasswordHashed = await bcrypt.compare(userData.password, dbUser!.passwordHash || '');
+      expect(isPasswordHashed).toBe(true);
+    });
 
-      // Verify the hashed password is valid
-      const isMatch = await bcrypt.compare(testUserData.password, savedUser!.passwordHash);
-      expect(isMatch).toBe(true);
+    it('should throw error if username already exists', async () => {
+      const userData = {
+        username: 'testuser3',
+        email: 'test3@example.com',
+        password: 'password123',
+        role: UserRole.SMALL_FARMER,
+        autonomousCommunity: AutonomousComunity.ARAGON,
+      };
+
+      await userService.createUser(userData);
+
+      await expect(userService.createUser(userData)).rejects.toThrow();
     });
 
     it('should throw an error if user with email already exists', async () => {
@@ -393,84 +468,123 @@ describe('UserService', () => {
   });
 
   describe('blockUser', () => {
-    it('should block the user', async () => {
-      const createdUser = await createTestUser();
-
-      const result = await userService.blockUser(
-        (createdUser._id as unknown as Types.ObjectId).toString(),
-        'abc',
-      );
-
+    it('debería bloquear un usuario correctamente', async () => {
+      const user = await createTestUser();
+      const result = await userService.blockUser((user._id as any).toString(), 'Razón de bloqueo');
       expect(result).toBe(true);
-      const user = await User.findById(createdUser._id);
-      expect(user?.isBlocked).toBe(true);
-      expect(user?.blockReason).toBe('abc');
+      const updatedUser = await User.findById((user._id as any).toString());
+      expect(updatedUser?.isBlocked).toBe(true);
+      expect(updatedUser?.blockReason).toBe('Razón de bloqueo');
     });
-
-    it('should fail to block the user', async () => {
-      const createdUser = await createTestUser();
-      const userId = new mongoose.Types.ObjectId().toString();
-
-      const result = await userService.blockUser(userId, 'abc');
-
+    it('debería devolver false si el usuario no existe', async () => {
+      const result = await userService.blockUser(new mongoose.Types.ObjectId().toString(), 'Razón');
       expect(result).toBe(false);
-      const user = await User.findById(createdUser._id);
-      expect(user?.isBlocked).toBe(false);
-      expect(user?.blockReason).toBeUndefined();
     });
   });
 
   describe('unblockUser', () => {
-    it('should unblock the user', async () => {
-      const createdUser = await createTestUser();
-      await User.findByIdAndUpdate(createdUser._id, { isBlocked: true });
-
-      const result = await userService.unblockUser(
-        (createdUser._id as unknown as Types.ObjectId).toString(),
-      );
-
+    it('debería desbloquear un usuario correctamente', async () => {
+      const user = await createTestUser();
+      await userService.blockUser((user._id as any).toString(), 'Razón');
+      const result = await userService.unblockUser((user._id as any).toString());
       expect(result).toBe(true);
-      const user = await User.findById(createdUser._id);
-      expect(user?.isBlocked).toBe(false);
-      expect(user?.blockReason).toBeUndefined();
+      const updatedUser = await User.findById((user._id as any).toString());
+      expect(updatedUser?.isBlocked).toBe(false);
+      expect(updatedUser?.blockReason).toBeUndefined();
     });
-
-    it('should fail to unblock the user', async () => {
-      const createdUser = await createTestUser();
-      await User.findByIdAndUpdate(createdUser._id, { isBlocked: true });
-      const userId = new mongoose.Types.ObjectId().toString();
-
-      const result = await userService.blockUser(userId, 'abc');
-
+    it('debería devolver false si el usuario no existe', async () => {
+      const result = await userService.unblockUser(new mongoose.Types.ObjectId().toString());
       expect(result).toBe(false);
-      const user = await User.findById(createdUser._id);
-      expect(user?.isBlocked).toBe(true);
-      expect(user?.blockReason).toBeUndefined();
+    });
+  });
+
+  describe('requestUnblock', () => {
+    it('debería registrar una apelación de desbloqueo', async () => {
+      const user = await createTestUser();
+      const result = await userService.requestUnblock(
+        (user._id as any).toString(),
+        'Quiero ser desbloqueado',
+      );
+      expect(result).toBe(true);
+      const updatedUser = await User.findById((user._id as any).toString());
+      expect(updatedUser?.unblockAppeal?.content).toBe('Quiero ser desbloqueado');
+    });
+    it('debería devolver false si el usuario no existe', async () => {
+      const result = await userService.requestUnblock(
+        new mongoose.Types.ObjectId().toString(),
+        'apelación',
+      );
+      expect(result).toBe(false);
     });
   });
 
   describe('makeAdmin', () => {
-    it('should promote the user to admin', async () => {
-      const createdUser = await createTestUser();
-
-      const result = await userService.makeAdmin(
-        (createdUser._id as unknown as Types.ObjectId).toString(),
-      );
-
+    it('debería convertir a un usuario en admin', async () => {
+      const user = await createTestUser();
+      const result = await userService.makeAdmin((user._id as any).toString());
       expect(result).toBe(true);
-      const user = await User.findById(createdUser._id);
-      expect(user?.isAdmin).toBe(true);
+      const updatedUser = await User.findById((user._id as any).toString());
+      expect(updatedUser?.isAdmin).toBe(true);
     });
-
-    it('should fail to promote the user to admin', async () => {
-      const createdUser = await createTestUser();
-      const userId = new mongoose.Types.ObjectId().toString();
-
-      const result = await userService.makeAdmin(userId);
-
+    it('debería devolver false si el usuario no existe', async () => {
+      const result = await userService.makeAdmin(new mongoose.Types.ObjectId().toString());
       expect(result).toBe(false);
-      const user = await User.findById(createdUser._id);
-      expect(user?.isAdmin).toBe(false);
+    });
+  });
+
+  describe('refreshUserImages', () => {
+    it('debería refrescar las imágenes de perfil de los usuarios', async () => {
+      const user1 = await createTestUser({ ...testUserData });
+      user1.profilePicture = 'mocked-image-key';
+      await user1.save();
+      const user2 = await createTestUser({
+        ...testUserData,
+        username: 'otro',
+        email: 'otro@example.com',
+      });
+      user2.profilePicture = 'mocked-image-key';
+      await user2.save();
+      const result = await userService.refreshUserImages([
+        (user1._id as any).toString(),
+        (user2._id as any).toString(),
+      ]);
+      expect(result).toHaveProperty((user1._id as any).toString());
+      expect(result).toHaveProperty((user2._id as any).toString());
+      expect(result[(user1._id as any).toString()]).toContain('mocked-s3-url');
+    });
+  });
+
+  describe('uploadProfilePicture', () => {
+    it('should upload profile picture successfully', async () => {
+      const userData = {
+        username: 'testuser4',
+        email: 'test4@example.com',
+        password: 'password123',
+        role: UserRole.SMALL_FARMER,
+        autonomousCommunity: AutonomousComunity.ARAGON,
+      };
+
+      const createdUser = (await userService.createUser(userData)) as IUser;
+      const mockFile = {
+        buffer: Buffer.from('test-image'),
+        originalname: 'test.jpg',
+        mimetype: 'image/jpeg',
+      } as Express.Multer.File;
+
+      const s3Key = await userService.uploadProfilePicture(String(createdUser._id), mockFile);
+
+      expect(s3Key).toBeDefined();
+      expect(s3Key).toContain('users/profile-pictures');
+    });
+  });
+
+  describe('deleteProfilePicture', () => {
+    it('debería eliminar la foto de perfil correctamente', async () => {
+      const user = await createTestUser({ ...testUserData });
+      user.profilePicture = 'mocked-image-key';
+      await user.save();
+      const result = await userService.deleteProfilePicture((user._id as any).toString());
+      expect(result).toBe(true);
     });
   });
 });

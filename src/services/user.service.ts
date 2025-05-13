@@ -398,8 +398,14 @@ class UserService {
    */
   async requestUnblock(userId: string, appeal: string): Promise<boolean> {
     try {
-      const result = await User.findByIdAndUpdate(userId, { $set: { unblockAppeal: appeal } });
-
+      const result = await User.findByIdAndUpdate(userId, {
+        $set: {
+          unblockAppeal: {
+            content: appeal,
+            createdAt: new Date(),
+          },
+        },
+      });
       if (!result) {
         logger.warn(`Failed to unblock user with id ${userId}`);
         return false;
@@ -411,6 +417,11 @@ class UserService {
     }
   }
 
+  /**
+   * Promotes a user to admin role
+   * @param userId The user ID to promote
+   * @returns True if the user was successfully promoted, false otherwise
+   */
   async makeAdmin(userId: string): Promise<boolean> {
     try {
       const result = await User.findByIdAndUpdate(userId, { $set: { isAdmin: true } });
@@ -520,4 +531,5 @@ class UserService {
   }
 }
 
+export { UserService };
 export default new UserService();
