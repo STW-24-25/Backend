@@ -28,11 +28,6 @@ function setupForumSockets(io: Server) {
         // Room has id of the forum
         socket.join(forum);
         logger.info(`User ${socket.id} joined forum ${forum}`);
-
-        const messages = await MessageModel.find({ forum: forum })
-          .sort({ createdAt: 1 })
-          .populate('author');
-        socket.emit('messageHistory', messages);
       } catch (err) {
         logger.error(`Invalid forumId ${err} from ${socket.id}`);
         socket.emit('error', 'Invalid forumId');
@@ -68,7 +63,7 @@ function setupForumSockets(io: Server) {
           );
 
           io.to(validatedData.forum).emit('newMessage', populatedNewMessage);
-          io.to(ADMIN_UPDATES_ROOM).emit('newMessage', populatedNewMessage?.id);
+          io.to(ADMIN_UPDATES_ROOM).emit('newMessage', populatedNewMessage);
           logger.info(`Message posted in forum ${data.forum}: ${data.content} by ${data.author}`);
         } catch (err) {
           logger.error(`Error posting message: ${err} from ${socket.id}`);

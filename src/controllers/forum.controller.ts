@@ -14,7 +14,7 @@ export const createForum = async (req: Request, res: Response): Promise<void> =>
     const forumData = {
       title: req.body.title,
       description: req.body.description,
-      createdBy: req.body.createdBy,
+      createdBy: req.auth!.id,
     };
 
     const forum = await forumService.createForum(forumData);

@@ -3,7 +3,9 @@ import logger from '../utils/logger';
 
 class MessageService {
   async getMessagesByForumId(forumId: string): Promise<IMessage | null> {
-    return await MessageModel.find({ forum: forumId }).lean<IMessage>();
+    return await MessageModel.find({ forum: forumId })
+      .populate({ path: 'author', select: '-passwordHash -loginHistory -parcels' })
+      .lean<IMessage>();
   }
 
   async getAllMessages(

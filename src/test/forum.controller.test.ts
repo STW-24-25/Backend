@@ -3,6 +3,7 @@ import * as forumController from '../controllers/forum.controller';
 import forumService from '../services/forum.service';
 import { Types } from 'mongoose';
 import messageService from '../services/message.service';
+import { UserRole } from '../models/user.model';
 
 // Mock the forum service
 jest.mock('../services/forum.service', () => ({
@@ -70,11 +71,20 @@ describe('Forum Controller', () => {
     messages: [],
   };
 
+  const mockAuthData = {
+    id: mockUserId,
+    username: 'Test username',
+    email: 'Test email',
+    role: UserRole.EXPERT,
+    isAdmin: false,
+  };
+
   describe('createForum', () => {
     it('should create a forum and return 201 status', async () => {
       // Arrange
       mockRequest = {
         body: mockForumData,
+        auth: mockAuthData,
       };
 
       (forumService.createForum as jest.Mock).mockResolvedValue(mockForumResponse);
@@ -95,6 +105,7 @@ describe('Forum Controller', () => {
       // Arrange
       mockRequest = {
         body: mockForumData,
+        auth: mockAuthData,
       };
 
       const errorMessage = 'Database error';

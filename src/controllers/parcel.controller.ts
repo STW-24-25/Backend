@@ -1,7 +1,6 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import parcelService from '../services/parcel.service';
 import logger from '../utils/logger';
-import { AuthRequest } from '../types/auth';
 
 /**
  * Gets parcel information based on coordinates.
@@ -9,15 +8,10 @@ import { AuthRequest } from '../types/auth';
  * @param res Response object, will have 200 with parcel data if found, 404 if not found, or 500 if an error occurred.
  * @returns Promise<void>
  */
-export const getParcel = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getParcel = async (req: Request, res: Response): Promise<void> => {
   try {
     // Get user ID from headers
-    const userId = req.auth?.id;
-    logger.info(`User ID: ${userId}`);
-    if (!userId) {
-      res.status(401).json({ message: 'Authentication required' });
-      return;
-    }
+    const userId = req.auth!.id;
 
     // Get coordinates from query parameters
     const lng = parseFloat(req.query.lng as string);
@@ -52,15 +46,9 @@ export const getParcel = async (req: AuthRequest, res: Response): Promise<void> 
  * @param res Response object, will have 201 if created, 400 if invalid data, or 500 if an error occurred.
  * @returns Promise<void>
  */
-export const createParcel = async (req: AuthRequest, res: Response): Promise<void> => {
+export const createParcel = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Get user ID from headers
-    const userId = req.auth?.id;
-    logger.info(`Auth data: ${req.auth?.id}`);
-    if (!userId) {
-      res.status(401).json({ message: 'Authentication required' });
-      return;
-    }
+    const userId = req.auth!.id;
 
     // Add user ID to parcel data
     const parcelData = {
@@ -86,15 +74,10 @@ export const createParcel = async (req: AuthRequest, res: Response): Promise<voi
  * @returns Promise<void>
  */
 
-export const getParcels = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getParcels = async (req: Request, res: Response): Promise<void> => {
   try {
     // Get user ID from headers
-    const userId = req.auth?.id;
-    logger.info(`Auth data: ${req.auth?.id}`);
-    if (!userId) {
-      res.status(401).json({ message: 'Authentication required' });
-      return;
-    }
+    const userId = req.auth!.id;
 
     // Get parcels for the user
     const parcels = await parcelService.getAllParcels(userId);

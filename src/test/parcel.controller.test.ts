@@ -1,19 +1,9 @@
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
 import * as parcelController from '../controllers/parcel.controller';
 import parcelService from '../services/parcel.service';
 import { Request, Response } from 'express';
 
 // Mock auth interface
-interface AuthRequest extends Request {
-  auth?: {
-    id: string;
-    username?: string;
-    email?: string;
-    role?: string;
-    isAdmin?: boolean;
-  };
-}
 
 // Mock the parcel service
 jest.mock('../services/parcel.service', () => ({
@@ -67,14 +57,14 @@ describe('ParcelController', () => {
   };
 
   // Create mock request and response objects
-  const mockRequest = (data: any = {}): Request | AuthRequest => {
+  const mockRequest = (data: any = {}): Request => {
     const req: Partial<Request> = {};
     req.body = data.body || {};
     req.params = data.params || {};
     req.query = data.query || {};
 
     if (data.user) {
-      (req as Partial<AuthRequest>).auth = {
+      (req as Partial<Request>).auth = {
         id: data.user.id,
         username: data.user.username,
         email: data.user.email,
@@ -98,21 +88,11 @@ describe('ParcelController', () => {
   });
 
   describe('getParcel', () => {
-    it('should return 401 if user is not authenticated', async () => {
-      const req = mockRequest() as AuthRequest;
-      const res = mockResponse();
-
-      await parcelController.getParcel(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Authentication required' });
-    });
-
     it('should return 400 if coordinates are invalid', async () => {
       const req = mockRequest({
         user: { id: userId },
         query: { lng: 'invalid', lat: 'invalid' },
-      }) as AuthRequest;
+      });
       const res = mockResponse();
 
       await parcelController.getParcel(req, res);
@@ -127,7 +107,7 @@ describe('ParcelController', () => {
       const req = mockRequest({
         user: { id: userId },
         query: { lng: mockCoordinates.lng.toString(), lat: mockCoordinates.lat.toString() },
-      }) as AuthRequest;
+      });
       const res = mockResponse();
 
       // Mock the service response
@@ -152,7 +132,7 @@ describe('ParcelController', () => {
       const req = mockRequest({
         user: { id: userId },
         query: { lng: mockCoordinates.lng.toString(), lat: mockCoordinates.lat.toString() },
-      }) as AuthRequest;
+      });
       const res = mockResponse();
 
       // Mock service to throw "No parcel found" error
@@ -172,7 +152,7 @@ describe('ParcelController', () => {
       const req = mockRequest({
         user: { id: userId },
         query: { lng: mockCoordinates.lng.toString(), lat: mockCoordinates.lat.toString() },
-      }) as AuthRequest;
+      });
       const res = mockResponse();
 
       // Mock service to throw a generic error
@@ -191,16 +171,6 @@ describe('ParcelController', () => {
   });
 
   describe('createParcel', () => {
-    it('should return 401 if user is not authenticated', async () => {
-      const req = mockRequest() as AuthRequest;
-      const res = mockResponse();
-
-      await parcelController.createParcel(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Authentication required' });
-    });
-
     it('should create a parcel and return 201', async () => {
       const parcelData = {
         size: 'Mediana',
@@ -219,7 +189,7 @@ describe('ParcelController', () => {
       const req = mockRequest({
         user: { id: userId },
         body: parcelData,
-      }) as AuthRequest;
+      });
       const res = mockResponse();
 
       // Mock service response
@@ -242,7 +212,7 @@ describe('ParcelController', () => {
       const req = mockRequest({
         user: { id: userId },
         body: { size: 'Mediana' }, // Incomplete data
-      }) as AuthRequest;
+      });
       const res = mockResponse();
 
       // Mock service to throw an error

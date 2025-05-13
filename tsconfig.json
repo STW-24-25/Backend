@@ -116,6 +116,9 @@
     "skipDefaultLibCheck": true /* Skip type checking .d.ts files that are included with TypeScript. */,
     "skipLibCheck": true /* Skip type checking all .d.ts files. */
   },
+  "ts-node": {
+    "files": true
+  },
   "include": ["src/**/*", "test/**/*", "src/types/**/*.d.ts", "jest.config.js"],
   "exclude": ["node_modules", "**/*babel__traverse*"]
 }

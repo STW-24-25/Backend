@@ -1,12 +1,11 @@
-import { NextFunction, Response } from 'express';
-import { AuthRequest } from '../types/auth';
+import { NextFunction, Request, Response } from 'express';
 import logger from '../utils/logger';
 
 /**
  * Middleware factory that returns a function to check if the authenticated user is an admin.
  * @returns Express middleware function
  */
-export const isAdmin = () => (req: AuthRequest, res: Response, next: NextFunction) => {
+export const isAdmin = () => (req: Request, res: Response, next: NextFunction) => {
   if (!req.auth) {
     logger.warn('Admin check failed: No authentication data found');
     res.status(401).json({ message: 'Authentication required' });
