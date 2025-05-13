@@ -119,6 +119,6 @@
   "ts-node": {
     "files": true
   },
-  "include": ["src/**/*", "test/**/*", "src/types/**/*.d.ts"],
+  "include": ["src/**/*", "test/**/*", "src/types/**/*.d.ts", "jest.config.js"],
   "exclude": ["node_modules", "**/*babel__traverse*"]
 }

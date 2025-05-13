@@ -1,0 +1,584 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Configuración de recursos de cómputo para Frontend - AgroNet 2025'
+
+Parameters:
+  EnvironmentName:
+    Description: Nombre del entorno
+    Type: String
+    Default: prod
+
+  FrontendInstanceType:
+    Description: Tipo de instancia EC2 para Frontend
+    Type: String
+    Default: t3.micro
+    AllowedValues:
+      - t3.micro
+      - t3.small
+      - t3.medium
+      - t3.large
+
+  KeyName:
+    Description: Nombre del Key Pair de EC2 para acceso SSH
+    Type: AWS::EC2::KeyPair::KeyName
+
+  LatestAmiId:
+    Description: AMI para instancias de Frontend (Amazon Linux 2023)
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64
+    
+  GitHubToken:
+    Description: GitHub fine-grained personal access token para acceder a repositorios
+    Type: String
+    Default: "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"
+    NoEcho: true
+
+Resources:
+  # IAM Role para permitir a las instancias obtener acceso a S3/ECR
+  FrontendInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+      Policies:
+        - PolicyName: !Sub ${EnvironmentName}-frontend-instance-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - secretsmanager:GetSecretValue
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                  - ssm:GetParametersByPath
+                  - elasticloadbalancing:DescribeLoadBalancers
+                  - elasticloadbalancing:DescribeTargetGroups
+                  - elasticloadbalancing:DescribeTargetHealth
+                  - elasticloadbalancing:DescribeLoadBalancerAttributes
+                Resource: '*'
+
+  FrontendInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref FrontendInstanceRole
+
+  # Frontend Instances en cada zona de disponibilidad
+  FrontendInstance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref FrontendInstanceType
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !ImportValue 
+          Fn::Sub: "${EnvironmentName}-Frontend-Instance-SecurityGroup"
+      IamInstanceProfile: !Ref FrontendInstanceProfile
+      SubnetId: !ImportValue 
+        Fn::Sub: "${EnvironmentName}-Frontend-Public-Subnet-1-ID"
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          # Configuración para Amazon Linux 2023
+          # Esperar a tener conexión con los repositorios antes de continuar
+          attempts=0
+          max_attempts=5
+          
+          until dnf list installed &> /dev/null || [ $attempts -eq $max_attempts ]
+          do
+            echo "Intento $((attempts+1))/$max_attempts para conectar con repositorios..."
+            sleep 10
+            attempts=$((attempts+1))
+          done
+          
+          if [ $attempts -eq $max_attempts ]; then
+            echo "No se pudo conectar con los repositorios. Continuando con la instalación sin actualizar."
+          else
+            dnf update -y
+          fi
+          
+          # Instalar dependencias necesarias
+          dnf install -y git nodejs npm jq aws-cli
+          
+          # Instalar PM2 globalmente para gestionar el proceso
+          npm install -g pm2
+          
+          # Obtener el token de GitHub desde Secrets Manager
+          GITHUB_TOKEN=$(aws secretsmanager get-secret-value \
+            --secret-id ${EnvironmentName}-github-token \
+            --region ${AWS::Region} \
+            --query SecretString --output text)
+
+          # Configurar credenciales de Git para clonar repositorio
+          echo "Configurando credenciales de Git..."
+          export HOME=/home/ec2-user
+          git config --global credential.helper store
+          echo "https://oauth2:$GITHUB_TOKEN@github.com" > /home/ec2-user/.git-credentials
+          chown ec2-user:ec2-user /home/ec2-user/.git-credentials
+          chmod 600 /home/ec2-user/.git-credentials
+
+          # Instalar dependencias y configurar
+          cd /home/ec2-user
+          echo "Clonando repositorio con token..."
+          # Usar autenticación con token para clonar el repositorio
+          sudo -u ec2-user git clone https://oauth2:$GITHUB_TOKEN@github.com/STW-24-25/Frontend.git
+          cd Frontend
+          
+          # Obtener el DNS del NLB1 desde SSM Parameter Store
+          NLB1_DNS=$(aws ssm get-parameter --name /${EnvironmentName}/network/nlb1-dns --region ${AWS::Region} --query "Parameter.Value" --output text)
+          
+          cat > .env << EOL
+          API_URL=http://$NLB1_DNS:3000/api
+          PORT=4321
+          EOL
+          
+          # Instalar dependencias
+          sudo -u ec2-user npm install
+          
+          # Crear configuración de PM2 para Astro
+          cat > ecosystem.config.cjs << 'EOL'
+          module.exports = {
+            apps: [{
+              name: 'frontend',
+              script: 'npm',
+              args: 'run dev',
+              env: {
+                HOST: '0.0.0.0',
+                PORT: 4321,
+                NODE_OPTIONS: '--dns-result-order=ipv4first --no-warnings',
+                UV_THREADPOOL_SIZE: 128,
+                UV_USE_IPV6: 0
+              }
+            }]
+          }
+          EOL
+          
+          # Iniciar con PM2 como usuario ec2-user
+          sudo -u ec2-user pm2 delete all || true
+          sudo -u ec2-user pm2 start ecosystem.config.cjs
+          
+          # Configurar PM2 para iniciar con el sistema
+          pm2 startup -u ec2-user
+          env PATH=$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user
+          sudo -u ec2-user pm2 save
+          
+          # Verificar que la aplicación está corriendo
+          sleep 10
+          sudo -u ec2-user pm2 status
+          sudo -u ec2-user pm2 logs frontend --lines 20
+          
+          # Limpiar credenciales después del despliegue
+          rm /home/ec2-user/.git-credentials
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-Frontend-Instance-1
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  FrontendInstance2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref FrontendInstanceType
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !ImportValue 
+          Fn::Sub: "${EnvironmentName}-Frontend-Instance-SecurityGroup"
+      IamInstanceProfile: !Ref FrontendInstanceProfile
+      SubnetId: !ImportValue 
+        Fn::Sub: "${EnvironmentName}-Frontend-Public-Subnet-2-ID"
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          # Configuración para Amazon Linux 2023
+          # Esperar a tener conexión con los repositorios antes de continuar
+          attempts=0
+          max_attempts=5
+          
+          until dnf list installed &> /dev/null || [ $attempts -eq $max_attempts ]
+          do
+            echo "Intento $((attempts+1))/$max_attempts para conectar con repositorios..."
+            sleep 10
+            attempts=$((attempts+1))
+          done
+          
+          if [ $attempts -eq $max_attempts ]; then
+            echo "No se pudo conectar con los repositorios. Continuando con la instalación sin actualizar."
+          else
+            dnf update -y
+          fi
+          
+          # Instalar dependencias necesarias
+          dnf install -y git nodejs npm jq aws-cli
+          
+          # Instalar PM2 globalmente para gestionar el proceso
+          npm install -g pm2
+          
+          # Obtener el token de GitHub desde Secrets Manager
+          GITHUB_TOKEN=$(aws secretsmanager get-secret-value \
+            --secret-id ${EnvironmentName}-github-token \
+            --region ${AWS::Region} \
+            --query SecretString --output text)
+
+          # Configurar credenciales de Git para clonar repositorio
+          echo "Configurando credenciales de Git..."
+          export HOME=/home/ec2-user
+          git config --global credential.helper store
+          echo "https://oauth2:$GITHUB_TOKEN@github.com" > /home/ec2-user/.git-credentials
+          chown ec2-user:ec2-user /home/ec2-user/.git-credentials
+          chmod 600 /home/ec2-user/.git-credentials
+
+          # Instalar dependencias y configurar
+          cd /home/ec2-user
+          echo "Clonando repositorio con token..."
+          # Usar autenticación con token para clonar el repositorio
+          sudo -u ec2-user git clone https://oauth2:$GITHUB_TOKEN@github.com/STW-24-25/Frontend.git
+          cd Frontend
+          
+          # Obtener el DNS del NLB2 desde SSM Parameter Store
+          NLB2_DNS=$(aws ssm get-parameter --name /${EnvironmentName}/network/nlb2-dns --region ${AWS::Region} --query "Parameter.Value" --output text)
+          
+          cat > .env << EOL
+          API_URL=http://$NLB2_DNS:3000/api
+          PORT=4321
+          EOL
+          
+          # Instalar dependencias
+          sudo -u ec2-user npm install
+          
+          # Crear configuración de PM2 para Astro
+          cat > ecosystem.config.cjs << 'EOL'
+          module.exports = {
+            apps: [{
+              name: 'frontend',
+              script: 'npm',
+              args: 'run dev',
+              env: {
+                HOST: '0.0.0.0',
+                PORT: 4321,
+                NODE_OPTIONS: '--dns-result-order=ipv4first --no-warnings',
+                UV_THREADPOOL_SIZE: 128,
+                UV_USE_IPV6: 0
+              }
+            }]
+          }
+          EOL
+          
+          # Iniciar con PM2 como usuario ec2-user
+          sudo -u ec2-user pm2 delete all || true
+          sudo -u ec2-user pm2 start ecosystem.config.cjs
+          
+          # Configurar PM2 para iniciar con el sistema
+          pm2 startup -u ec2-user
+          env PATH=$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user
+          sudo -u ec2-user pm2 save
+          
+          # Verificar que la aplicación está corriendo
+          sleep 10
+          sudo -u ec2-user pm2 status
+          sudo -u ec2-user pm2 logs frontend --lines 20
+          
+          # Limpiar credenciales después del despliegue
+          rm /home/ec2-user/.git-credentials
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-Frontend-Instance-2
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  FrontendInstance3:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref FrontendInstanceType
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !ImportValue 
+          Fn::Sub: "${EnvironmentName}-Frontend-Instance-SecurityGroup"
+      IamInstanceProfile: !Ref FrontendInstanceProfile
+      SubnetId: !ImportValue 
+        Fn::Sub: "${EnvironmentName}-Frontend-Public-Subnet-3-ID"
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          # Configuración para Amazon Linux 2023
+          # Esperar a tener conexión con los repositorios antes de continuar
+          attempts=0
+          max_attempts=5
+          
+          until dnf list installed &> /dev/null || [ $attempts -eq $max_attempts ]
+          do
+            echo "Intento $((attempts+1))/$max_attempts para conectar con repositorios..."
+            sleep 10
+            attempts=$((attempts+1))
+          done
+          
+          if [ $attempts -eq $max_attempts ]; then
+            echo "No se pudo conectar con los repositorios. Continuando con la instalación sin actualizar."
+          else
+            dnf update -y
+          fi
+          
+          # Instalar dependencias necesarias
+          dnf install -y git nodejs npm jq aws-cli
+          
+          # Instalar PM2 globalmente para gestionar el proceso
+          npm install -g pm2
+          
+          # Obtener el token de GitHub desde Secrets Manager
+          GITHUB_TOKEN=$(aws secretsmanager get-secret-value \
+            --secret-id ${EnvironmentName}-github-token \
+            --region ${AWS::Region} \
+            --query SecretString --output text)
+
+          # Configurar credenciales de Git para clonar repositorio
+          echo "Configurando credenciales de Git..."
+          export HOME=/home/ec2-user
+          git config --global credential.helper store
+          echo "https://oauth2:$GITHUB_TOKEN@github.com" > /home/ec2-user/.git-credentials
+          chown ec2-user:ec2-user /home/ec2-user/.git-credentials
+          chmod 600 /home/ec2-user/.git-credentials
+
+          # Instalar dependencias y configurar
+          cd /home/ec2-user
+          echo "Clonando repositorio con token..."
+          # Usar autenticación con token para clonar el repositorio
+          sudo -u ec2-user git clone https://oauth2:$GITHUB_TOKEN@github.com/STW-24-25/Frontend.git
+          cd Frontend
+          
+          # Obtener el DNS del NLB3 desde SSM Parameter Store
+          NLB3_DNS=$(aws ssm get-parameter --name /${EnvironmentName}/network/nlb3-dns --region ${AWS::Region} --query "Parameter.Value" --output text)
+          
+          cat > .env << EOL
+          API_URL=http://$NLB3_DNS:3000/api
+          PORT=4321
+          EOL
+          
+          # Instalar dependencias
+          sudo -u ec2-user npm install
+          
+          # Crear configuración de PM2 para Astro
+          cat > ecosystem.config.cjs << 'EOL'
+          module.exports = {
+            apps: [{
+              name: 'frontend',
+              script: 'npm',
+              args: 'run dev',
+              env: {
+                HOST: '0.0.0.0',
+                PORT: 4321,
+                NODE_OPTIONS: '--dns-result-order=ipv4first --no-warnings',
+                UV_THREADPOOL_SIZE: 128,
+                UV_USE_IPV6: 0
+              }
+            }]
+          }
+          EOL
+          
+          # Iniciar con PM2 como usuario ec2-user
+          sudo -u ec2-user pm2 delete all || true
+          sudo -u ec2-user pm2 start ecosystem.config.cjs
+          
+          # Configurar PM2 para iniciar con el sistema
+          pm2 startup -u ec2-user
+          env PATH=$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user
+          sudo -u ec2-user pm2 save
+          
+          # Verificar que la aplicación está corriendo
+          sleep 10
+          sudo -u ec2-user pm2 status
+          sudo -u ec2-user pm2 logs frontend --lines 20
+          
+          # Limpiar credenciales después del despliegue
+          rm /home/ec2-user/.git-credentials
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-Frontend-Instance-3
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  # Registrar instancias en el Target Group existente
+  FrontendTargetGroupAttachment1:
+    Type: Custom::TargetGroupAttachment
+    Properties:
+      ServiceToken: !GetAtt TargetGroupAttachmentLambda.Arn
+      TargetGroupArn: !ImportValue 
+        Fn::Sub: "${EnvironmentName}-Frontend-TG-ARN"
+      TargetId: !Ref FrontendInstance1
+      Port: 4321
+
+  FrontendTargetGroupAttachment2:
+    Type: Custom::TargetGroupAttachment
+    Properties:
+      ServiceToken: !GetAtt TargetGroupAttachmentLambda.Arn
+      TargetGroupArn: !ImportValue 
+        Fn::Sub: "${EnvironmentName}-Frontend-TG-ARN"
+      TargetId: !Ref FrontendInstance2
+      Port: 4321
+
+  FrontendTargetGroupAttachment3:
+    Type: Custom::TargetGroupAttachment
+    Properties:
+      ServiceToken: !GetAtt TargetGroupAttachmentLambda.Arn
+      TargetGroupArn: !ImportValue 
+        Fn::Sub: "${EnvironmentName}-Frontend-TG-ARN"
+      TargetId: !Ref FrontendInstance3
+      Port: 4321
+
+  # Lambda para registrar instancias en el target group
+  TargetGroupAttachmentLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: ElasticLoadBalancingAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - elasticloadbalancing:RegisterTargets
+                  - elasticloadbalancing:DeregisterTargets
+                  - elasticloadbalancing:DescribeTargetHealth
+                Resource: '*'
+
+  TargetGroupAttachmentLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Role: !GetAtt TargetGroupAttachmentLambdaRole.Arn
+      Runtime: nodejs16.x
+      Timeout: 30
+      Code:
+        ZipFile: |
+          const AWS = require('aws-sdk');
+          const elbv2 = new AWS.ELBv2();
+          const { CLOUDFORMATION_RESPONSE_URL, REGION } = process.env;
+          
+          exports.handler = async (event, context) => {
+            console.log('Event: ', JSON.stringify(event, null, 2));
+            
+            // Inicializar respuesta
+            let responseStatus = 'SUCCESS';
+            let responseData = {};
+            
+            try {
+              if (event.RequestType === 'Create' || event.RequestType === 'Update') {
+                // Registrar target en el grupo
+                const registerParams = {
+                  TargetGroupArn: event.ResourceProperties.TargetGroupArn,
+                  Targets: [
+                    {
+                      Id: event.ResourceProperties.TargetId,
+                      Port: parseInt(event.ResourceProperties.Port, 10)
+                    }
+                  ]
+                };
+                
+                await elbv2.registerTargets(registerParams).promise();
+                responseData = { TargetId: event.ResourceProperties.TargetId };
+              } else if (event.RequestType === 'Delete') {
+                // Desregistrar target del grupo
+                const deregisterParams = {
+                  TargetGroupArn: event.ResourceProperties.TargetGroupArn,
+                  Targets: [
+                    {
+                      Id: event.ResourceProperties.TargetId,
+                      Port: parseInt(event.ResourceProperties.Port, 10)
+                    }
+                  ]
+                };
+                
+                await elbv2.deregisterTargets(deregisterParams).promise();
+              }
+            } catch (error) {
+              console.error('Error: ', error);
+              responseStatus = 'FAILED';
+              responseData = { Error: error.message };
+            }
+            
+            // Enviar respuesta a CloudFormation
+            await sendResponse(event, context.logStreamName, responseStatus, responseData);
+          };
+          
+          async function sendResponse(event, logStreamName, responseStatus, responseData) {
+            const responseBody = JSON.stringify({
+              Status: responseStatus,
+              Reason: `See the details in CloudWatch Log Stream: ${logStreamName}`,
+              PhysicalResourceId: event.ResourceProperties.TargetId || event.LogicalResourceId,
+              StackId: event.StackId,
+              RequestId: event.RequestId,
+              LogicalResourceId: event.LogicalResourceId,
+              Data: responseData
+            });
+            
+            console.log('Response body: ', responseBody);
+            
+            const https = require('https');
+            const url = require('url');
+            
+            const parsedUrl = url.parse(event.ResponseURL);
+            const options = {
+              hostname: parsedUrl.hostname,
+              port: 443,
+              path: parsedUrl.path,
+              method: 'PUT',
+              headers: {
+                'content-type': '',
+                'content-length': responseBody.length
+              }
+            };
+            
+            return new Promise((resolve, reject) => {
+              const request = https.request(options, (response) => {
+                console.log(`Status code: ${response.statusCode}`);
+                console.log(`Status message: ${response.statusMessage}`);
+                resolve();
+              });
+              
+              request.on('error', (error) => {
+                console.log(`Send response error: ${error}`);
+                reject(error);
+              });
+              
+              request.write(responseBody);
+              request.end();
+            });
+          }
+
+Outputs:
+  FrontendInstance1Id:
+    Description: ID de la instancia Frontend 1
+    Value: !Ref FrontendInstance1
+    Export:
+      Name: !Sub "${EnvironmentName}-Frontend-Instance-1-ID"
+
+  FrontendInstance2Id:
+    Description: ID de la instancia Frontend 2
+    Value: !Ref FrontendInstance2
+    Export:
+      Name: !Sub "${EnvironmentName}-Frontend-Instance-2-ID"
+
+  FrontendInstance3Id:
+    Description: ID de la instancia Frontend 3
+    Value: !Ref FrontendInstance3
+    Export:
+      Name: !Sub "${EnvironmentName}-Frontend-Instance-3-ID" 

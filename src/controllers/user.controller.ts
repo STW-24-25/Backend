@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import userService from '../services/user.service';
 import logger from '../utils/logger';
 import { AutonomousComunity, UserRole } from '../models/user.model';
+import { AuthRequest } from '../types/auth';
+import { S3Service } from '../services/s3.service';
 
 /**
  * Creates a user and saves it in the DB.
@@ -266,5 +268,79 @@ export const makeAdmin = async (req: Request, res: Response): Promise<void> => {
   } catch (err: any) {
     res.status(500).json({ message: 'Error promoting user to admin', error: err.message });
     logger.error('Error promoting user to admin', err);
+  }
+};
+
+/**
+ * Sube una foto de perfil para el usuario autenticado
+ * @param req Request object con el archivo de imagen
+ * @param res Response object
+ */
+export const uploadProfilePicture = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.auth?.id;
+    const file = req.file;
+
+    if (!userId) {
+      res.status(401).json({ message: 'Usuario no autenticado' });
+      return;
+    }
+
+    if (!file) {
+      res.status(400).json({ message: 'No se ha subido ningún archivo' });
+      return;
+    }
+
+    const s3Key = await userService.uploadProfilePicture(userId, file);
+    const signedUrl = await S3Service.getSignedUrl(s3Key);
+    res.json({ message: 'Foto de perfil subida exitosamente', imageUrl: signedUrl });
+  } catch (error: any) {
+    logger.error('Error al subir foto de perfil:', error);
+    res.status(500).json({ message: 'Error al subir foto de perfil', error: error.message });
+  }
+};
+
+/**
+ * Deletes the authenticated user's profile picture
+ * @param req Request object with authenticated user
+ * @param res Response object
+ */
+export const deleteProfilePicture = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.auth?.id;
+
+    if (!userId) {
+      res.status(401).json({ message: 'User not authenticated' });
+      return;
+    }
+
+    const deleted = await userService.deleteProfilePicture(userId);
+
+    if (!deleted) {
+      res.status(404).json({ message: 'User not found or has no profile picture' });
+      return;
+    }
+
+    res.json({ message: 'Profile picture successfully deleted' });
+  } catch (error: any) {
+    logger.error('Error deleting profile picture:', error);
+    res.status(500).json({ message: 'Error deleting profile picture', error: error.message });
+  }
+};
+
+/**
+ * Refreshes signed URLs for user profile pictures
+ * @param req Request object containing user IDs to refresh
+ * @param res Response object, will have 200 with refreshed image URLs or 500 if an error occurred
+ * @returns Promise<void>
+ */
+export const refreshUserImages = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { userIds } = req.body;
+    const images = await userService.refreshUserImages(userIds);
+    res.json({ images });
+  } catch (error) {
+    logger.error('Error refreshing user images:', error);
+    res.status(500).json({ message: 'Error refreshing images' });
   }
 };

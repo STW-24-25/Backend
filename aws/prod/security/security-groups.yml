@@ -1,0 +1,100 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Configuración de Grupos de Seguridad para AgroNet - 2025'
+
+Parameters:
+  EnvironmentName:
+    Description: Nombre del entorno
+    Type: String
+    Default: prod
+
+Resources:
+  # Security Groups para Frontend VPC
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group para el Application Load Balancer
+      VpcId: !ImportValue 
+        Fn::Sub: "${EnvironmentName}-Frontend-VPC-ID"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: Acceso HTTP desde Internet
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: Acceso HTTPS desde Internet
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-ALB-SG'
+
+  FrontendInstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group para las instancias Frontend
+      VpcId: !ImportValue 
+        Fn::Sub: "${EnvironmentName}-Frontend-VPC-ID"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 4321
+          ToPort: 4321
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
+          Description: Acceso HTTP desde ALB
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+          Description: Acceso SSH para administracion
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Frontend-Instance-SG'
+
+  # Security Groups para Backend VPC
+  BackendInstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group para las instancias Backend
+      VpcId: !ImportValue 
+        Fn::Sub: "${EnvironmentName}-Backend-VPC-ID"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          CidrIp: !ImportValue 
+            Fn::Sub: "${EnvironmentName}-Frontend-VPC-CIDR"
+          Description: Acceso desde Frontend VPC
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          CidrIp: !ImportValue 
+            Fn::Sub: "${EnvironmentName}-Backend-VPC-CIDR"
+          Description: Acceso interno a la VPC Backend
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+          Description: Acceso SSH para administracion
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-Backend-Instance-SG'
+
+Outputs:
+  ALBSecurityGroupId:
+    Description: ID del Security Group del ALB
+    Value: !Ref ALBSecurityGroup
+    Export:
+      Name: !Sub '${EnvironmentName}-ALB-SecurityGroup'
+
+  FrontendInstanceSecurityGroupId:
+    Description: ID del Security Group de instancias Frontend
+    Value: !Ref FrontendInstanceSecurityGroup
+    Export:
+      Name: !Sub '${EnvironmentName}-Frontend-Instance-SecurityGroup'
+
+  BackendInstanceSecurityGroupId:
+    Description: ID del Security Group de instancias Backend
+    Value: !Ref BackendInstanceSecurityGroup
+    Export:
+      Name: !Sub '${EnvironmentName}-Backend-Instance-SecurityGroup' 
