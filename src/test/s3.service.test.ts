@@ -111,3 +111,54 @@ describe('S3Service', () => {
     });
   });
 });
+
+describe('Environment Variables Validation', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    jest.resetModules();
+    process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it('should throw error when S3_BUCKET_NAME is not defined', async () => {
+    delete process.env.S3_BUCKET_NAME;
+    await expect(async () => {
+      await import('../config/s3.config');
+    }).rejects.toThrow('S3_BUCKET_NAME no está definido en las variables de entorno');
+  });
+
+  it('should throw error when AWS_REGION is not defined', async () => {
+    delete process.env.AWS_REGION;
+    await expect(async () => {
+      await import('../config/s3.config');
+    }).rejects.toThrow('AWS_REGION no está definido en las variables de entorno');
+  });
+
+  it('should throw error when AWS_ACCESS_KEY_ID is not defined', async () => {
+    delete process.env.AWS_ACCESS_KEY_ID;
+    await expect(async () => {
+      await import('../config/s3.config');
+    }).rejects.toThrow('AWS_ACCESS_KEY_ID no está definido en las variables de entorno');
+  });
+
+  it('should throw error when AWS_SECRET_ACCESS_KEY is not defined', async () => {
+    delete process.env.AWS_SECRET_ACCESS_KEY;
+    await expect(async () => {
+      await import('../config/s3.config');
+    }).rejects.toThrow('AWS_SECRET_ACCESS_KEY no está definido en las variables de entorno');
+  });
+
+  it('should not throw error when all required environment variables are defined', async () => {
+    process.env.S3_BUCKET_NAME = 'test-bucket';
+    process.env.AWS_REGION = 'us-east-1';
+    process.env.AWS_ACCESS_KEY_ID = 'test-access-key';
+    process.env.AWS_SECRET_ACCESS_KEY = 'test-secret-key';
+
+    const importPromise = import('../config/s3.config');
+    await expect(importPromise).resolves.not.toThrow();
+  });
+});
