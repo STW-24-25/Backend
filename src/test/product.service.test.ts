@@ -10,6 +10,20 @@ jest.mock('../utils/logger', () => ({
   debug: jest.fn(),
 }));
 
+// Mock de S3Service y sharp para los métodos que lo usan
+jest.mock('../services/s3.service', () => ({
+  S3Service: {
+    uploadFile: jest.fn().mockResolvedValue('mocked-s3-key'),
+    getSignedUrl: jest.fn().mockResolvedValue('https://mocked-s3-url'),
+    generateProductImageKey: jest.fn().mockReturnValue('products/images/mock-key.jpg'),
+  },
+}));
+jest.mock('sharp', () => () => ({
+  resize: () => ({
+    jpeg: () => ({ toBuffer: jest.fn().mockResolvedValue(Buffer.from('mocked-image')) }),
+  }),
+}));
+
 describe('ProductService', () => {
   let mongoServer: MongoMemoryServer;
 
@@ -206,6 +220,65 @@ describe('ProductService', () => {
       const result = await productService.getProductById(new Types.ObjectId().toString());
 
       expect(result).not.toBeDefined();
+    });
+  });
+
+  describe('getPriceDiff', () => {
+    it('debería calcular la diferencia de precio correctamente', () => {
+      const data = [
+        { date: new Date('2024-01-01'), price: 10 },
+        { date: new Date('2024-02-01'), price: 15 },
+        { date: new Date('2024-03-01'), price: 20 },
+        { date: new Date('2024-04-01'), price: 25 },
+      ];
+      const diff = productService.getPriceDiff(data, 2); // 2 meses atrás
+      expect(diff).toBe(25 - 10);
+    });
+    it('debería devolver la diferencia con el primer precio si el periodo es mayor que el historial', () => {
+      const data = [
+        { date: new Date('2024-01-01'), price: 10 },
+        { date: new Date('2024-02-01'), price: 15 },
+      ];
+      const diff = productService.getPriceDiff(data, 12); // periodo muy grande
+      expect(diff).toBe(15 - 10);
+    });
+  });
+
+  describe('refreshProductImages', () => {
+    it('debería refrescar las imágenes de los productos', async () => {
+      const [p1, p2] = await createTestProducts();
+      p1.image = 'mocked-image-key';
+      p2.image = 'mocked-image-key';
+      await p1.save();
+      await p2.save();
+      const id1 = String(p1._id);
+      const id2 = String(p2._id);
+      const result = await productService.refreshProductImages([id1, id2]);
+      expect(result).toHaveProperty(id1);
+      expect(result).toHaveProperty(id2);
+      expect(result[id1]).toContain('mocked-s3-url');
+    });
+  });
+
+  describe('uploadProductImage', () => {
+    it('debería subir una imagen de producto correctamente', async () => {
+      const [p1] = await createTestProducts();
+      const id1 = String(p1._id);
+      const mockFile = {
+        buffer: Buffer.from('fake'),
+        mimetype: 'image/jpeg',
+      } as Express.Multer.File;
+      const result = await productService.uploadProductImage(id1, mockFile);
+      expect(result).toBe('mocked-s3-key');
+    });
+    it('debería lanzar un error si el producto no existe', async () => {
+      const mockFile = {
+        buffer: Buffer.from('fake'),
+        mimetype: 'image/jpeg',
+      } as Express.Multer.File;
+      await expect(
+        productService.uploadProductImage(new mongoose.Types.ObjectId().toString(), mockFile),
+      ).rejects.toThrow('Product not found');
     });
   });
 });
