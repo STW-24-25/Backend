@@ -61,7 +61,7 @@ export const createForumSchema = z.object({
  *          example: "Discussion about eco-friendly farming methods"
  */
 export const updateForumSchema = z.object({
-  path: z.object({
+  params: z.object({
     id: z.string().refine(val => isValidObjectId(val)),
   }),
   body: z.object({
@@ -83,7 +83,7 @@ export const updateForumSchema = z.object({
  *      required: true
  */
 export const deleteForumSchema = z.object({
-  path: z.object({
+  params: z.object({
     id: z.string().refine(val => isValidObjectId(val)),
   }),
 });
