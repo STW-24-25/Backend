@@ -179,7 +179,7 @@ router.put(
   authenticateJWT(),
   isAdmin(),
   validateSchema(forumRequestSchemas.updateForumSchema),
-  forumCont.createForum,
+  forumCont.updateForum,
 );
 
 /**

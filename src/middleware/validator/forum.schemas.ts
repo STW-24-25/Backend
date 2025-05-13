@@ -46,9 +46,6 @@ export const createForumSchema = z.object({
  *  requestBodies:
  *    updateForum:
  *      type: object
- *      required:
- *        - title
- *        - description
  *      properties:
  *        title:
  *          type: string
@@ -65,8 +62,8 @@ export const updateForumSchema = z.object({
     id: z.string().refine(val => isValidObjectId(val)),
   }),
   body: z.object({
-    title: z.string().min(3).max(100),
-    description: z.string().max(500),
+    title: z.string().min(3).max(100).optional(),
+    description: z.string().max(500).optional(),
   }),
 });
 
