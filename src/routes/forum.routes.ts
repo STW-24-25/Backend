@@ -201,7 +201,7 @@ router.put(
  *        description: Error processing request
  */
 router.delete(
-  '/',
+  '/:id',
   authenticateJWT(),
   isAdmin(),
   validateSchema(forumRequestSchemas.deleteForumSchema),
