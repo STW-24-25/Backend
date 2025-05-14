@@ -145,10 +145,42 @@ export const getAllForumsSchema = z.object({
  *        format: mongoId
  *      required: true
  *      description: The ID of the forum to retrieve
+ *    getForumByIdPageParameterSchema:
+ *      in: query
+ *      name: page
+ *      schema:
+ *        type: integer
+ *        minimum: 1
+ *        default: 1
+ *      required: true
+ *      description: Page number to retrieve
+ *    getForumByIdSizeParameterSchema:
+ *      in: query
+ *      name: size
+ *      schema:
+ *        type: integer
+ *        minimum: 1
+ *        default: 15
+ *      required: true
+ *      description: Number of messages per page
  */
 export const getForumByIdSchema = z.object({
   params: z.object({
     id: z.string().refine(val => isValidObjectId(val)),
+  }),
+  query: z.object({
+    page: z
+      .string()
+      .optional()
+      .refine(val => !isNaN(Number(val)) && Number(val) > 0, {
+        message: 'Page must be a positive number',
+      }),
+    size: z
+      .string()
+      .optional()
+      .refine(val => !isNaN(Number(val)) && Number(val) > 0, {
+        message: 'Size must be a positive number',
+      }),
   }),
 });
 

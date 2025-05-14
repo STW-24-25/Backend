@@ -77,7 +77,7 @@ export const deleteForum = async (req: Request, res: Response): Promise<void> =>
 };
 
 /**
- * Gets forum information by ID.
+ * Gets forum information by ID plus its messages paginated.
  * @param req Request object containing the forum ID.
  * @param res Response object, will have 200 if forum is found, 404 if not found, or 500 if an error occurred.
  * @returns Promise<void>
@@ -86,7 +86,10 @@ export const getForumById = async (req: Request, res: Response): Promise<void> =
   try {
     const forumId = req.params.id;
     const forum = await forumService.getForumById(forumId);
-    const messages = await messageService.getMessagesByForumId(forumId);
+    const page = parseInt(req.query.page as string) || 1;
+    const size = parseInt(req.query.size as string) || 10;
+    const { messages, totalPages } = await messageService.getMessagesByForumId(forumId, page, size);
+    const totalMessages = await messageService.countMessagesByForumId(forumId);
 
     if (!forum) {
       logger.info(`Forum with id ${forumId} not found`);
@@ -94,7 +97,14 @@ export const getForumById = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    res.status(200).json({ ...forum.toObject(), messages });
+    res.status(200).json({
+      ...forum.toObject(),
+      messages,
+      page,
+      pageSize: size,
+      totalMessages,
+      totalPages,
+    });
     logger.info(`Forum retrieved: ${forumId}`);
   } catch (err: any) {
     res.status(500).json({ message: 'Error retrieving forum', error: err.message });

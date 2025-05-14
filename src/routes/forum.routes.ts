@@ -106,6 +106,14 @@ router.get(
  *                  type: array
  *                  items:
  *                    $ref: '#/components/schemas/Message'
+ *                page:
+ *                  type: integer
+ *                pageSize:
+ *                  type: integer
+ *                totalMessages:
+ *                  type: integer
+ *                totalPages:
+ *                  type: integer
  *      400:
  *        description: Bad request, schema validation failed
  *      500:

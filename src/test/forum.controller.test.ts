@@ -19,6 +19,7 @@ jest.mock('../services/forum.service', () => ({
 
 jest.mock('../services/message.service', () => ({
   getMessagesByForumId: jest.fn(),
+  countMessagesByForumId: jest.fn(),
 }));
 
 // Mock the logger
@@ -253,6 +254,7 @@ describe('Forum Controller', () => {
       // Arrange
       mockRequest = {
         params: { id: mockForumId },
+        query: { page: '1', size: '10' },
       };
       const mockMessages: any[] = [];
 
@@ -262,18 +264,26 @@ describe('Forum Controller', () => {
       };
 
       (forumService.getForumById as jest.Mock).mockResolvedValue(mockForumDocument);
-      (messageService.getMessagesByForumId as jest.Mock).mockResolvedValue(mockMessages);
+      (messageService.getMessagesByForumId as jest.Mock).mockResolvedValue({
+        messages: mockMessages,
+        totalPages: 1,
+      });
+      (messageService.countMessagesByForumId as jest.Mock).mockResolvedValue(0);
 
       // Act
       await forumController.getForumById(mockRequest as Request, mockResponse as Response);
 
       // Assert
       expect(forumService.getForumById).toHaveBeenCalledWith(mockForumId);
-      expect(messageService.getMessagesByForumId).toHaveBeenCalledWith(mockForumId);
+      expect(messageService.getMessagesByForumId).toHaveBeenCalledWith(mockForumId, 1, 10);
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
         ...mockForumResponse,
         messages: mockMessages,
+        page: 1,
+        pageSize: 10,
+        totalMessages: 0,
+        totalPages: 1,
       });
     });
 
@@ -281,6 +291,7 @@ describe('Forum Controller', () => {
       // Arrange
       mockRequest = {
         params: { id: mockForumId },
+        query: { page: '1', size: '10' },
       };
       (forumService.getForumById as jest.Mock).mockResolvedValue(null);
 
@@ -298,6 +309,7 @@ describe('Forum Controller', () => {
       // Arrange
       mockRequest = {
         params: { id: mockForumId },
+        query: { page: '1', size: '10' },
       };
 
       const errorMessage = 'Database error';

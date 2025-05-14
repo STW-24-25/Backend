@@ -71,6 +71,9 @@ export const newUserSchema = z.object({
  *          type: string
  *          format: email
  *          description: Unique user email
+ *        password:
+ *          type: string
+ *          description: The new password for the user
  *        profilePicture:
  *          type: string
  *          description: Profile picture path
