@@ -74,9 +74,6 @@ export const newUserSchema = z.object({
  *        password:
  *          type: string
  *          description: The new password for the user
- *        profilePicture:
- *          type: string
- *          description: Profile picture path
  *        role:
  *          $ref: '#/components/schemas/UserRole'
  *        autonomousCommunity:
@@ -87,7 +84,6 @@ export const updateUserSchema = z.object({
     username: z.string().min(3).optional(),
     email: z.string().email().optional(),
     password: z.string().optional(),
-    profilePicture: z.string().optional(),
     role: z.nativeEnum(UserRole).optional(),
     autonomousCommunity: z.nativeEnum(AutonomousComunity).optional(),
   }),
