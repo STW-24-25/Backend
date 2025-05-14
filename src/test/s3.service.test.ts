@@ -1,11 +1,5 @@
 import { S3Service } from '../services/s3.service';
 import { s3Client } from '../config/s3.config';
-import {
-  PutObjectCommand,
-  GetObjectCommand,
-  DeleteObjectCommand,
-  S3Client,
-} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 // Configurar variables de entorno para pruebas
