@@ -80,6 +80,9 @@ export const newUserSchema = z.object({
  *          $ref: '#/components/schemas/AutonomousCommunity'
  */
 export const updateUserSchema = z.object({
+  params: z.object({
+    id: z.string().refine(val => isValidObjectId(val)),
+  }),
   body: z.object({
     username: z.string().min(3).optional(),
     email: z.string().email().optional(),
