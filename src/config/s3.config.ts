@@ -29,6 +29,9 @@ export const S3_CONFIG = {
     USER_PROFILE: 'users/profile-pictures',
     PRODUCT_IMAGES: 'products/images',
   },
+  DEFAULT_IMAGES: {
+    USER_PROFILE: 'defaults/default-profile.jpg', // Imagen de perfil predeterminada
+  },
 } as const;
 
 // Verificar configuración de S3

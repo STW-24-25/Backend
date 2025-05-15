@@ -4,11 +4,10 @@ import { validateSchema } from '../middleware/validator';
 import * as userRequestSchemas from '../middleware/validator/user.schemas';
 import { authenticateJWT } from '../middleware/auth';
 import { isAdmin } from '../middleware/admin';
-import multer from 'multer';
 import { validateImage } from '../middleware/image.middleware';
+import { S3Service } from '../services/s3.service';
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage() });
 
 // ##### PUBLIC #####
 
@@ -36,23 +35,30 @@ router.post('/', validateSchema(userRequestSchemas.newUserSchema), userCont.crea
 
 /**
  * @swagger
- * /api/users/{id}:
+ * /api/users/profile:
  *  put:
- *    summary: Update an existing user data
+ *    summary: Update authenticated user's profile
  *    tags: [User]
  *    security:
  *      - bearerAuth: []
- *    parameters:
- *      - $ref: '#/components/parameters/updateUserUserIdParameterSchema'
  *    requestBody:
  *      required: true
  *      content:
- *        application/json:
+ *        multipart/form-data:
  *          schema:
- *            $ref: '#/components/requestBodies/updateUser'
+ *            $ref: '#/components/requestBodies/updateProfile'
  *    responses:
  *      200:
- *        description: User updated successfully
+ *        description: User profile updated successfully
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                message:
+ *                  type: string
+ *                user:
+ *                  type: object
  *      400:
  *        description: Bad request, invalid data
  *      404:
@@ -61,41 +67,150 @@ router.post('/', validateSchema(userRequestSchemas.newUserSchema), userCont.crea
  *        description: Error processing the request
  */
 router.put(
-  '/:id',
+  '/profile',
   authenticateJWT(),
-  validateSchema(userRequestSchemas.updateUserSchema),
+  S3Service.multerUpload.single('profilePicture'),
+  validateSchema(userRequestSchemas.updateProfileSchema),
   userCont.updateUser,
 );
 
 /**
  * @swagger
- * /api/users/{id}:
- *  delete:
- *    summary: Delete a user account
- *    description:
- *      Deletes a user account, if the authenticated user is not admin only their own, otherwise
- *      any account may be deleted.
+ * /api/users/profile-picture:
+ *  post:
+ *    summary: Sube una foto de perfil para el usuario autenticado
  *    security:
  *      - bearerAuth: []
- *    tags: [Admin]
- *    parameters:
- *      - $ref: '#/components/parameters/deleteUserUserIdParameterSchema'
+ *    tags: [User]
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        multipart/form-data:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              image:
+ *                type: string
+ *                format: binary
+ *                description: Archivo de imagen de perfil (JPEG o PNG, máximo 2MB)
  *    responses:
  *      200:
- *        description: User deleted successfully
+ *        description: Foto de perfil subida exitosamente
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                message:
+ *                  type: string
+ *                imageUrl:
+ *                  type: string
  *      400:
- *        description: Bad request, schema validation failed
+ *        description: Tipo o tamaño de archivo inválido
+ *      401:
+ *        description: Usuario no autenticado
+ *      500:
+ *        description: Error al subir la foto de perfil
+ */
+router.post(
+  '/profile-picture',
+  authenticateJWT(),
+  S3Service.multerUpload.single('image'),
+  validateImage,
+  userCont.uploadProfilePicture,
+);
+
+/**
+ * @swagger
+ * /api/users/profile-picture:
+ *  delete:
+ *    summary: Delete authenticated user's profile picture
+ *    security:
+ *      - bearerAuth: []
+ *    tags: [User]
+ *    responses:
+ *      200:
+ *        description: Profile picture deleted successfully
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                message:
+ *                  type: string
+ *      401:
+ *        description: User not authenticated
+ *      404:
+ *        description: User not found or has no profile picture
+ *      500:
+ *        description: Error deleting profile picture
+ */
+router.delete(
+  '/profile-picture',
+  authenticateJWT(),
+  validateSchema(userRequestSchemas.deleteProfilePictureSchema),
+  userCont.deleteProfilePicture,
+);
+
+/**
+ * @swagger
+ * /api/users/request-unblock:
+ *  post:
+ *    summary: Request to unblock a user account
+ *    security:
+ *      - bearerAuth: []
+ *    tags: [User]
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/requestBodies/requestUnblock'
+ *    responses:
+ *      200:
+ *        description: Unblock appeal registered successfully
+ *      400:
+ *        description: Bad request, invalid data
  *      404:
  *        description: User not found
  *      500:
  *        description: Error processing the request
  */
-router.delete(
-  '/:id',
+router.post(
+  '/request-unblock',
   authenticateJWT(),
-  validateSchema(userRequestSchemas.deleteUserSchema),
-  userCont.deleteUser,
+  validateSchema(userRequestSchemas.requestUnblockSchema),
+  userCont.requestUnblock,
 );
+
+/**
+ * @swagger
+ * /api/users/refresh-images:
+ *  post:
+ *    summary: Refresh user profile images
+ *    security:
+ *      - bearerAuth: []
+ *    tags: [User]
+ *    responses:
+ *      200:
+ *        description: User images refreshed successfully
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                message:
+ *                  type: string
+ *                updatedImages:
+ *                  type: array
+ *                  items:
+ *                    type: string
+ *      401:
+ *        description: User not authenticated
+ *      500:
+ *        description: Error processing the request
+ */
+router.post('/refresh-images', authenticateJWT(), userCont.refreshUserImages);
 
 /**
  * @swagger
@@ -155,6 +270,36 @@ router.post('/login', validateSchema(userRequestSchemas.loginSchema), userCont.l
 /**
  * @swagger
  * /api/users/{id}:
+ *  delete:
+ *    summary: Delete a user account
+ *    description:
+ *      Deletes a user account, if the authenticated user is not admin only their own, otherwise
+ *      any account may be deleted.
+ *    security:
+ *      - bearerAuth: []
+ *    tags: [Admin]
+ *    parameters:
+ *      - $ref: '#/components/parameters/deleteUserUserIdParameterSchema'
+ *    responses:
+ *      200:
+ *        description: User deleted successfully
+ *      400:
+ *        description: Bad request, schema validation failed
+ *      404:
+ *        description: User not found
+ *      500:
+ *        description: Error processing the request
+ */
+router.delete(
+  '/:id',
+  authenticateJWT(),
+  validateSchema(userRequestSchemas.deleteUserSchema),
+  userCont.deleteUser,
+);
+
+/**
+ * @swagger
+ * /api/users/{id}:
  *  get:
  *    summary: Get user information by ID
  *    security:
@@ -200,139 +345,6 @@ router.get(
   validateSchema(userRequestSchemas.getUserSchema),
   userCont.getUser,
 );
-
-/**
- * @swagger
- * /api/users/request-unblock:
- *  post:
- *    summary: Request to unblock a user account
- *    security:
- *      - bearerAuth: []
- *    tags: [User]
- *    requestBody:
- *      required: true
- *      content:
- *        application/json:
- *          schema:
- *            $ref: '#/components/requestBodies/requestUnblock'
- *    responses:
- *      200:
- *        description: Unblock appeal registered successfully
- *      400:
- *        description: Bad request, invalid data
- *      404:
- *        description: User not found
- *      500:
- *        description: Error processing the request
- */
-router.post(
-  '/request-unblock',
-  authenticateJWT(),
-  validateSchema(userRequestSchemas.requestUnblockSchema),
-  userCont.requestUnblock,
-);
-
-/**
- * @swagger
- * /api/users/profile-picture:
- *  post:
- *    summary: Sube una foto de perfil para el usuario autenticado
- *    security:
- *      - bearerAuth: []
- *    tags: [User]
- *    requestBody:
- *      required: true
- *      content:
- *        multipart/form-data:
- *          schema:
- *            type: object
- *            properties:
- *              image:
- *                type: string
- *                format: binary
- *                description: Archivo de imagen de perfil (JPEG o PNG, máximo 2MB)
- *    responses:
- *      200:
- *        description: Foto de perfil subida exitosamente
- *        content:
- *          application/json:
- *            schema:
- *              type: object
- *              properties:
- *                message:
- *                  type: string
- *                imageUrl:
- *                  type: string
- *      400:
- *        description: Tipo o tamaño de archivo inválido
- *      401:
- *        description: Usuario no autenticado
- *      500:
- *        description: Error al subir la foto de perfil
- */
-router.post(
-  '/profile-picture',
-  authenticateJWT(),
-  upload.single('image'),
-  validateImage,
-  userCont.uploadProfilePicture,
-);
-
-/**
- * @swagger
- * /api/users/profile-picture:
- *  delete:
- *    summary: Elimina la foto de perfil del usuario autenticado
- *    security:
- *      - bearerAuth: []
- *    tags: [User]
- *    responses:
- *      200:
- *        description: Foto de perfil eliminada exitosamente
- *        content:
- *          application/json:
- *            schema:
- *              type: object
- *              properties:
- *                message:
- *                  type: string
- *      401:
- *        description: Usuario no autenticado
- *      404:
- *        description: No se encontró el usuario o no tiene foto de perfil
- *      500:
- *        description: Error al eliminar la foto de perfil
- */
-router.delete('/profile-picture', authenticateJWT(), userCont.deleteProfilePicture);
-
-/**
- * @swagger
- * /api/users/refresh-images:
- *  post:
- *    summary: Refresh user profile images
- *    security:
- *      - bearerAuth: []
- *    tags: [User]
- *    responses:
- *      200:
- *        description: User images refreshed successfully
- *        content:
- *          application/json:
- *            schema:
- *              type: object
- *              properties:
- *                message:
- *                  type: string
- *                updatedImages:
- *                  type: array
- *                  items:
- *                    type: string
- *      401:
- *        description: User not authenticated
- *      500:
- *        description: Error processing the request
- */
-router.post('/refresh-images', authenticateJWT(), userCont.refreshUserImages);
 
 // ##### ADMIN #####
 
@@ -502,6 +514,40 @@ router.post(
   isAdmin(),
   validateSchema(userRequestSchemas.makeAdminSchema),
   userCont.makeAdmin,
+);
+
+/**
+ * @swagger
+ * /api/users/{id}:
+ *  put:
+ *    summary: Update a user's details (Admin only)
+ *    tags: [Admin]
+ *    security:
+ *      - bearerAuth: []
+ *    parameters:
+ *      - $ref: '#/components/parameters/updateUserUserIdParameterSchema'
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/requestBodies/updateUser'
+ *    responses:
+ *      200:
+ *        description: User updated successfully
+ *      400:
+ *        description: Bad request, invalid data
+ *      404:
+ *        description: User not found
+ *      500:
+ *        description: Error processing the request
+ */
+router.put(
+  '/:id',
+  authenticateJWT(),
+  isAdmin(),
+  validateSchema(userRequestSchemas.updateUserSchema),
+  userCont.updateUser,
 );
 
 export default router;

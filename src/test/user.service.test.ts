@@ -51,6 +51,8 @@ jest.mock('../services/s3.service', () => ({
     deleteFile: jest.fn().mockResolvedValue(true),
     getSignedUrl: jest.fn().mockResolvedValue('https://mocked-s3-url'),
     generateUserProfileKey: jest.fn().mockReturnValue('users/profile-pictures/mock-key.jpg'),
+    processImage: jest.fn().mockResolvedValue(Buffer.from('processed-image')),
+    getDefaultProfilePictureUrl: jest.fn().mockResolvedValue('https://mocked-default-profile-url'),
   },
 }));
 jest.mock('sharp', () => () => ({

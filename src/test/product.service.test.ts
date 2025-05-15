@@ -16,6 +16,7 @@ jest.mock('../services/s3.service', () => ({
     uploadFile: jest.fn().mockResolvedValue('mocked-s3-key'),
     getSignedUrl: jest.fn().mockResolvedValue('https://mocked-s3-url'),
     generateProductImageKey: jest.fn().mockReturnValue('products/images/mock-key.jpg'),
+    processImage: jest.fn().mockResolvedValue(Buffer.from('processed-image')),
   },
 }));
 jest.mock('sharp', () => () => ({

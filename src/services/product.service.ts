@@ -125,14 +125,8 @@ class ProductService {
     try {
       logger.info(`Uploading image for product: ${productId}`);
 
-      // Process image with sharp
-      const processedImageBuffer = await sharp(file.buffer)
-        .resize(S3_CONFIG.IMAGE_DIMENSIONS.WIDTH, S3_CONFIG.IMAGE_DIMENSIONS.HEIGHT, {
-          fit: 'cover',
-          position: 'center',
-        })
-        .jpeg({ quality: 80 }) // Convert to JPEG with 80% quality
-        .toBuffer();
+      // Process image using centralized method
+      const processedImageBuffer = await S3Service.processImage(file.buffer);
 
       const key = S3Service.generateProductImageKey(productId, 'jpg');
       const s3Key = await S3Service.uploadFile(processedImageBuffer, key, 'image/jpeg');

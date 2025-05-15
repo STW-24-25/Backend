@@ -22,6 +22,19 @@ jest.mock('@aws-sdk/s3-request-presigner', () => ({
   getSignedUrl: jest.fn(),
 }));
 
+// Mock de sharp
+jest.mock('sharp', () => {
+  return jest.fn().mockImplementation(() => ({
+    rotate: jest.fn().mockReturnThis(),
+    resize: jest.fn().mockReturnThis(),
+    jpeg: jest.fn().mockReturnThis(),
+    toBuffer: jest.fn().mockResolvedValue(Buffer.from('processed image')),
+  }));
+});
+
+// Importar sharp para poder usarlo en las pruebas
+import sharp from 'sharp';
+
 describe('S3Service', () => {
   const mockFile = Buffer.from('test file content');
   const mockKey = 'test/path/file.jpg';
@@ -34,6 +47,45 @@ describe('S3Service', () => {
     (s3Client.send as jest.Mock).mockResolvedValue({});
     // Mock de getSignedUrl
     (getSignedUrl as jest.Mock).mockResolvedValue(mockSignedUrl);
+
+    // Limpiar la caché de URLs firmadas antes de cada test
+    // @ts-expect-error Accediendo a una propiedad privada para pruebas
+    S3Service.signedUrlCache = new Map();
+  });
+
+  describe('processImage', () => {
+    it('should process an image successfully', async () => {
+      const result = await S3Service.processImage(mockFile);
+
+      expect(result).toBeInstanceOf(Buffer);
+      expect(result.toString()).toBe('processed image');
+    });
+
+    it('should process an image with custom dimensions', async () => {
+      const customWidth = 300;
+      const customHeight = 400;
+
+      // Crear un nuevo mock para sharp para este test específico
+      const mockSharpInstance = {
+        rotate: jest.fn().mockReturnThis(),
+        resize: jest.fn().mockReturnThis(),
+        jpeg: jest.fn().mockReturnThis(),
+        toBuffer: jest.fn().mockResolvedValue(Buffer.from('processed image')),
+      };
+
+      // Reemplazar el mock de sharp para este test
+      (sharp as unknown as jest.Mock).mockReturnValue(mockSharpInstance);
+
+      await S3Service.processImage(mockFile, customWidth, customHeight);
+
+      // Verificar que sharp fue llamado con los parámetros correctos
+      expect(sharp).toHaveBeenCalledWith(mockFile);
+      expect(mockSharpInstance.resize).toHaveBeenCalledWith(
+        customWidth,
+        customHeight,
+        expect.any(Object),
+      );
+    });
   });
 
   describe('uploadFile', () => {
@@ -64,9 +116,37 @@ describe('S3Service', () => {
     it('should throw an error when generating signed URL fails', async () => {
       (getSignedUrl as jest.Mock).mockRejectedValue(new Error('URL generation failed'));
 
-      await expect(S3Service.getSignedUrl(mockKey)).rejects.toThrow(
+      // Asegurarnos de forzar la generación de una nueva URL
+      await expect(S3Service.getSignedUrl(mockKey, true)).rejects.toThrow(
         'Failed to generate signed URL',
       );
+    });
+
+    it('should return cached URL if available and not expired', async () => {
+      // Primera llamada para almacenar en caché
+      const url1 = await S3Service.getSignedUrl(mockKey);
+
+      // Reiniciar el mock para verificar que no se llama de nuevo
+      (getSignedUrl as jest.Mock).mockClear();
+
+      // Segunda llamada debería usar la caché
+      const url2 = await S3Service.getSignedUrl(mockKey);
+
+      expect(url2).toBe(url1);
+      expect(getSignedUrl).not.toHaveBeenCalled();
+    });
+
+    it('should generate new URL when forceRefresh is true', async () => {
+      // Primera llamada para almacenar en caché
+      await S3Service.getSignedUrl(mockKey);
+
+      // Reiniciar el mock para verificar que se llama de nuevo
+      (getSignedUrl as jest.Mock).mockClear();
+
+      // Segunda llamada con forceRefresh debería regenerar
+      await S3Service.getSignedUrl(mockKey, true);
+
+      expect(getSignedUrl).toHaveBeenCalled();
     });
   });
 
@@ -82,6 +162,22 @@ describe('S3Service', () => {
       (s3Client.send as jest.Mock).mockRejectedValue(new Error('Deletion failed'));
 
       await expect(S3Service.deleteFile(mockKey)).rejects.toThrow('Failed to delete file from S3');
+    });
+
+    it('should remove the URL from cache when file is deleted', async () => {
+      // Primero almacenamos una URL en caché
+      await S3Service.getSignedUrl(mockKey);
+
+      // Verificamos que la URL está en caché
+      // @ts-expect-error Accediendo a una propiedad privada para pruebas
+      expect(S3Service.signedUrlCache.has(mockKey)).toBe(true);
+
+      // Borramos el archivo
+      await S3Service.deleteFile(mockKey);
+
+      // Verificamos que la URL ya no está en caché
+      // @ts-expect-error Accediendo a una propiedad privada para pruebas
+      expect(S3Service.signedUrlCache.has(mockKey)).toBe(false);
     });
   });
 
@@ -102,6 +198,64 @@ describe('S3Service', () => {
       const key = S3Service.generateProductImageKey(productId, fileExtension);
 
       expect(key).toMatch(/^products\/images\/456-\d+\.png$/);
+    });
+  });
+
+  describe('cleanExpiredCache', () => {
+    it('should remove expired items from cache', () => {
+      // @ts-expect-error Accediendo a una propiedad privada para pruebas
+      S3Service.signedUrlCache.set(mockKey, {
+        url: mockSignedUrl,
+        expiresAt: Date.now() - 1000, // Ya expirado
+      });
+
+      S3Service.cleanExpiredCache();
+
+      // @ts-expect-error Accediendo a una propiedad privada para pruebas
+      expect(S3Service.signedUrlCache.has(mockKey)).toBe(false);
+    });
+
+    it('should keep non-expired items in cache', () => {
+      // @ts-expect-error Accediendo a una propiedad privada para pruebas
+      S3Service.signedUrlCache.set(mockKey, {
+        url: mockSignedUrl,
+        expiresAt: Date.now() + 60000, // Expira en 1 minuto
+      });
+
+      S3Service.cleanExpiredCache();
+
+      // @ts-expect-error Accediendo a una propiedad privada para pruebas
+      expect(S3Service.signedUrlCache.has(mockKey)).toBe(true);
+    });
+  });
+
+  describe('getCacheSize', () => {
+    it('should return the correct cache size', () => {
+      // @ts-expect-error Accediendo a una propiedad privada para pruebas
+      S3Service.signedUrlCache.clear();
+      expect(S3Service.getCacheSize()).toBe(0);
+
+      // @ts-expect-error Accediendo a una propiedad privada para pruebas
+      S3Service.signedUrlCache.set('key1', { url: 'url1', expiresAt: Date.now() + 60000 });
+      // @ts-expect-error Accediendo a una propiedad privada para pruebas
+      S3Service.signedUrlCache.set('key2', { url: 'url2', expiresAt: Date.now() + 60000 });
+
+      expect(S3Service.getCacheSize()).toBe(2);
+    });
+  });
+
+  describe('getDefaultProfilePictureUrl', () => {
+    it('should return the default profile picture URL', async () => {
+      const url = await S3Service.getDefaultProfilePictureUrl();
+      expect(url).toBe(mockSignedUrl);
+    });
+
+    it('should throw an error when getting default profile picture URL fails', async () => {
+      (getSignedUrl as jest.Mock).mockRejectedValue(new Error('URL generation failed'));
+
+      await expect(S3Service.getDefaultProfilePictureUrl()).rejects.toThrow(
+        'Failed to get default profile picture URL',
+      );
     });
   });
 });

@@ -4,11 +4,10 @@ import * as productRequestSchemas from '../middleware/validator/product.schemas'
 import { validateSchema } from '../middleware/validator';
 import { authenticateJWT } from '../middleware/auth';
 import { isAdmin } from '../middleware/admin';
-import multer from 'multer';
 import { validateImage } from '../middleware/image.middleware';
+import { S3Service } from '../services/s3.service';
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage() });
 
 // #### PUBLIC ####
 
@@ -172,7 +171,7 @@ router.post(
   '/:id/image',
   authenticateJWT(),
   isAdmin(),
-  upload.single('image'),
+  S3Service.multerUpload.single('image'),
   validateImage,
   productController.uploadProductImage,
 );

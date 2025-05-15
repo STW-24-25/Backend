@@ -37,16 +37,34 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
  * @param res Response object, will have 200 if update was successful, 404 if user not found, or 500 if an error occurred.
  * @returns Promise<void>
  */
-export const updateUser = async (req: Request, res: Response): Promise<void> => {
+export const updateUser = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const userId = req.params.id;
+    // Determinar si estamos actualizando el perfil propio o un usuario como admin
+    const userId = req.params.id || req.auth?.id;
+
+    if (!userId) {
+      res.status(401).json({ message: 'User not authenticated' });
+      return;
+    }
+
     const updateData = req.body;
+
+    // Handle profile picture if it's a file
+    if (req.file) {
+      // Upload the new profile picture to S3
+      const s3Key = await userService.uploadProfilePicture(userId, req.file);
+      // Add the S3 key to the update data
+      updateData.profilePicture = s3Key;
+    }
+
     const updatedUser = await userService.updateUser(userId, updateData);
 
     if (!updatedUser) {
       res.status(404).json({ message: 'User not found' });
       return;
     }
+
+    // Ya no es necesario manejar la imagen de perfil aquí, lo hace el servicio
 
     res.status(200).json({ message: 'User updated successfully', user: updatedUser });
     logger.info(`User updated: ${userId}`);
@@ -130,6 +148,8 @@ export const getUser = async (req: Request, res: Response): Promise<void> => {
       res.status(404).json({ message: 'User not found' });
       return;
     }
+
+    // Ya no es necesario manejar la imagen de perfil aquí, lo hace el servicio
 
     res.status(200).json(user);
     logger.info(`User retrieved: ${userId}`);

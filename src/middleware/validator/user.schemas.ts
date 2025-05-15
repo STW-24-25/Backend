@@ -52,16 +52,8 @@ export const newUserSchema = z.object({
 /**
  * @swagger
  * components:
- *  parameters:
- *    updateUserUserIdParameterSchema:
- *      in: path
- *      name: id
- *      schema:
- *        type: string
- *      required: true
- *      description: User ID
  *  requestBodies:
- *    updateUser:
+ *    updateUserById:
  *      type: object
  *      properties:
  *        username:
@@ -79,14 +71,14 @@ export const newUserSchema = z.object({
  *        autonomousCommunity:
  *          $ref: '#/components/schemas/AutonomousCommunity'
  */
-export const updateUserSchema = z.object({
+export const updateUserByIdSchema = z.object({
   params: z.object({
     id: z.string().refine(val => isValidObjectId(val)),
   }),
   body: z.object({
     username: z.string().min(3).optional(),
     email: z.string().email().optional(),
-    password: z.string().optional(),
+    password: z.string().min(6).optional(),
     role: z.nativeEnum(UserRole).optional(),
     autonomousCommunity: z.nativeEnum(AutonomousComunity).optional(),
   }),
@@ -307,3 +299,80 @@ export const makeAdminSchema = z.object({
     id: z.string().refine(val => isValidObjectId(val)),
   }),
 });
+
+/**
+ * @swagger
+ * components:
+ *  requestBodies:
+ *    updateUser:
+ *      type: object
+ *      properties:
+ *        username:
+ *          type: string
+ *          description: Unique username
+ *        email:
+ *          type: string
+ *          format: email
+ *          description: Unique user email
+ *        password:
+ *          type: string
+ *          description: The new password for the user
+ *        role:
+ *          $ref: '#/components/schemas/UserRole'
+ *        autonomousCommunity:
+ *          $ref: '#/components/schemas/AutonomousCommunity'
+ */
+export const updateUserSchema = z.object({
+  params: z.object({
+    id: z.string().refine(val => isValidObjectId(val)),
+  }),
+  body: z.object({
+    username: z.string().min(3).optional(),
+    email: z.string().email().optional(),
+    password: z.string().min(6).optional(),
+    role: z.nativeEnum(UserRole).optional(),
+    autonomousCommunity: z.nativeEnum(AutonomousComunity).optional(),
+  }),
+});
+
+/**
+ * @swagger
+ * components:
+ *  requestBodies:
+ *    updateProfile:
+ *      type: object
+ *      properties:
+ *        username:
+ *          type: string
+ *          description: Unique username
+ *        email:
+ *          type: string
+ *          format: email
+ *          description: Unique user email
+ *        password:
+ *          type: string
+ *          description: The new password for the user
+ *        role:
+ *          $ref: '#/components/schemas/UserRole'
+ *        autonomousCommunity:
+ *          $ref: '#/components/schemas/AutonomousCommunity'
+ */
+export const updateProfileSchema = z.object({
+  body: z.object({
+    username: z.string().min(3).optional(),
+    email: z.string().email().optional(),
+    password: z.string().min(6).optional(),
+    role: z.nativeEnum(UserRole).optional(),
+    autonomousCommunity: z.nativeEnum(AutonomousComunity).optional(),
+  }),
+});
+
+/**
+ * @swagger
+ * components:
+ *  requestBodies:
+ *    deleteProfilePicture:
+ *      type: object
+ *      description: No body required, user ID is extracted from JWT token
+ */
+export const deleteProfilePictureSchema = z.object({});

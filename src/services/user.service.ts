@@ -91,6 +91,22 @@ class UserService {
   }
 
   /**
+   * Asigna una URL de imagen de perfil al objeto de usuario
+   * @param userObject Objeto de usuario a modificar
+   * @returns Promise con el objeto modificado
+   */
+  private async assignProfilePictureUrl(userObject: any): Promise<any> {
+    if (userObject.profilePicture) {
+      // Si el usuario tiene foto de perfil, usa esa
+      userObject.profilePicture = await S3Service.getSignedUrl(userObject.profilePicture);
+    } else {
+      // Si no tiene, usa la foto por defecto
+      userObject.profilePicture = await S3Service.getDefaultProfilePictureUrl();
+    }
+    return userObject;
+  }
+
+  /**
    * Finds a user by ID
    * @param userId User ID
    * @param includePassword Whether to include password in the response
@@ -115,7 +131,12 @@ class UserService {
       }
 
       logger.info(`User found with ID: ${userId}`);
-      return user as UserDocument;
+
+      // Convertir a objeto plano para agregar la URL de imagen
+      const userObj = user.toObject();
+      await this.assignProfilePictureUrl(userObj);
+
+      return userObj as UserDocument;
     } catch (error) {
       logger.error(`Error finding user by ID: ${error}`);
       throw error;
@@ -331,10 +352,8 @@ class UserService {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { passwordHash: loginPasswordHash, ...loginUserData } = loginUserResponse;
 
-      // Get signed URL for profile picture if it exists
-      if (user.profilePicture) {
-        loginUserData.profilePicture = await S3Service.getSignedUrl(user.profilePicture);
-      }
+      // Asignar URL de imagen de perfil (propia o por defecto)
+      await this.assignProfilePictureUrl(loginUserData);
 
       logger.info(`User authenticated successfully: ${emailOrUsername}`);
       return { user: loginUserData as unknown as UserDocument, token };
@@ -449,6 +468,8 @@ class UserService {
         const user = await User.findById(userId);
         if (user?.profilePicture) {
           images[userId] = await S3Service.getSignedUrl(user.profilePicture);
+        } else {
+          images[userId] = await S3Service.getDefaultProfilePictureUrl();
         }
       }),
     );
@@ -466,15 +487,8 @@ class UserService {
     try {
       logger.info(`Uploading profile picture for user: ${userId}`);
 
-      // Process image with sharp
-      const processedImageBuffer = await sharp(file.buffer)
-        .resize(500, 500, {
-          // Resize to 500x500
-          fit: 'cover', // Maintain aspect ratio and crop if necessary
-          position: 'center', // Center the crop
-        })
-        .jpeg({ quality: 80 }) // Convert to JPEG with 80% quality
-        .toBuffer();
+      // Process image using centralized method
+      const processedImageBuffer = await S3Service.processImage(file.buffer);
 
       const fileExtension = 'jpg'; // Always use jpg after processing
       const key = S3Service.generateUserProfileKey(userId, fileExtension);
