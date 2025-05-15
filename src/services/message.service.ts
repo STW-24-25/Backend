@@ -7,13 +7,41 @@ class MessageService {
     page: number,
     size: number,
   ): Promise<{ messages: IMessage[]; totalPages: number }> {
-    const totalPages = Math.ceil((await MessageModel.countDocuments({ forum: forumId })) / size);
-    const messages = await MessageModel.find({ forum: forumId })
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * size)
-      .limit(size)
-      .populate({ path: 'author', select: '-passwordHash -loginHistory -parcels' });
-    return { messages: messages as IMessage[], totalPages };
+    try {
+      // Only get root messages (those without a parent)
+      const rootMessagesQuery = { forum: forumId, parent: { $exists: false } };
+
+      const totalRootMessages = await MessageModel.countDocuments(rootMessagesQuery);
+      const totalPages = Math.ceil(totalRootMessages / size);
+
+      // Get paginated root messages
+      const rootMessages = await MessageModel.find(rootMessagesQuery)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * size)
+        .limit(size)
+        .populate({ path: 'author', select: '-passwordHash -loginHistory -parcels' });
+
+      // For each root message, fetch all its descendants recursively
+      const messages = [];
+      for (const rootMessage of rootMessages) {
+        messages.push(rootMessage);
+
+        // Get all child messages for this root message
+        const childMessages = await MessageModel.find({ forum: forumId, parent: rootMessage._id })
+          .sort({ createdAt: -1 })
+          .populate({ path: 'author', select: '-passwordHash -loginHistory -parcels' });
+
+        messages.push(...childMessages);
+      }
+
+      logger.info(
+        `Found ${messages.length} messages (${rootMessages.length} root messages) for forum ${forumId}`,
+      );
+      return { messages: messages as IMessage[], totalPages };
+    } catch (err) {
+      logger.error(`Error retrieving messages for forum ${forumId}: ${err}`);
+      throw err;
+    }
   }
 
   async getAllMessages(
