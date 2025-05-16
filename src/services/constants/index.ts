@@ -1,2 +1,2 @@
-export * from './weather.constants';
 export * from './location.constants';
+export * from './sigpac.constants';
