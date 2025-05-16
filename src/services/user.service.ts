@@ -276,7 +276,10 @@ class UserService {
         .select('-passwordHash')
         .skip((page - 1) * size)
         .limit(size)
-        .exec();
+        .lean();
+
+      // Process all user profile pictures in parallel
+      await Promise.all(users.map(user => this.assignProfilePictureUrl(user)));
 
       logger.info(`Found ${users.length} users`);
       return { users: users as UserDocument[], totalPages };
