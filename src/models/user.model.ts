@@ -139,6 +139,7 @@ export interface IUser extends Document {
  *          type: array
  *          items:
  *            type: string
+ *            format: MongoId
  *          description: Array of parcel IDs
  *        loginHistory:
  *          type: array
@@ -175,13 +176,16 @@ const userSchema: Schema = new Schema({
   createdAt: { type: Date, default: Date.now(), required: true },
   isBlocked: { type: Boolean, default: false, required: true },
   blockReason: { type: String, required: false },
-  parcels: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Parcel',
-      required: false,
-    },
-  ],
+  parcels: {
+    type: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Parcel',
+        required: false,
+      },
+    ],
+    required: true,
+  },
 
   loginHistory: {
     type: [

@@ -185,6 +185,13 @@ export const getUserSchema = z.object({
  *        type: boolean
  *      required: false
  *      description: Filter by admin status
+ *    getAllUsersHasAppealedParameterSchema:
+ *      in: query
+ *      name: hasAppealed
+ *      schema:
+ *        type: boolean
+ *      required: false
+ *      description: Filter by users that have been blocked and appealed for unblocking
  *    getAllUsersPageParameterSchema:
  *      in: query
  *      name: page
@@ -211,6 +218,7 @@ export const getAllUsersSchema = z.object({
     role: z.nativeEnum(UserRole).optional(),
     autonomousCommunity: z.nativeEnum(AutonomousComunity).optional(),
     isAdmin: z.boolean().optional(),
+    hasAppealed: z.boolean().optional(),
     page: z.string().optional(),
     size: z.string().optional(),
   }),

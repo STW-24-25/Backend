@@ -244,6 +244,7 @@ class UserService {
     role: UserRole | undefined,
     autCom: AutonomousComunity | undefined,
     isAdmin: boolean | undefined,
+    hasAppealed: boolean | undefined,
     page: number,
     size: number,
   ): Promise<{ users: UserDocument[]; totalPages: number }> {
@@ -266,8 +267,14 @@ class UserService {
         query.autonomousCommunity = autCom;
       }
 
-      if (isAdmin !== undefined) {
+      if (isAdmin) {
         query.isAdmin = isAdmin;
+      }
+
+      if (hasAppealed) {
+        query.isBlocked = true;
+        query.unblockAppeal = { $exists: true, $ne: null };
+        query['unblockAppeal.content'] = { $exists: true, $ne: '' };
       }
 
       const totalPages = Math.ceil((await User.countDocuments(query)) / size);

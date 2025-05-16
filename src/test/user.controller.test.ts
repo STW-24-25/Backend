@@ -392,6 +392,7 @@ describe('UserController', () => {
         undefined,
         undefined,
         undefined,
+        undefined,
         page,
         size,
       );
@@ -423,6 +424,7 @@ describe('UserController', () => {
         undefined,
         undefined,
         undefined,
+        undefined,
         1,
         10,
       );
@@ -445,6 +447,7 @@ describe('UserController', () => {
       await userController.getAllUsers(req, res);
 
       expect(userService.getAllUsers).toHaveBeenCalledWith(
+        undefined,
         undefined,
         undefined,
         undefined,

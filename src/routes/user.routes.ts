@@ -348,7 +348,6 @@ router.get(
 
 // ##### ADMIN #####
 
-// todo: add parcels and loginHistory
 /**
  * @swagger
  * /api/users:
@@ -363,6 +362,7 @@ router.get(
  *      - $ref: '#/components/parameters/getAllUsersRoleParameterSchema'
  *      - $ref: '#/components/parameters/getAllUsersAutonomousCommunityParameterSchema'
  *      - $ref: '#/components/parameters/getAllUsersIsAdminParameterSchema'
+ *      - $ref: '#/components/parameters/getAllUsersHasAppealedParameterSchema'
  *      - $ref: '#/components/parameters/getAllUsersPageParameterSchema'
  *      - $ref: '#/components/parameters/getAllUsersSizeParameterSchema'
  *    responses:
@@ -394,11 +394,34 @@ router.get(
  *                        $ref: '#/components/schemas/AutonomousCommunity'
  *                      isAdmin:
  *                        type: boolean
+ *                      isBlocked:
+ *                        type: boolean
+ *                      blockReason:
+ *                        type: string
+ *                      parcels:
+ *                        type: array
+ *                        items:
+ *                          type: string
+ *                          format: MongoId
+ *                        description: Array of parcel IDs
+ *                      loginHistory:
+ *                        type: array
+ *                        items:
+ *                          type: object
+ *                          properties:
+ *                            timestamp:
+ *                              type: string
+ *                              format: date
+ *                            ipAddress:
+ *                              type: string
+ *                      unblockAppeal:
+ *                        type: object
+ *                        properties:
+ *                          content:
+ *                            type: string
  *                      createdAt:
  *                        type: string
  *                        format: date
- *                      isBlocked:
- *                        type: boolean
  *                page:
  *                  type: integer
  *                pageSize:

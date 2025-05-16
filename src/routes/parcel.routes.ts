@@ -150,12 +150,6 @@ router.post(
  *     tags: [Parcel]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - $ref: '#/components/parameters/getAllParcelsCropParameterSchema'
- *       - $ref: '#/components/parameters/getAllParcelsSizeParameterSchema'
- *       - $ref: '#/components/parameters/getAllParcelsAutonomousCommunityParameterSchema'
- *       - $ref: '#/components/parameters/getAllParcelsLimitParameterSchema'
- *       - $ref: '#/components/parameters/getAllParcelsSkipParameterSchema'
  *     responses:
  *       200:
  *         description: Parcels retrieved successfully

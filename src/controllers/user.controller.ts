@@ -178,6 +178,7 @@ export const getAllUsers = async (req: Request, res: Response): Promise<void> =>
     const role = req.query.role as UserRole | undefined;
     const autCom = req.query.autCom as AutonomousComunity | undefined;
     const isAdmin = req.query.isAdmin as boolean | undefined;
+    const hasAppealed = req.query.hasAppealed as boolean | undefined;
     const page = parseInt(req.query.page as string) || 1; // Default to page 1
     const size = parseInt(req.query.size as string) || 16; // Default to size 16
 
@@ -187,6 +188,7 @@ export const getAllUsers = async (req: Request, res: Response): Promise<void> =>
       role,
       autCom,
       isAdmin,
+      hasAppealed,
       page,
       size,
     );
