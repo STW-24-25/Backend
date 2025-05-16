@@ -1,5 +1,6 @@
 import { MessageModel, IMessage } from '../models/message.model';
 import logger from '../utils/logger';
+import userService from './user.service';
 
 class MessageService {
   async getMessagesByForumId(
@@ -8,7 +9,7 @@ class MessageService {
     size: number,
   ): Promise<{ messages: IMessage[]; totalPages: number }> {
     try {
-      const query = { forum: forumId, parent: { $exists: false } };
+      const query = { forum: forumId, parentMessage: { $exists: false } };
 
       const totalRootMessages = await MessageModel.countDocuments(query);
       const totalPages = Math.ceil(totalRootMessages / size);
@@ -20,8 +21,9 @@ class MessageService {
         .limit(size)
         .populate({ path: 'author', select: '-passwordHash -loginHistory -parcels' });
 
-      // Get all messages for this forum to avoid multiple DB queries
-      const allForumMessages = await MessageModel.find({ forum: forumId }).populate({
+      const allForumMessages = await MessageModel.find({
+        forum: forumId,
+      }).populate({
         path: 'author',
         select: '-passwordHash -loginHistory -parcels',
       });
@@ -38,8 +40,6 @@ class MessageService {
         }
       });
 
-      logger.debug(messagesByParentId.size);
-
       // Sort children by createdAt descending for each parent
       messagesByParentId.forEach(children => {
         children.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -53,7 +53,7 @@ class MessageService {
           result.push(message);
 
           // Get children for this message
-          const children = messagesByParentId.get(message._id as string) || [];
+          const children = messagesByParentId.get(message._id.toString()) || [];
 
           // Recursively add flattened children
           if (children.length > 0) {
@@ -65,8 +65,14 @@ class MessageService {
         return result;
       };
 
-      // Process each root message and its descendants in order
       const flatMessages = flattenMessageTree(rootMessages as IMessage[]);
+
+      // Process all user profile images in parallel
+      await Promise.all(
+        flatMessages.map(async message => {
+          await userService.assignProfilePictureUrl(message.author);
+        }),
+      );
 
       logger.info(
         `Found ${flatMessages.length} messages (${rootMessages.length} root messages) for forum ${forumId}`,

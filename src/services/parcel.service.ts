@@ -311,7 +311,7 @@ class ParcelService {
           temperature: weatherResponse.weatherData.temperatura,
           windChillFactor: weatherResponse.weatherData.sensTermica,
           relativeHumidity: weatherResponse.weatherData.humedadRelativa,
-          skyState: weatherResponse.weatherData.estadoCielo,
+          skyState: weatherResponse.weatherData.estadoCielo.descripcion,
         },
         wind: {
           speed: weatherResponse.weatherData.viento.velocidad,

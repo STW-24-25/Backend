@@ -39,6 +39,7 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
  *          format: date-time
  */
 export interface IMessage extends Document {
+  _id: Types.ObjectId;
   content: string;
   author: Types.ObjectId;
   forum: Types.ObjectId;

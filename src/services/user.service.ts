@@ -94,7 +94,7 @@ class UserService {
    * @param userObject Objeto de usuario a modificar
    * @returns Promise con el objeto modificado
    */
-  private async assignProfilePictureUrl(userObject: any): Promise<any> {
+  async assignProfilePictureUrl(userObject: any): Promise<any> {
     if (userObject.profilePicture) {
       // Si el usuario tiene foto de perfil, usa esa
       userObject.profilePicture = await S3Service.getSignedUrl(userObject.profilePicture);

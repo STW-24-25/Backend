@@ -121,6 +121,23 @@ export interface IParcel extends Document {
  *              enum: [polygon, centroid]
  *              description: Identifies the feature's purpose
  *
+ *    GeoJSONFeatureCollection:
+ *      type: object
+ *      required:
+ *        - type
+ *        - features
+ *      properties:
+ *        type:
+ *          type: string
+ *          enum: [FeatureCollection]
+ *          description: GeoJSON FeatureCollection type
+ *        features:
+ *          type: array
+ *          items:
+ *            $ref: '#/components/schemas/GeoJSONFeature'
+ *          minItems: 2
+ *          maxItems: 2
+ *
  *    Parcel:
  *      type: object
  *      required:

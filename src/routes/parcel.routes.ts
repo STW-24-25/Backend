@@ -6,8 +6,6 @@ import { authenticateJWT } from '../middleware/auth';
 
 const router = Router();
 
-// todo adjust to new parcel schema
-
 /**
  * @swagger
  * /api/parcels:
@@ -28,59 +26,25 @@ const router = Router();
  *              type: object
  *              properties:
  *                parcel:
- *                  type: object
- *                  properties:
- *                    geoJSON:
- *                      type: object
- *                      properties:
- *                        type:
- *                          type: string
- *                        features:
- *                          type: array
- *                          items:
- *                            type: object
- *                            properties:
- *                              type:
- *                                type: string
- *                              geometry:
- *                                type: object
- *                    products:
- *                      type: array
- *                      items:
- *                        type: string
- *                    createdAt:
- *                      type: string
- *                      format: date-time
- *                    municipality:
- *                      type: string
- *                    province:
- *                      type: string
- *                    size:
- *                      type: number
+ *                  $ref: '#/components/schemas/Parcel'
  *                weather:
  *                  type: object
  *                  properties:
  *                    main:
  *                      type: object
  *                      properties:
- *                        temp:
+ *                        temperature:
  *                          type: number
  *                          description: Current temperature in Celsius
- *                        humidity:
+ *                        windChillFactor:
+ *                          type: number
+ *                          description: Wind chill factor, also known as thermal sensation or feels-like temperature
+ *                        relativeHumidity:
  *                          type: number
  *                          description: Current humidity percentage
- *                        temp_max:
- *                          type: number
- *                          description: Maximum temperature in Celsius
- *                        temp_min:
- *                          type: number
- *                          description: Minimum temperature in Celsius
- *                        pressure_max:
- *                          type: number
- *                          description: Maximum pressure in hPa
- *                        pressure_min:
- *                          type: number
- *                          description: Minimum pressure in hPa
+ *                        skyState:
+ *                          type: string
+ *                          description: Current sky state (in spanish)
  *                    wind:
  *                      type: object
  *                      properties:
@@ -99,28 +63,29 @@ const router = Router();
  *                        rain:
  *                          type: number
  *                          description: Rain amount in mm
+ *                        rainChance:
+ *                          type: number
+ *                          description: Rain probability in percentage
  *                        snow:
  *                          type: number
  *                          description: Snow amount in mm
- *                    solar:
- *                      type: object
- *                      properties:
- *                        radiation:
+ *                        snowChance:
  *                          type: number
- *                          description: Solar radiation
- *                    description:
- *                      type: string
- *                      description: Weather condition description
- *                    icon:
- *                      type: string
- *                      description: Weather icon code
+ *                          description: Snow probability in percentage
+ *                        stormChance:
+ *                          type: number
+ *                          description: Storm probability in percentage
  *                    date:
  *                      type: string
  *                      format: date
- *                    time_max_temp:
+ *                    hour:
+ *                      type: number
+ *                    distance:
+ *                      type: number
+ *                      description: Distance in kilometers to the closest municipality
+ *                    municipality:
  *                      type: string
- *                    time_min_temp:
- *                      type: string
+ *                      description: Name of the municipality
  *      400:
  *        description: Invalid coordinates provided
  *      401:
@@ -199,23 +164,7 @@ router.post(
  *             schema:
  *               type: array
  *               items:
- *                 type: object
- *                 properties:
- *                   municipio:
- *                     type: string
- *                     description: Municipality name
- *                   ubicacion:
- *                     type: array
- *                     items:
- *                       type: number
- *                     description: Coordinates of the parcel [lat, lng]
- *                   producto:
- *                     type: string
- *                     description: Main product of the parcel
- *                 example:
- *                   municipio: "Madrid"
- *                   ubicacion: [40.4168, -3.7038]
- *                   producto: "Tomate"
+ *                 $ref: '#/components/schemas/Parcel'
  *       400:
  *         description: Bad request, schema validation failed
  *       401:
