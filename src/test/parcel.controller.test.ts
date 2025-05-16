@@ -7,12 +7,9 @@ import { Request, Response } from 'express';
 
 // Mock the parcel service
 jest.mock('../services/parcel.service', () => ({
-  getParcelByCoordinates: jest.fn(),
   createParcel: jest.fn(),
-  default: {
-    getParcelByCoordinates: jest.fn(),
-    createParcel: jest.fn(),
-  },
+  getParcelByCoordinates: jest.fn(),
+  getAllParcels: jest.fn(),
 }));
 
 // Mock the logger to avoid logs during tests
@@ -33,27 +30,71 @@ describe('ParcelController', () => {
 
   const mockParcel = {
     _id: new mongoose.Types.ObjectId().toString(),
-    user: userId,
-    size: 'Mediana',
-    crop: 'Cereales',
-    location: {
-      lat: mockCoordinates.lat,
-      lng: mockCoordinates.lng,
+    geometry: {
+      type: 'FeatureCollection',
+      features: [
+        {
+          geometry: {
+            type: 'Polygon',
+            coordinates: [
+              [[-0.127639761538193, 41.541507350426606]],
+              [[-0.131800770699279, 41.545093020690565]],
+            ],
+          },
+          type: 'Feature',
+          properties: {
+            name: 'polygon',
+          },
+        },
+        {
+          geometry: {
+            type: 'Point',
+            coordinates: [-0.1297398615341678, 41.54709554565112],
+          },
+          type: 'Feature',
+          properties: {
+            name: 'centroid',
+          },
+        },
+      ],
     },
-    autonomousCommunity: 'Castilla-La Mancha',
-    geoJSON: {
-      type: 'Polygon',
-      coordinates: [[]],
-    },
-    createdAt: new Date(),
+    products: [],
+    provinceCode: 22,
+    provinceName: 'Huesca',
+    municipalityCode: '336',
+    municipalityName: 'Valfarta',
+    parcelUse: 'TIERRAS ARABLES',
+    coefRegadio: 100,
+    altitude: 362,
+    surface: 102.92532935506046,
+    createdAt: '2025-05-16T09:56:38.888Z',
   };
 
   const mockWeatherData = {
-    temperature: 25.2,
-    humidity: 45,
-    windSpeed: 2.1,
-    description: 'clear sky',
-    icon: '01d',
+    main: {
+      temperature: 20,
+      windChillFactor: 20,
+      relativeHumidity: 39,
+      skyState: {
+        value: '11',
+        descripcion: 'Despejado',
+      },
+    },
+    wind: {
+      speed: 20,
+      direction: 'O',
+    },
+    precipitation: {
+      rain: 0,
+      rainChance: 0,
+      snow: 0,
+      snowChance: 0,
+      stormChance: 0,
+    },
+    date: '2025-05-16T12:00:00',
+    hour: 12,
+    distance: 1.0612565156217004,
+    municipality: 'Valfarta',
   };
 
   // Create mock request and response objects
@@ -173,17 +214,12 @@ describe('ParcelController', () => {
   describe('createParcel', () => {
     it('should create a parcel and return 201', async () => {
       const parcelData = {
-        size: 'Mediana',
         crop: 'Cereales',
         location: {
           lat: mockCoordinates.lat,
           lng: mockCoordinates.lng,
         },
-        autonomousCommunity: 'Castilla-La Mancha',
-        geoJSON: {
-          type: 'Polygon',
-          coordinates: [[]],
-        },
+        products: [],
       };
 
       const req = mockRequest({
@@ -197,10 +233,7 @@ describe('ParcelController', () => {
 
       await parcelController.createParcel(req, res);
 
-      expect(parcelService.createParcel).toHaveBeenCalledWith({
-        ...parcelData,
-        user: userId,
-      });
+      expect(parcelService.createParcel).toHaveBeenCalledWith(userId, parcelData);
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
         message: 'Parcel created successfully',
@@ -211,7 +244,7 @@ describe('ParcelController', () => {
     it('should return 500 if service throws an error', async () => {
       const req = mockRequest({
         user: { id: userId },
-        body: { size: 'Mediana' }, // Incomplete data
+        body: { crop: 'Cereales' },
       });
       const res = mockResponse();
 

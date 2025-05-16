@@ -79,6 +79,8 @@ router.get(
  *    tags: [Forum]
  *    parameters:
  *      - $ref: '#/components/parameters/getForumByIdIdParameterSchema'
+ *      - $ref: '#/components/parameters/getForumByIdPageParameterSchema'
+ *      - $ref: '#/components/parameters/getForumByIdSizeParameterSchema'
  *    responses:
  *      200:
  *        description: The forum information including its messages

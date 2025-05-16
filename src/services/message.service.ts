@@ -8,36 +8,70 @@ class MessageService {
     size: number,
   ): Promise<{ messages: IMessage[]; totalPages: number }> {
     try {
-      // Only get root messages (those without a parent)
-      const rootMessagesQuery = { forum: forumId, parent: { $exists: false } };
+      const query = { forum: forumId, parent: { $exists: false } };
 
-      const totalRootMessages = await MessageModel.countDocuments(rootMessagesQuery);
+      const totalRootMessages = await MessageModel.countDocuments(query);
       const totalPages = Math.ceil(totalRootMessages / size);
 
       // Get paginated root messages
-      const rootMessages = await MessageModel.find(rootMessagesQuery)
+      const rootMessages = await MessageModel.find(query)
         .sort({ createdAt: -1 })
         .skip((page - 1) * size)
         .limit(size)
         .populate({ path: 'author', select: '-passwordHash -loginHistory -parcels' });
 
-      // For each root message, fetch all its descendants recursively
-      const messages = [];
-      for (const rootMessage of rootMessages) {
-        messages.push(rootMessage);
+      // Get all messages for this forum to avoid multiple DB queries
+      const allForumMessages = await MessageModel.find({ forum: forumId }).populate({
+        path: 'author',
+        select: '-passwordHash -loginHistory -parcels',
+      });
 
-        // Get all child messages for this root message
-        const childMessages = await MessageModel.find({ forum: forumId, parent: rootMessage._id })
-          .sort({ createdAt: -1 })
-          .populate({ path: 'author', select: '-passwordHash -loginHistory -parcels' });
+      // Create a map for faster lookup of children
+      const messagesByParentId = new Map<string, IMessage[]>();
+      allForumMessages.forEach(msg => {
+        if (msg.parentMessage) {
+          const parentId = msg.parentMessage.toString();
+          if (!messagesByParentId.has(parentId)) {
+            messagesByParentId.set(parentId, []);
+          }
+          messagesByParentId.get(parentId)!.push(msg as IMessage);
+        }
+      });
 
-        messages.push(...childMessages);
-      }
+      logger.debug(messagesByParentId.size);
+
+      // Sort children by createdAt descending for each parent
+      messagesByParentId.forEach(children => {
+        children.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      });
+
+      // Function to flatten the message tree in the desired order
+      const flattenMessageTree = (messages: IMessage[]): IMessage[] => {
+        const result: IMessage[] = [];
+
+        for (const message of messages) {
+          result.push(message);
+
+          // Get children for this message
+          const children = messagesByParentId.get(message._id as string) || [];
+
+          // Recursively add flattened children
+          if (children.length > 0) {
+            const flattenedChildren = flattenMessageTree(children);
+            result.push(...flattenedChildren);
+          }
+        }
+
+        return result;
+      };
+
+      // Process each root message and its descendants in order
+      const flatMessages = flattenMessageTree(rootMessages as IMessage[]);
 
       logger.info(
-        `Found ${messages.length} messages (${rootMessages.length} root messages) for forum ${forumId}`,
+        `Found ${flatMessages.length} messages (${rootMessages.length} root messages) for forum ${forumId}`,
       );
-      return { messages: messages as IMessage[], totalPages };
+      return { messages: flatMessages, totalPages };
     } catch (err) {
       logger.error(`Error retrieving messages for forum ${forumId}: ${err}`);
       throw err;

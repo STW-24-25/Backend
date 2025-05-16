@@ -33,7 +33,7 @@ This document contains guidelines for coding, documentation, and continuous inte
 
 ### General
 
-- Use `const` or `let`, __no__ `var`.
+- Use `const` or `let`, **no** `var`.
 - Follow the structure already in place in the project (controllers, models, routes, common utils, etc).
 - Request validation should be done in the routes file, using the middleware provided.
 - Use `async/await` instead of `.then()`.
@@ -42,7 +42,7 @@ This document contains guidelines for coding, documentation, and continuous inte
 - Use `===` instead of `==`.
 - Stick to the types, don't use `any` unless absolutely necessary.
 - Use `interface` for defining types, `type` for defining unions and intersections.
-- Use the logger from `common/utils/logger` to log messages __only__, no `console.log`.
+- Use the logger from `common/utils/logger` to log messages **only**, no `console.log`.
 
 ### Commit Conventions
 
@@ -89,12 +89,12 @@ This document contains guidelines for coding, documentation, and continuous inte
 
 ## Continuous Integration Workflows
 
-- **PR Validation**: All PRs must go through automated code validation.
-- **Main Protection**: The main branch is protected and requires passing CI checks before merging.
-- **Automated Testing**: Tests run automatically on pull requests and merges to main.
-- **Code Quality**: Static code analysis runs on all PRs to ensure code quality.
-- **Deployment**: Automatic deployment to staging environments on merges to development branch.
-- **Security Scanning**: Dependency and security scanning is performed on a schedule.
+- _PR Validation_: All PRs must go through automated code validation.
+- _Main Protection_: The main branch is protected and requires passing CI checks before merging.
+- _Automated Testing_: Tests run automatically on pull requests and merges to main.
+- _Code Quality_: Static code analysis runs on all PRs to ensure code quality.
+- _Deployment_: Automatic deployment to staging environments on merges to development branch.
+- _Security Scanning_: Dependency and security scanning is performed on a schedule.
 
 ## Release Process
 

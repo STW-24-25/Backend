@@ -10,27 +10,6 @@ import dotenv from 'dotenv';
 // Cargar variables de entorno
 dotenv.config();
 
-// Importar interfaces del servicio
-interface CreateUserParams {
-  username: string;
-  email: string;
-  password: string;
-  profilePicture?: string;
-  role?: UserRole;
-  autonomousCommunity?: AutonomousComunity;
-}
-
-interface UserDocument extends mongoose.Document {
-  username: string;
-  email: string;
-  passwordHash?: string;
-  profilePicture?: string;
-  role: UserRole;
-  autonomousCommunity: AutonomousComunity;
-  isAdmin: boolean;
-  createdAt: Date;
-}
-
 // Mock del middleware de autenticación
 jest.mock('../middleware/auth', () => ({
   genJWT: jest.fn().mockReturnValue('mocked-jwt-token'),

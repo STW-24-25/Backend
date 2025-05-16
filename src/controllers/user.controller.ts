@@ -39,8 +39,14 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
  */
 export const updateUser = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    // Determinar si estamos actualizando el perfil propio o un usuario como admin
-    const userId = req.params.id || req.auth?.id;
+    let userId;
+    if (req.params.id) {
+      // Called from admin endpoint
+      userId = req.params.id;
+    } else {
+      // Called from /profile endpoint, id is of the user making the request
+      userId = req.auth!.id;
+    }
 
     if (!userId) {
       res.status(401).json({ message: 'User not authenticated' });

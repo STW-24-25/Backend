@@ -5,7 +5,16 @@ import logger from '../utils/logger';
 import dotenv from 'dotenv';
 import { Aemet } from 'aemet-api';
 import { CAPITAL_NAMES } from './constants/location.constants';
-import area from '@turf/area';
+import UserModel from '../models/user.model';
+import userService from './user.service';
+import { centroid } from '@turf/centroid';
+import axios from 'axios';
+import {
+  getGeoJSONSigpacUrl,
+  getMunicSigpacUrl,
+  USO_SIGPAC_URL,
+  VALID_SIGPAC_USES,
+} from './constants/sigpac.constants';
 
 // Load environment variables
 dotenv.config();
@@ -35,70 +44,33 @@ class ParcelService {
    * @param parcelData - The parcel data to be saved
    * @returns The created parcel
    */
-  async createParcel(parcelData: any) {
+  async createParcel(userId: string, parcelData: any) {
     try {
-      // Get SIGPAC data first to extract province and municipality
-      const sigpacData = await this.getParcelInfoFromSigpac(
+      const parcelToCreate = await this.getParcelGeoJSON(
         Number(parcelData.location.lng),
         Number(parcelData.location.lat),
       );
 
-      // Convert location format from {lat, lng} to GeoJSON Point
-      const parcelToCreate = {
-        ...parcelData,
-        location: {
-          type: 'Point',
-          coordinates: [Number(parcelData.location.lng), Number(parcelData.location.lat)],
-        },
-        // Add province and municipality from SIGPAC data using correct field names
-        province: sigpacData.declarationData.province,
-        municipality: sigpacData.declarationData.municipality,
-        size: sigpacData.declarationData.superficie,
-      };
+      // Check the product ids given are valid
+      if (parcelData.products.length > 0) {
+        const productIds = parcelData.products.map((product: any) => product.id || product);
 
-      // Remove original lat/lng properties if they exist at root level
-      if (parcelToCreate.lat) delete parcelToCreate.lat;
-      if (parcelToCreate.lng) delete parcelToCreate.lng;
-
-      // Si se han proporcionado productos, buscarlos por nombre en la BD
-      if (parcelData.products && Array.isArray(parcelData.products)) {
-        // Buscar los productos por nombre
         const existingProducts = await ProductModel.find({
-          name: { $in: parcelData.products },
+          _id: { $in: productIds },
         });
 
-        if (existingProducts.length !== parcelData.products.length) {
-          const foundProductNames = existingProducts.map(p => p.name);
-          const missingProducts = parcelData.products.filter(
-            (name: string) => !foundProductNames.includes(name),
-          );
-          throw new Error(
-            `Los siguientes productos no existen en la base de datos: ${missingProducts.join(', ')}`,
-          );
+        if (existingProducts.length !== productIds.length) {
+          throw new Error('One or more product IDs are invalid');
         }
 
-        // Asignar los IDs de los productos encontrados
-        parcelToCreate.products = existingProducts.map(product => product._id);
-      } else {
-        parcelToCreate.products = []; // Si no hay productos, inicializar como array vacío
+        // Add validated products to parcel
+        parcelToCreate.products = productIds;
       }
 
+      // Save and update the user's array of parcels
       const parcel = new ParcelModel(parcelToCreate);
-
-      // Verificar que las coordenadas mantienen su signo antes de guardar
-      if (parcelData.location.lng < 0 && parcel.location.coordinates[0] > 0) {
-        parcel.location.coordinates[0] = -parcel.location.coordinates[0];
-      }
-      if (parcelData.location.lat < 0 && parcel.location.coordinates[1] > 0) {
-        parcel.location.coordinates[1] = -parcel.location.coordinates[1];
-      }
-
       const savedParcel = await parcel.save();
-
-      // Actualizar el array de parcelas del usuario
-      await mongoose
-        .model('User')
-        .findByIdAndUpdate(parcelData.user, { $push: { parcels: savedParcel._id } });
+      await UserModel.findByIdAndUpdate(userId, { $push: { parcels: savedParcel._id } });
 
       return savedParcel;
     } catch (error: any) {
@@ -108,9 +80,10 @@ class ParcelService {
   }
 
   /**
-   * Gets a parcel by coordinates.
-   * If the parcel exists in the database, retrieves it.
-   * If not, throws an error.
+   * Gets a parcel by coordinates, if the parcel is registered as owned by one of the users in
+   * the platform, the owner, parcel data, geoJSON and weather data are returned; otherwise only
+   * the geoJSON and weather data are returned. If the coordinates do not match a parcel in the system
+   * or in SIGPAC, an error is thrown.
    *
    * @param userId - User ID
    * @param lng - Longitude coordinate
@@ -121,79 +94,55 @@ class ParcelService {
     try {
       logger.info(`Buscando parcela para usuario ${userId} en coordenadas [${lng}, ${lat}]`);
 
-      // Primero obtener el usuario con sus parcelas
-      const user = await mongoose.model('User').findById(userId).populate('parcels');
+      let result;
+      const user = await userService.getUserById(userId);
 
       if (!user) {
         throw new Error('Usuario no encontrado');
       }
 
-      // Si el usuario tiene parcelas, buscar primero en ellas
-      if (user.parcels && user.parcels.length > 0) {
-        const parcel = user.parcels.find((p: { location: { coordinates: number[] } }) => {
-          const [parcelLng, parcelLat] = p.location.coordinates;
-          const distance = this.calculateDistance(lat, lng, parcelLat, parcelLng);
-          return distance <= 1; // 1 km de distancia máxima
-        });
-
-        if (parcel) {
-          logger.info(
-            `Parcela encontrada en el array de parcelas del usuario: [${parcel.location.coordinates}]`,
-          );
-
-          const parcelGeoJSON = await this.getParcelGeoJSON(lng, lat);
-          logger.info('Parcel GeoJSON data:', parcelGeoJSON);
-
-          // Get weather data using the stored province and municipality
-          const weatherData = await this.getWeatherData(lng, lat, {
-            declarationData: {
-              provincia: parcel.province,
-              municipio: parcel.municipality,
+      // Check for parcels registered at the location
+      const parcel = await ParcelModel.findOne(
+        {
+          'geometry.features.geometry': {
+            $near: {
+              // Use $nearSphere for 2dsphere indexes
+              $geometry: {
+                type: 'Point',
+                coordinates: [lng, lat],
+              },
+              $maxDistance: 1000, // 1 km radius
             },
-          });
+          },
+          'geometry.features': {
+            $elemMatch: {
+              'properties.name': 'centroid',
+              'geometry.type': 'Point', // Ensure the centroid feature is a Point
+            },
+          },
+        },
+        {
+          'geometry.features._id': 0, // Don't project _id fields from features array
+        },
+      );
 
-          return {
-            parcel: {
-              geoJSON: parcelGeoJSON.parcelGeoJSON,
-              products: parcel.products,
-              createdAt: parcel.createdAt,
-              municipality: parcel.municipality.split(' - ')[1],
-              province: parcel.province.split(' - ')[1],
-              size: parcel.size,
-            },
-            weather: {
-              main: {
-                temp: weatherData.main.temp,
-                humidity: weatherData.main.humidity,
-                temp_max: weatherData.main.temp_max,
-                temp_min: weatherData.main.temp_min,
-                pressure_max: weatherData.main.pressure_max,
-                pressure_min: weatherData.main.pressure_min,
-              },
-              wind: {
-                speed: weatherData.wind.speed,
-                gust: weatherData.wind.gust,
-                direction: weatherData.wind.direction,
-              },
-              precipitation: {
-                rain: weatherData.precipitation.rain,
-                snow: weatherData.precipitation.snow,
-              },
-              solar: {
-                radiation: weatherData.solar.radiation,
-              },
-              description: weatherData.weather[0].description,
-              icon: weatherData.weather[0].icon,
-              date: weatherData.date,
-              time_max_temp: weatherData.time_max_temp,
-              time_min_temp: weatherData.time_min_temp,
-            },
-          };
-        }
+      // If it's registered return the owner together with the rest of the data
+      if (parcel) {
+        result = { parcel, owner: user };
+      } else {
+        // Parcel is not registered, get just the geoJSON from SIGPAC
+        const parcelData = await this.getParcelGeoJSON(lng, lat);
+        result = { parcel: parcelData };
       }
 
-      // Si no se encuentra en el array de parcelas del usuario, lanzar error
-      throw new Error('No se encontró la parcela en las coordenadas especificadas');
+      const weatherData = await this.getWeatherData(lng, lat);
+
+      const weather = weatherData ? weatherData : 'Could not retrieve weather data from AEMET';
+
+      return {
+        ...result,
+        weather,
+      };
     } catch (error: any) {
       logger.error('Error al obtener parcela por coordenadas', error);
       throw new Error(`No se pudo obtener la parcela: ${error.message}`);
@@ -208,20 +157,14 @@ class ParcelService {
    */
   private async getParcelGeoJSON(lng: number, lat: number) {
     try {
-      const responseGeoJSON = await fetch(
-        `https://sigpac-hubcloud.es/servicioconsultassigpac/query/recinfobypoint/4258/${lng}/${lat}.geojson`,
-        {
-          headers: {
-            'User-Agent':
-              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-            Accept: 'application/json',
-            'Accept-Encoding': 'gzip, deflate, br',
-          },
+      const responseGeoJSON = await axios.get(getGeoJSONSigpacUrl(lng, lat), {
+        headers: {
+          Accept: 'application/json',
+          'Accept-Encoding': 'gzip, deflate, br',
         },
-      );
+      });
 
-      const rawParcelGeoJSON = await responseGeoJSON.json();
-      logger.info('Raw Parcel GeoJSON data retrieved from Sigpac:', rawParcelGeoJSON);
+      const rawParcelGeoJSON = responseGeoJSON.data;
 
       if (
         !rawParcelGeoJSON ||
@@ -231,22 +174,71 @@ class ParcelService {
         throw new Error('No parcel found at specified coordinates');
       }
 
+      const { properties, ...polygon } = rawParcelGeoJSON.features[0];
+
+      if (!this.validParcelUse(properties.uso_sigpac)) {
+        throw new Error('The parcel selected is not of valid use');
+      }
+
+      const provinceCode = String(properties.provincia).padStart(2, '0');
+      const municipalityCode = Number(properties.municipio);
+      const [{ provinceName, municipalityName }, parcelUse] = await Promise.all([
+        this.getLocationInfo(provinceCode, municipalityCode),
+        this.mapUsoSigpac(properties.uso_sigpac),
+      ]);
+
       return {
-        parcelGeoJSON: {
-          type: rawParcelGeoJSON.type,
-          features: rawParcelGeoJSON.features.map((feature: { type: string; geometry: any }) => ({
-            type: feature.type,
-            geometry: feature.geometry,
-          })),
+        geometry: {
+          type: 'FeatureCollection',
+          features: [
+            { ...polygon, properties: { name: 'polygon' } },
+            { ...centroid(polygon), properties: { name: 'centroid' } },
+          ],
         },
-        provinceCode: String(rawParcelGeoJSON.features[0].properties.provincia).padStart(2, '0'),
-        municipalityCode: Number(rawParcelGeoJSON.features[0].properties.municipio),
-        usoSigpac: rawParcelGeoJSON.features[0].properties.uso_sigpac || '',
-        geometry: rawParcelGeoJSON.features[0].geometry,
+        products: [],
+        provinceCode,
+        provinceName,
+        municipalityCode,
+        municipalityName,
+        parcelUse,
+        coefRegadio: properties.coef_regadio,
+        altitude: properties.altitud,
+        surface: properties.dn_surface / 10000, // convert to hectares
       };
     } catch (error: any) {
       logger.error('Error fetching GeoJSON from Sigpac', error);
       throw new Error(`Failed to fetch GeoJSON from Sigpac: ${error.message}`);
+    }
+  }
+
+  private validParcelUse(parcelUseCode: string) {
+    return parcelUseCode in VALID_SIGPAC_USES;
+  }
+
+  private async mapUsoSigpac(code: string): Promise<string> {
+    try {
+      // If the map is empty, fetch the usage codes
+      const response = await axios.get(USO_SIGPAC_URL, {
+        headers: {
+          Accept: 'application/json',
+        },
+      });
+
+      if (response.status !== 200 && response.status !== 304) {
+        throw new Error('No response from Sigpac');
+      }
+
+      const match = response.data.codigos.find((item: { codigo: string }) => item.codigo === code);
+      if (match) {
+        return match.descripcion;
+      }
+
+      // Return the original code if no match was found
+      return code;
+    } catch (error: any) {
+      logger.error('Error mapping SIGPAC usage code', error);
+      // Return the original code if there was an error
+      return code;
     }
   }
 
@@ -267,17 +259,12 @@ class ParcelService {
       // Get municipality name from cached data or fetch it
       if (!this.municipalitiesCache[provinceCode]) {
         try {
-          const municResponse = await fetch(
-            `https://sigpac-hubcloud.es/codigossigpac/municipio${provinceCode}.json`,
-            {
-              headers: {
-                'User-Agent':
-                  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-                Accept: 'application/json',
-              },
+          const municResponse = await axios.get(getMunicSigpacUrl(provinceCode), {
+            headers: {
+              Accept: 'application/json',
             },
-          );
-          const municipalityData = await municResponse.json();
+          });
+          const municipalityData = municResponse.data;
 
           // Convert the array format to our cache format
           this.municipalitiesCache[provinceCode] = {};
@@ -298,8 +285,8 @@ class ParcelService {
       const formattedProvinceName = this.formatName(provinceName);
 
       return {
-        province: `${provinceCode} - ${formattedProvinceName}`,
-        municipality: `${municipalityCode} - ${municipalityName}`,
+        provinceName: formattedProvinceName,
+        municipalityName,
       };
     } catch (error: any) {
       logger.error('Error getting location info', error);
@@ -308,264 +295,53 @@ class ParcelService {
   }
 
   /**
-   * Obtiene toda la información de una parcela desde SIGPAC
-   */
-  private async getParcelInfoFromSigpac(lng: number, lat: number) {
-    try {
-      // Get GeoJSON and codes first
-      const parcelData = await this.getParcelGeoJSON(lng, lat);
-
-      // Get province and municipality info
-      const locationInfo = await this.getLocationInfo(
-        parcelData.provinceCode,
-        parcelData.municipalityCode,
-      );
-
-      // Calculate area from GeoJSON using turf
-      const surfaceArea = area(parcelData.geometry) / 10000; // Convert from m² to hectares
-
-      return {
-        parcelGeoJSON: parcelData.parcelGeoJSON,
-        declarationData: {
-          ...locationInfo,
-          superficie: Number(surfaceArea.toFixed(4)),
-          cultivo: parcelData.usoSigpac,
-        },
-      };
-    } catch (error: any) {
-      logger.error('Error fetching parcel from Sigpac', error);
-      throw new Error(`Failed to fetch parcel data from Sigpac: ${error.message}`);
-    }
-  }
-
-  /**
-   * Calcula la humedad relativa aproximada basada en la temperatura y presión
-   * @param temp - Temperatura en grados Celsius
-   * @param pres - Presión atmosférica en hPa
-   * @returns Humedad relativa estimada en porcentaje
-   */
-  private calculateHumidity(temp: number, pres: number): number {
-    // Fórmula simplificada para estimar humedad relativa
-    // Basada en la relación entre temperatura, presión y humedad
-    const baseHumidity = 50; // Humedad base
-    const tempFactor = (temp - 20) / 10; // Factor de temperatura
-    const presFactor = (pres - 1013) / 100; // Factor de presión
-
-    // Ajustamos la humedad base según los factores
-    let humidity = baseHumidity + tempFactor * -5 + presFactor * 2;
-
-    // Aseguramos que la humedad esté entre 0 y 100
-    humidity = Math.max(0, Math.min(100, humidity));
-
-    return Math.round(humidity);
-  }
-
-  /**
    * Gets weather data for the specified coordinates.
    * @param lng - Longitude coordinate
    * @param lat - Latitude coordinate
-   * @param sigpacData - Data from SIGPAC
+   * @param provinceName - Name of the province
    * @returns Current weather data for the location
    */
-  private async getWeatherData(lng: number, lat: number, sigpacData: any) {
+  private async getWeatherData(lng: number, lat: number) {
     try {
-      // Validar que tenemos los datos de declaración de SIGPAC
-      if (!sigpacData?.declarationData?.provincia) {
-        logger.error(
-          'No se encontró información de provincia en los datos de declaración de SIGPAC:',
-          sigpacData,
-        );
-        return this.getDefaultWeatherData();
-      }
+      const weatherResponse = await aemetClient.getWeatherByCoordinates(lat, lng);
+      logger.info('AEMET RESPONSE', weatherResponse);
 
-      logger.info('Datos de declaración de SIGPAC recibidos:', sigpacData.declarationData);
-
-      // Get province code and name from declaration data
-      const [provinceCode, provinceName] = sigpacData.declarationData.provincia.split(' - ');
-      const formattedProvinceName = this.formatName(provinceName);
-
-      logger.info(`Código de provincia: ${provinceCode}`);
-      logger.info(`Nombre de provincia: ${formattedProvinceName}`);
-
-      if (!provinceName) {
-        logger.error('No se encontró el nombre de la provincia en los datos de declaración');
-        return this.getDefaultWeatherData();
-      }
-
-      // Get weather data using AEMET method
-      const weatherResponse = await aemetClient.getWeatherByCoordinates(
-        lat,
-        lng,
-        formattedProvinceName,
-      );
-      logger.info('Respuesta de AEMET:', weatherResponse);
-
-      // Map the response to our expected format
       return {
         main: {
-          temp: weatherResponse?.weatherData?.tm || 22.3,
-          humidity: this.calculateHumidity(
-            weatherResponse?.weatherData?.tm || 22.3,
-            weatherResponse?.weatherData?.presMax || 1015,
-          ),
-          temp_max: weatherResponse?.weatherData?.tmax || 28.5,
-          temp_min: weatherResponse?.weatherData?.tmin || 15.2,
-          pressure_max: weatherResponse?.weatherData?.presMax || 1015,
-          pressure_min: weatherResponse?.weatherData?.presMin || 1012,
+          temperature: weatherResponse.weatherData.temperatura,
+          windChillFactor: weatherResponse.weatherData.sensTermica,
+          relativeHumidity: weatherResponse.weatherData.humedadRelativa,
+          skyState: weatherResponse.weatherData.estadoCielo,
         },
         wind: {
-          speed: weatherResponse?.weatherData?.velmedia || 10.5,
-          gust: weatherResponse?.weatherData?.racha || 15.2,
-          direction: weatherResponse?.weatherData?.dir || 220,
+          speed: weatherResponse.weatherData.viento.velocidad,
+          gust: weatherResponse.weatherData.viento.rachaMax,
+          direction: weatherResponse.weatherData.viento.direccion,
         },
         precipitation: {
-          rain: weatherResponse?.weatherData?.prec || 0,
-          snow: weatherResponse?.weatherData?.nieve || 0,
+          rain: weatherResponse.weatherData.precipitacion,
+          rainChance: weatherResponse.weatherData.probPrecipitacion,
+          snow: weatherResponse.weatherData.nieve,
+          snowChance: weatherResponse.weatherData.probNieve,
+          stormChance: weatherResponse.weatherData.probTormenta,
         },
-        solar: {
-          radiation: weatherResponse?.weatherData?.inso || 8.5,
-        },
-        station: {
-          id: weatherResponse?.station?.indicativo || '',
-          name: weatherResponse?.station?.nombre || '',
-          distance: weatherResponse?.distancia || 0,
-        },
-        weather: [
-          {
-            description: this.getWeatherDescription(weatherResponse?.weatherData || {}),
-            icon: this.determineWeatherIcon(weatherResponse?.weatherData || {}),
-          },
-        ],
-        date: weatherResponse?.weatherData?.fecha || new Date().toISOString().split('T')[0],
-        time_max_temp: weatherResponse?.weatherData?.horatmax || '',
-        time_min_temp: weatherResponse?.weatherData?.horatmin || '',
+        date: weatherResponse.weatherData.fecha,
+        hour: parseInt(weatherResponse.weatherData.periodo),
+        distance: weatherResponse.distancia,
+        municipality: weatherResponse.name,
       };
     } catch (error: any) {
-      logger.error('Error al obtener datos climáticos de AEMET', {
+      logger.error('Error retrieving data from AEMET', {
         error: error.message,
         stack: error.stack,
-        sigpacData: sigpacData,
       });
-      return this.getDefaultWeatherData();
     }
-  }
-
-  /**
-   * Generates a weather description based on weather conditions
-   * @param data - Weather data from AEMET
-   * @returns Human-readable weather description
-   */
-  private getWeatherDescription(data: any): string {
-    const conditions = [];
-
-    if (data.tmax && data.tmax > 30) conditions.push('Caluroso');
-    if (data.tmin && data.tmin < 5) conditions.push('Frío');
-    if (data.prec && data.prec > 0) conditions.push('Lluvioso');
-    if (data.velmedia && data.velmedia > 20) conditions.push('Ventoso');
-
-    return conditions.length > 0 ? conditions.join(', ') : 'Condiciones normales para la época';
-  }
-
-  /**
-   * Determines the weather icon based on weather conditions
-   * @param data - Weather data from AEMET
-   * @returns Icon code for the weather condition
-   */
-  private determineWeatherIcon(data: any): string {
-    // Si hay precipitación
-    if (data.prec && data.prec > 0) {
-      return '10d'; // Lluvia
-    }
-
-    // Si hay nieve
-    if (data.nieve && data.nieve > 0) {
-      return '13d'; // Nieve
-    }
-
-    // Si hay viento fuerte
-    if (data.velmedia && data.velmedia > 20) {
-      return '50d'; // Viento
-    }
-
-    // Por defecto, despejado
-    return '01d';
-  }
-
-  /**
-   * Returns default weather data when API calls fail
-   * @returns Default weather data object
-   */
-  private getDefaultWeatherData() {
-    return {
-      main: {
-        temp: 25,
-        humidity: 50,
-        temp_max: 30,
-        temp_min: 20,
-        pressure_max: 1013,
-        pressure_min: 1000,
-      },
-      wind: {
-        speed: 10,
-        gust: 15,
-        direction: 0,
-      },
-      precipitation: {
-        rain: 0,
-        snow: 0,
-      },
-      solar: {
-        radiation: 0,
-      },
-      station: {
-        id: '',
-        name: '',
-        distance: 0,
-      },
-      weather: [
-        {
-          description: 'Despejado (datos por defecto)',
-          icon: '01d',
-        },
-      ],
-      date: new Date().toISOString().split('T')[0],
-      time_max_temp: '',
-      time_min_temp: '',
-    };
-  }
-
-  /**
-   * Calculates the distance between two geographical points using Haversine formula
-   * @param lat1 - Latitude of point 1
-   * @param lng1 - Longitude of point 1
-   * @param lat2 - Latitude of point 2
-   * @param lng2 - Longitude of point 2
-   * @returns Distance in kilometers
-   */
-  private calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
-    const R = 6371; // Radio de la Tierra en km
-    const dLat = this.degToRad(lat2 - lat1);
-    const dLng = this.degToRad(lng2 - lng1);
-
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(this.degToRad(lat1)) *
-        Math.cos(this.degToRad(lat2)) *
-        Math.sin(dLng / 2) *
-        Math.sin(dLng / 2);
-
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c; // Distancia en km
-  }
-
-  private degToRad(deg: number): number {
-    return deg * (Math.PI / 180);
   }
 
   /**
    * Gets all parcels basic information for a user
    * @param userId - User ID
-   * @returns Array of parcels with basic information (municipality, location, crop)
+   * @returns Array of parcels
    */
   async getAllParcels(userId: string) {
     try {
@@ -577,11 +353,7 @@ class ParcelService {
       }
 
       // Transform parcels to required format
-      return user.parcels.map((parcel: any) => ({
-        municipio: parcel.municipality.split(' - ')[1], // Remove code from municipality
-        ubicacion: [parcel.location.coordinates[1], parcel.location.coordinates[0]], // lat, lng directly from db
-        producto: parcel.products[0] || 'Sin producto', // Take first product as main product
-      }));
+      return user.parcels;
     } catch (error: any) {
       logger.error('Error getting all parcels', error);
       throw new Error(`Failed to get all parcels: ${error.message}`);

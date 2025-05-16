@@ -4,7 +4,6 @@ import logger from '../utils/logger';
 import bcrypt from 'bcrypt';
 import { genJWT, JWTPayload } from '../middleware/auth';
 import { S3Service } from '../services/s3.service';
-import sharp from 'sharp';
 
 // Definimos una interfaz para el usuario basada en el modelo
 interface UserDocument extends Document {
@@ -109,7 +108,7 @@ class UserService {
   /**
    * Finds a user by ID
    * @param userId User ID
-   * @param includePassword Whether to include password in the response
+   * @param includePassword Whether to include password in the response (default: false)
    * @returns User if found, null otherwise
    */
   async getUserById(userId: string, includePassword = false): Promise<UserDocument | null> {
@@ -121,9 +120,11 @@ class UserService {
         return null;
       }
 
-      const user = await User.findById(userId).select(
-        includePassword ? '+passwordHash' : '-passwordHash',
-      );
+      const user = await User.findById(userId)
+        .select(includePassword ? '+passwordHash' : '-passwordHash')
+        .lean();
+
+      logger.debug(`User: ${JSON.stringify(user)}`);
 
       if (!user) {
         logger.info(`No user found with ID: ${userId}`);
@@ -133,10 +134,9 @@ class UserService {
       logger.info(`User found with ID: ${userId}`);
 
       // Convertir a objeto plano para agregar la URL de imagen
-      const userObj = user.toObject();
-      await this.assignProfilePictureUrl(userObj);
+      await this.assignProfilePictureUrl(user);
 
-      return userObj as UserDocument;
+      return user as UserDocument;
     } catch (error) {
       logger.error(`Error finding user by ID: ${error}`);
       throw error;

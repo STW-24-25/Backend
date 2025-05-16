@@ -4,7 +4,6 @@ import { s3Client, S3_CONFIG } from '../config/s3.config';
 import logger from '../utils/logger';
 import multer from 'multer';
 import sharp from 'sharp';
-import { Request } from 'express';
 
 /**
  * Interfaz para los elementos en caché

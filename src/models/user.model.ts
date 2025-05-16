@@ -140,7 +140,6 @@ export interface IUser extends Document {
  *          items:
  *            type: string
  *          description: Array of parcel IDs
- *          nullable: true
  *        loginHistory:
  *          type: array
  *          items:

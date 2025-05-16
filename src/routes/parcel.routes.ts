@@ -1,10 +1,13 @@
 import { Router } from 'express';
 import * as parcelController from '../controllers/parcel.controller';
 import { validateSchema } from '../middleware/validator';
-import { newParcelSchema } from '../middleware/validator/parcel.schemas';
+import * as parcelRequestSchemas from '../middleware/validator/parcel.schemas';
 import { authenticateJWT } from '../middleware/auth';
 
 const router = Router();
+
+// todo adjust to new parcel schema
+
 /**
  * @swagger
  * /api/parcels:
@@ -14,18 +17,8 @@ const router = Router();
  *    security:
  *      - bearerAuth: []
  *    parameters:
- *      - in: query
- *        name: lng
- *        schema:
- *          type: number
- *        required: true
- *        description: Longitude coordinate
- *      - in: query
- *        name: lat
- *        schema:
- *          type: number
- *        required: true
- *        description: Latitude coordinate
+ *      - $ref: '#/components/parameters/getParcelLatParameterSchema'
+ *      - $ref: '#/components/parameters/getParcelLngParameterSchema'
  *    responses:
  *      200:
  *        description: Parcel information retrieved successfully
@@ -137,7 +130,12 @@ const router = Router();
  *      500:
  *        description: Error retrieving parcel
  */
-router.get('/', authenticateJWT(), parcelController.getParcel);
+router.get(
+  '/',
+  authenticateJWT(),
+  validateSchema(parcelRequestSchemas.getParcelSchema),
+  parcelController.getParcel,
+);
 
 /**
  * @swagger
@@ -172,7 +170,12 @@ router.get('/', authenticateJWT(), parcelController.getParcel);
  *      500:
  *        description: Error creating parcel
  */
-router.post('/', authenticateJWT(), validateSchema(newParcelSchema), parcelController.createParcel);
+router.post(
+  '/',
+  authenticateJWT(),
+  validateSchema(parcelRequestSchemas.newParcelSchema),
+  parcelController.createParcel,
+);
 
 /**
  * @swagger
@@ -182,6 +185,12 @@ router.post('/', authenticateJWT(), validateSchema(newParcelSchema), parcelContr
  *     tags: [Parcel]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/getAllParcelsCropParameterSchema'
+ *       - $ref: '#/components/parameters/getAllParcelsSizeParameterSchema'
+ *       - $ref: '#/components/parameters/getAllParcelsAutonomousCommunityParameterSchema'
+ *       - $ref: '#/components/parameters/getAllParcelsLimitParameterSchema'
+ *       - $ref: '#/components/parameters/getAllParcelsSkipParameterSchema'
  *     responses:
  *       200:
  *         description: Parcels retrieved successfully
@@ -216,7 +225,11 @@ router.post('/', authenticateJWT(), validateSchema(newParcelSchema), parcelContr
  *       500:
  *         description: Error retrieving parcels
  */
-
-router.get('/all', authenticateJWT(), parcelController.getParcels);
+router.get(
+  '/all',
+  authenticateJWT(),
+  validateSchema(parcelRequestSchemas.getAllParcelsSchema),
+  parcelController.getParcels,
+);
 
 export default router;

@@ -50,14 +50,7 @@ export const createParcel = async (req: Request, res: Response): Promise<void> =
   try {
     const userId = req.auth!.id;
 
-    // Add user ID to parcel data
-    const parcelData = {
-      ...req.body,
-      user: userId,
-    };
-
-    // Create parcel
-    const parcel = await parcelService.createParcel(parcelData);
+    const parcel = await parcelService.createParcel(userId, req.body);
 
     res.status(201).json({ message: 'Parcel created successfully', parcel });
     logger.info(`Parcel created for user ${userId}`);
@@ -84,8 +77,8 @@ export const getParcels = async (req: Request, res: Response): Promise<void> => 
 
     res.status(200).json(parcels);
     logger.info(`Parcels retrieved for user ${userId}`);
-  } catch (error: any) {
-    res.status(500).json({ message: 'Error retrieving parcels', error: error.message });
-    logger.error('Error retrieving parcels', error);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Error retrieving parcels', error: err.message });
+    logger.error('Error retrieving parcels', err);
   }
 };
