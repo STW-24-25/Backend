@@ -173,7 +173,6 @@ describe('UserService', () => {
 
       const updateData = {
         username: 'updateduser',
-        email: 'updated@example.com',
       };
 
       const result = await userService.updateUser(
@@ -183,12 +182,10 @@ describe('UserService', () => {
 
       expect(result).toBeDefined();
       expect(result!.username).toBe(updateData.username);
-      expect(result!.email).toBe(updateData.email);
 
       // Verify DB was updated
       const updatedUser = await User.findById(createdUser._id);
       expect(updatedUser!.username).toBe(updateData.username);
-      expect(updatedUser!.email).toBe(updateData.email);
     });
 
     it('should hash password when updating password', async () => {
@@ -217,22 +214,6 @@ describe('UserService', () => {
       const result = await userService.updateUser(validButNonExistentId, { username: 'test' });
 
       expect(result).toBeNull();
-    });
-
-    it('should throw error if updating to an existing email', async () => {
-      // Create two users
-      const user1 = await createTestUser();
-      const user2 = await createTestUser({
-        ...adminUserData,
-        email: 'unique@example.com',
-      });
-
-      // Try to update user2 with user1's email
-      await expect(
-        userService.updateUser((user2._id as unknown as Types.ObjectId).toString(), {
-          email: user1.email,
-        }),
-      ).rejects.toThrow('Email');
     });
 
     it('should throw error if updating to an existing username', async () => {

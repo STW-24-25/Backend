@@ -12,11 +12,11 @@ interface UserDocument extends Document {
   autonomousCommunity: AutonomousComunity;
   isAdmin: boolean;
   createdAt: Date;
+  googleId?: string;
 }
 
 interface UpdateUserParams {
   username?: string;
-  email?: string;
   password?: string;
   role?: UserRole;
   autonomousCommunity?: AutonomousComunity;
@@ -100,19 +100,6 @@ class UserService {
         if (existingUsername) {
           logger.warn(`Username ${updateFields.username} already in use`);
           throw new Error(`Username ${updateFields.username} already in use`);
-        }
-      }
-
-      // Si se actualiza el email, verificar que no exista
-      if (updateFields.email) {
-        const existingEmail = await User.findOne({
-          email: updateFields.email,
-          _id: { $ne: userId }, // Excluir al usuario actual
-        });
-
-        if (existingEmail) {
-          logger.warn(`Email ${updateFields.email} already in use`);
-          throw new Error(`Email ${updateFields.email} already in use`);
         }
       }
 
@@ -423,6 +410,17 @@ class UserService {
       logger.error(`Error deleting profile picture: ${error}`);
       throw error;
     }
+  }
+
+  async getUserByGoogleId(googleId: string): Promise<UserDocument | null> {
+    const user = await User.findOne({ googleId }).select('-passwordHash');
+
+    if (!user) {
+      logger.warn(`No user found with googleId = ${googleId}`);
+      return null;
+    }
+
+    return user as UserDocument;
   }
 }
 

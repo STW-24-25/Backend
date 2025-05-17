@@ -12,10 +12,6 @@ import { isValidObjectId } from 'mongoose';
  *        username:
  *          type: string
  *          description: Unique username
- *        email:
- *          type: string
- *          format: email
- *          description: Unique user email
  *        password:
  *          type: string
  *          description: The new password for the user
@@ -30,7 +26,6 @@ export const updateUserByIdSchema = z.object({
   }),
   body: z.object({
     username: z.string().min(3).optional(),
-    email: z.string().email().optional(),
     password: z.string().min(6).optional(),
     role: z.nativeEnum(UserRole).optional(),
     autonomousCommunity: z.nativeEnum(AutonomousComunity).optional(),
@@ -167,16 +162,12 @@ export const getAllUsersSchema = z.object({
  *      required:
  *        - id
  *      properties:
- *        id:
- *          type: string
- *          description: ID of the user requesting unblock
  *        appeal:
  *          type: string
  *          description: Appeal description and reasons presented to unblock the user
  */
 export const requestUnblockSchema = z.object({
   body: z.object({
-    id: z.string().refine(val => isValidObjectId(val)),
     appeal: z.string().optional(),
   }),
 });

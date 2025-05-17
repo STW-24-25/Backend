@@ -44,6 +44,8 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
   }
 };
 
+// todo move password update to separate endpoint
+
 /**
  * Deletes a user from the system.
  * @param req Request object containing user ID to delete.
@@ -155,7 +157,7 @@ export const getAllUsers = async (req: Request, res: Response): Promise<void> =>
  */
 export const requestUnblock = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.body.id;
+    const userId = req.auth!.id;
     const unblockAppeal = req.body.appeal;
     const blockedUser = await userService.requestUnblock(userId, unblockAppeal);
 

@@ -3,14 +3,15 @@ import User, { UserRole, AutonomousComunity } from '../models/user.model';
 import bcrypt from 'bcrypt';
 import { genJWT, JWTPayload } from '../middleware/auth';
 import userService from './user.service';
+import { OAuth2Client, TokenPayload } from 'google-auth-library';
 
-interface CreateUserParams {
+export interface CreateUserParams {
   username: string;
   email: string;
-  password: string;
-  profilePicture?: string;
-  role?: UserRole;
-  autonomousCommunity?: AutonomousComunity;
+  password?: string;
+  role: UserRole;
+  autonomousCommunity: AutonomousComunity;
+  googleId?: string;
 }
 
 interface UserDocument extends Document {
@@ -22,6 +23,7 @@ interface UserDocument extends Document {
   isAdmin: boolean;
   createdAt: Date;
   profilePicture?: string;
+  googleId?: string;
 }
 
 class AuthService {
@@ -48,16 +50,20 @@ class AuthService {
         throw new Error('A user already exists with this username');
       }
 
-      // Hash password
-      const salt = await bcrypt.genSalt(10);
-      const passwordHash = await bcrypt.hash(userData.password, salt);
+      let passwordHash;
+      if (!userData.password) {
+        logger.info('Creating user from google account, password will be empty');
+        passwordHash = '';
+      } else {
+        // Hash password
+        passwordHash = await bcrypt.hash(userData.password, 12);
+      }
 
-      // Crear objeto con los datos para el modelo
       const userToCreate = {
         username: userData.username,
         email: userData.email,
         passwordHash,
-        profilePicture: userData.profilePicture,
+        profilePicture: undefined,
         role: userData.role,
         autonomousCommunity: userData.autonomousCommunity,
       };
@@ -126,6 +132,8 @@ class AuthService {
         isAdmin: user.isAdmin,
       } as JWTPayload);
 
+      // todo add login history (separate to reuse in loginGoogleUser)
+
       // Remove password from user object
       const loginUserResponse = user.toObject();
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -138,6 +146,65 @@ class AuthService {
       return { user: loginUserData as unknown as UserDocument, token };
     } catch (err) {
       logger.error(`Error authenticating user: ${err}`);
+      throw err;
+    }
+  }
+
+  async verifyGoogleToken(token: string, googleId: string): Promise<TokenPayload | null> {
+    try {
+      const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+      const ticket = await googleClient.verifyIdToken({
+        idToken: token,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      const payload = ticket.getPayload();
+
+      if (payload && payload.sub !== googleId) {
+        logger.warn(
+          `Google ID mismatch during registration. Token sub: ${payload.sub}, Received ID: ${googleId}`,
+        );
+        return null;
+      }
+      if (payload) {
+        return payload;
+      }
+      logger.warn('Google payload empty');
+      return null;
+    } catch (err: any) {
+      logger.error('Error verifying google token', err.message);
+      return null;
+    }
+  }
+
+  async loginGoogleUser(
+    username: string,
+    email: string,
+    googleId: string,
+  ): Promise<{ user: UserDocument; token: string } | null> {
+    try {
+      // Find user by email or username
+      const user = await User.findOne({ email, username, googleId }).select('-passwordHash');
+
+      if (!user) {
+        logger.info(
+          `Authentication failed: No user found with email/username/googleId: ${email}/${username}/${googleId}`,
+        );
+        return null;
+      }
+
+      const token = genJWT({
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        isAdmin: user.isAdmin,
+      } as JWTPayload);
+      const userDataToReturn = user.toObject();
+      await userService.assignProfilePictureUrl(userDataToReturn);
+
+      return { user: userDataToReturn as unknown as UserDocument, token };
+    } catch (err) {
+      logger.error(`Error authenticating google user: ${err}`);
       throw err;
     }
   }

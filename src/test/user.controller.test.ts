@@ -477,7 +477,7 @@ describe('UserController', () => {
     const appeal = 'def';
 
     it('should call userService.requestUnblock and return 200 on success', async () => {
-      const req = mockRequest({ body: { id: testUserId, appeal: appeal } });
+      const req = mockRequest({ body: { appeal: appeal }, auth: { id: testUserId } });
       const res = mockResponse();
 
       (userService.requestUnblock as jest.Mock).mockResolvedValue(true);
@@ -493,7 +493,7 @@ describe('UserController', () => {
     it('should return 404 if userService.requestUnblock returns false', async () => {
       const validButNonExistentId = new mongoose.Types.ObjectId().toString();
       // Assuming appeal comes from req.body
-      const req = mockRequest({ body: { id: validButNonExistentId, appeal: appeal } });
+      const req = mockRequest({ body: { appeal: appeal }, auth: { id: validButNonExistentId } });
       const res = mockResponse();
 
       // Mock service not finding the user
@@ -511,7 +511,7 @@ describe('UserController', () => {
 
     it('should return 500 if userService.requestUnblock throws an error', async () => {
       // Assuming appeal comes from req.body
-      const req = mockRequest({ body: { id: testUserId, appeal: appeal } });
+      const req = mockRequest({ body: { appeal: appeal }, auth: { id: testUserId } });
       const res = mockResponse();
       const errorMessage = 'Database error during appeal';
 

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import authService from '../services/auth.service';
 import logger from '../utils/logger';
+import userService from '../services/user.service';
 
 /**
  * Creates a user and saves it in the DB.
@@ -14,7 +15,6 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       username: req.body.username,
       email: req.body.email,
       password: req.body.password,
-      profilePicture: req.body.profilePicture,
       role: req.body.role,
       autonomousCommunity: req.body.autonomousCommunity,
     };
@@ -50,5 +50,68 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   } catch (err: any) {
     res.status(500).json({ message: 'Login error', error: err.message });
     logger.error('Login error', err);
+  }
+};
+
+export const googleLogin = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { user: googleUser } = req.body;
+    const googlePayload = await authService.verifyGoogleToken(googleUser.id_token, googleUser.id);
+
+    if (!googlePayload) {
+      res.status(401).json({ message: 'Invalid Google ID token' });
+      return;
+    }
+
+    const existingUser = await userService.getUserByGoogleId(googlePayload.sub);
+    if (existingUser) {
+      const result = await authService.loginGoogleUser(
+        existingUser.username,
+        existingUser.email,
+        existingUser.googleId!,
+      );
+      if (!result) {
+        res.status(401).json({ message: 'Somehow invalid credentials' });
+      }
+
+      res.status(200).json(result);
+    } else {
+      res.status(200).json({ needsMoreData: true, googlePayload });
+    }
+  } catch (err: any) {
+    res.status(500).json({ message: 'Google login failed', error: err.message });
+    logger.error('Google login error', err);
+  }
+};
+
+export const googleRegister = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { user: googleUser, userData } = req.body;
+    const googlePayload = await authService.verifyGoogleToken(googleUser.id_token, googleUser.id);
+
+    if (!googlePayload) {
+      res.status(401).json({ message: 'Invalid Google ID token' });
+      return;
+    }
+
+    const existingUser = await userService.getUserByGoogleId(googlePayload.sub);
+    if (existingUser) {
+      res.status(409).json({ message: 'Google account already linked to an existing user' });
+      return;
+    }
+
+    const { user: createdUser, token } = await authService.createUser({
+      username: userData.username,
+      email: googleUser.email,
+      role: userData.role,
+      autonomousCommunity: userData.autonomousCommunity,
+      googleId: googlePayload.sub,
+    });
+
+    res.status(201).json({ user: createdUser, token });
+    logger.info(`New user registered with Google: ${createdUser.email}`);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Google registration failed', error: err.message });
+    logger.error('Google registration error', err);
   }
 };

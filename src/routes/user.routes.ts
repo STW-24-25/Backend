@@ -129,7 +129,7 @@ router.delete('/profile-picture', authenticateJWT(), userCont.deleteProfilePictu
  * @swagger
  * /api/users/request-unblock:
  *  post:
- *    summary: Request to unblock a user account
+ *    summary: Request to unblock a authenticated user account
  *    security:
  *      - bearerAuth: []
  *    tags: [User]
