@@ -21,8 +21,8 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       autonomousCommunity: req.body.autonomousCommunity,
     };
 
-    await userService.createUser(userData);
-    res.status(201).json({ message: 'User created successfully' });
+    const data = await userService.createUser(userData);
+    res.status(201).json(data);
     logger.info(`User created: ${req.body.username}`);
   } catch (err: any) {
     res.status(500).json({ message: 'Error creating user', error: err.message });

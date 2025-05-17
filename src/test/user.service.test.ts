@@ -141,7 +141,7 @@ describe('UserService', () => {
         autonomousCommunity: AutonomousComunity.ARAGON,
       };
 
-      const createdUser = (await userService.createUser(userData)) as IUser;
+      const { user: createdUser, token } = await userService.createUser(userData);
 
       expect(createdUser).toBeDefined();
       expect(createdUser.username).toBe(userData.username);
@@ -546,7 +546,7 @@ describe('UserService', () => {
         autonomousCommunity: AutonomousComunity.ARAGON,
       };
 
-      const createdUser = (await userService.createUser(userData)) as IUser;
+      const { user: createdUser, token } = await userService.createUser(userData);
       const mockFile = {
         buffer: Buffer.from('test-image'),
         originalname: 'test.jpg',

@@ -3,6 +3,7 @@ import * as userController from '../controllers/user.controller';
 import { UserRole, AutonomousComunity } from '../models/user.model';
 import { Request, Response } from 'express';
 import userService from '../services/user.service';
+import { genJWT } from '../middleware/auth';
 
 jest.mock('../utils/logger', () => ({
   info: jest.fn(),
@@ -82,12 +83,23 @@ describe('UserController', () => {
     loginHistory: [],
   };
 
+  const mockToken = genJWT({
+    id: testUserId,
+    username: mockCreatedUser.username,
+    email: mockCreatedUser.email,
+    role: mockCreatedUser.role,
+    isAdmin: mockCreatedUser.isAdmin,
+  });
+
   describe('createUser', () => {
     it('should call userService.createUser and return 201 on success', async () => {
       const req = mockRequest({ body: testUserDataInput });
       const res = mockResponse();
 
-      (userService.createUser as jest.Mock).mockResolvedValue(mockCreatedUser);
+      (userService.createUser as jest.Mock).mockResolvedValue({
+        user: mockCreatedUser,
+        token: mockToken,
+      });
 
       await userController.createUser(req, res);
 
@@ -96,7 +108,10 @@ describe('UserController', () => {
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalled();
 
-      expect(res.json).toHaveBeenCalledWith({ message: 'User created successfully' });
+      expect(res.json).toHaveBeenCalledWith({
+        user: mockCreatedUser,
+        token: mockToken,
+      });
     });
 
     it('should return 500 if userService.createUser throws an error', async () => {

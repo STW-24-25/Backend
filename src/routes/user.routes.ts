@@ -26,6 +26,53 @@ const router = Router();
  *    responses:
  *      201:
  *        description: User created successfully
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                user:
+ *                  type: object
+ *                  properties:
+ *                    _id:
+ *                      type: string
+ *                      format: MongoId
+ *                    username:
+ *                      type: string
+ *                    email:
+ *                      type: string
+ *                    role:
+ *                      $ref: '#/components/schemas/UserRole'
+ *                    autonomousCommunity:
+ *                      $ref: '#/components/schemas/AutonomousCommunity'
+ *                    isAdmin:
+ *                      type: boolean
+ *                      default: false
+ *                    isBlocked:
+ *                      type: boolean
+ *                      default: false
+ *                    profilePicture:
+ *                      type: string
+ *                      nullable: true
+ *                    parcels:
+ *                      type: array
+ *                      items:
+ *                        type: string
+ *                        format: MongoId
+ *                      description: Array of parcel IDs
+ *                    loginHistory:
+ *                      type: array
+ *                      items:
+ *                        type: object
+ *                        properties:
+ *                          timestamp:
+ *                            type: string
+ *                            format: date
+ *                          ipAddress:
+ *                            type: string
+ *                token:
+ *                  type: string
+ *                  format: MongoId
  *      400:
  *        description: Bad request, schema validation failed
  *      500:
@@ -267,6 +314,10 @@ router.post('/refresh-images', authenticateJWT(), userCont.refreshUserImages);
  */
 router.post('/login', validateSchema(userRequestSchemas.loginSchema), userCont.login);
 
+router.post('/auth/google');
+
+router.post('/auth/github');
+
 /**
  * @swagger
  * /api/users/{id}:
@@ -315,13 +366,13 @@ router.delete(
  *            schema:
  *              type: object
  *              properties:
+ *                _id:
+ *                  type: string
+ *                  format: MongoId
  *                username:
  *                  type: string
  *                email:
  *                  type: string
- *                profilePicture:
- *                  type: string
- *                  nullable: true
  *                role:
  *                  $ref: '#/components/schemas/UserRole'
  *                autonomousCommunity:
@@ -332,6 +383,37 @@ router.delete(
  *                isBlocked:
  *                  type: boolean
  *                  default: false
+ *                profilePicture:
+ *                  type: string
+ *                  nullable: true
+ *                blockReason:
+ *                  type: string
+ *                  nullable: true
+ *                parcels:
+ *                  type: array
+ *                  items:
+ *                    type: string
+ *                    format: MongoId
+ *                  description: Array of parcel IDs
+ *                loginHistory:
+ *                  type: array
+ *                  items:
+ *                    type: object
+ *                    properties:
+ *                      timestamp:
+ *                        type: string
+ *                        format: date
+ *                      ipAddress:
+ *                        type: string
+ *                unblockAppeal:
+ *                  type: object
+ *                  properties:
+ *                    content:
+ *                      type: string
+ *                    createdAt:
+ *                      type: string
+ *                      format: date
+ *                  nullable: true
  *      400:
  *        description: Bad request, schema validation failed
  *      404:

@@ -370,6 +370,15 @@ export const updateUserSchema = z.object({
  *          $ref: '#/components/schemas/UserRole'
  *        autonomousCommunity:
  *          $ref: '#/components/schemas/AutonomousCommunity'
+ *
+ *  parameters:
+ *    deleteUserUserIdParameterSchema:
+ *      in: path
+ *      name: id
+ *      schema:
+ *        type: string
+ *      required: true
+ *      description: User ID
  */
 export const updateProfileSchema = z.object({
   body: z.object({

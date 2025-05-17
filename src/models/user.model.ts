@@ -87,9 +87,9 @@ export interface IUser extends Document {
   isAdmin: boolean;
   createdAt: Date;
   isBlocked: boolean;
-  blockReason: string;
-  parcels?: mongoose.Schema.Types.ObjectId[];
-  loginHistory: [{ timestamp: string; ipAddress: string }];
+  blockReason?: string;
+  parcels: mongoose.Schema.Types.ObjectId[];
+  loginHistory: [{ content: string; createdAt: Date }];
   unblockAppeal?: {
     content: string;
     createdAt: Date;
@@ -135,6 +135,7 @@ export interface IUser extends Document {
  *          type: boolean
  *        blockReason:
  *          type: string
+ *          nullable: true
  *        parcels:
  *          type: array
  *          items:
@@ -159,6 +160,7 @@ export interface IUser extends Document {
  *            createdAt:
  *              type: string
  *              format: date
+ *          nullable: true
  */
 const userSchema: Schema = new Schema({
   username: { type: String, required: true, unique: true },

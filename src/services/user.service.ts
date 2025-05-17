@@ -41,7 +41,7 @@ class UserService {
    * @param userData User data to create
    * @returns Created user
    */
-  async createUser(userData: CreateUserParams): Promise<UserDocument> {
+  async createUser(userData: CreateUserParams): Promise<{ user: UserDocument; token: string }> {
     try {
       logger.info(`Creating new user with email: ${userData.email}`);
 
@@ -76,13 +76,21 @@ class UserService {
       const user = new User(userToCreate);
       const savedUser = await user.save();
 
+      const token = genJWT({
+        id: savedUser._id,
+        username: savedUser.username,
+        email: savedUser.email,
+        role: savedUser.role,
+        isAdmin: savedUser.isAdmin,
+      } as JWTPayload);
+
       // Remove password from response
       const userResponse = savedUser.toObject();
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { passwordHash: createUserPasswordHash, ...createUserData } = userResponse;
+      const { passwordHash: _, ...createUserData } = userResponse;
 
       logger.info(`User created successfully with ID: ${savedUser._id}`);
-      return createUserData as unknown as UserDocument;
+      return { user: createUserData as unknown as UserDocument, token };
     } catch (error) {
       logger.error(`Error creating user: ${error}`);
       throw error;
