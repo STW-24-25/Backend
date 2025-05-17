@@ -204,7 +204,7 @@ describe('UserService', () => {
       const updatedUser = await User.findById(createdUser._id).select('+passwordHash');
 
       // Verify the password was hashed
-      const isMatch = await bcrypt.compare(updateData.password, updatedUser!.passwordHash);
+      const isMatch = await bcrypt.compare(updateData.password, updatedUser!.passwordHash!);
       expect(isMatch).toBe(true);
     });
 
