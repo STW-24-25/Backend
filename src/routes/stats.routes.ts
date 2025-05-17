@@ -27,6 +27,19 @@ const router = Router();
  *                  type: integer
  *                totalForums:
  *                  type: integer
+ *                totalPosts:
+ *                  type: integer
+ *                postsPerMonth:
+ *                  type: array
+ *                  items:
+ *                    type: object
+ *                    properties:
+ *                      year:
+ *                        type: integer
+ *                      month:
+ *                        type: integer
+ *                      postCount:
+ *                        type: integer
  *                usersPerMonth:
  *                  type: array
  *                  items:
