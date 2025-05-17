@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import userService from '../services/user.service';
+import authService from '../services/auth.service';
 import logger from '../utils/logger';
 
 /**
@@ -19,7 +19,7 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       autonomousCommunity: req.body.autonomousCommunity,
     };
 
-    const data = await userService.createUser(userData);
+    const data = await authService.createUser(userData);
     res.status(201).json(data);
     logger.info(`User created: ${req.body.username}`);
   } catch (err: any) {
@@ -37,7 +37,7 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { usernameOrEmail, password } = req.body;
-    const result = await userService.loginUser(usernameOrEmail, password);
+    const result = await authService.loginUser(usernameOrEmail, password);
 
     if (!result) {
       res.status(401).json({ message: 'Invalid credentials' });

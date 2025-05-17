@@ -3,7 +3,7 @@ import * as authController from '../controllers/auth.controller';
 import { UserRole, AutonomousComunity } from '../models/user.model';
 import { genJWT } from '../middleware/auth';
 import { Request, Response } from 'express';
-import userService from '../services/user.service';
+import authService from '../services/auth.service';
 
 jest.mock('../utils/logger', () => ({
   info: jest.fn(),
@@ -12,7 +12,7 @@ jest.mock('../utils/logger', () => ({
   debug: jest.fn(),
 }));
 
-jest.mock('../services/user.service', () => ({
+jest.mock('../services/auth.service', () => ({
   createUser: jest.fn(),
   loginUser: jest.fn(),
 }));
@@ -80,18 +80,18 @@ describe('AuthController', () => {
   });
 
   describe('createUser', () => {
-    it('should call userService.createUser and return 201 on success', async () => {
+    it('should call authService.createUser and return 201 on success', async () => {
       const req = mockRequest({ body: testUserDataInput });
       const res = mockResponse();
 
-      (userService.createUser as jest.Mock).mockResolvedValue({
+      (authService.createUser as jest.Mock).mockResolvedValue({
         user: mockCreatedUser,
         token: mockToken,
       });
 
       await authController.createUser(req, res);
 
-      expect(userService.createUser).toHaveBeenCalledWith(testUserDataInput);
+      expect(authService.createUser).toHaveBeenCalledWith(testUserDataInput);
 
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalled();
@@ -102,18 +102,18 @@ describe('AuthController', () => {
       });
     });
 
-    it('should return 500 if userService.createUser throws an error', async () => {
+    it('should return 500 if authService.createUser throws an error', async () => {
       const req = mockRequest({ body: testUserDataInput });
       const res = mockResponse();
       const errorMessage = 'A user already exists with this email';
 
       // Mock service failure (e.g., duplicate entry)
-      (userService.createUser as jest.Mock).mockRejectedValue(new Error(errorMessage));
+      (authService.createUser as jest.Mock).mockRejectedValue(new Error(errorMessage));
 
       await authController.createUser(req, res);
 
       // Verify service call
-      expect(userService.createUser).toHaveBeenCalledWith(testUserDataInput);
+      expect(authService.createUser).toHaveBeenCalledWith(testUserDataInput);
 
       // Verify error response
       expect(res.status).toHaveBeenCalledWith(500);
@@ -130,16 +130,16 @@ describe('AuthController', () => {
       password: testUserDataInput.password,
     };
 
-    it('should call userService.loginUser and return 200 with token/user on success', async () => {
+    it('should call authService.loginUser and return 200 with token/user on success', async () => {
       const req = mockRequest({ body: loginCredentials });
       const res = mockResponse();
       const loginResult = { token: 'mocked-jwt-token', user: mockCreatedUser };
 
-      (userService.loginUser as jest.Mock).mockResolvedValue(loginResult);
+      (authService.loginUser as jest.Mock).mockResolvedValue(loginResult);
 
       await authController.login(req, res);
 
-      expect(userService.loginUser).toHaveBeenCalledWith(
+      expect(authService.loginUser).toHaveBeenCalledWith(
         loginCredentials.usernameOrEmail,
         loginCredentials.password,
       );
@@ -148,15 +148,15 @@ describe('AuthController', () => {
       expect(res.json).toHaveBeenCalledWith(loginResult);
     });
 
-    it('should return 401 if userService.loginUser returns null (invalid credentials)', async () => {
+    it('should return 401 if authService.loginUser returns null (invalid credentials)', async () => {
       const req = mockRequest({ body: loginCredentials });
       const res = mockResponse();
 
-      (userService.loginUser as jest.Mock).mockResolvedValue(null);
+      (authService.loginUser as jest.Mock).mockResolvedValue(null);
 
       await authController.login(req, res);
 
-      expect(userService.loginUser).toHaveBeenCalledWith(
+      expect(authService.loginUser).toHaveBeenCalledWith(
         loginCredentials.usernameOrEmail,
         loginCredentials.password,
       );
@@ -165,16 +165,16 @@ describe('AuthController', () => {
       expect(res.json).toHaveBeenCalledWith({ message: 'Invalid credentials' });
     });
 
-    it('should return 500 if userService.loginUser throws an error', async () => {
+    it('should return 500 if authService.loginUser throws an error', async () => {
       const req = mockRequest({ body: loginCredentials });
       const res = mockResponse();
       const errorMessage = 'Authentication service unavailable';
 
-      (userService.loginUser as jest.Mock).mockRejectedValue(new Error(errorMessage));
+      (authService.loginUser as jest.Mock).mockRejectedValue(new Error(errorMessage));
 
       await authController.login(req, res);
 
-      expect(userService.loginUser).toHaveBeenCalledWith(
+      expect(authService.loginUser).toHaveBeenCalledWith(
         loginCredentials.usernameOrEmail,
         loginCredentials.password,
       );

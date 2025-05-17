@@ -1,11 +1,11 @@
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import bcrypt from 'bcrypt';
-import { UserService } from '../services/user.service';
+import userService from '../services/user.service';
 import User, { UserRole, AutonomousComunity } from '../models/user.model';
-import { genJWT } from '../middleware/auth';
 import { Types } from 'mongoose';
 import dotenv from 'dotenv';
+import authService from '../services/auth.service';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -34,6 +34,7 @@ jest.mock('../services/s3.service', () => ({
     getDefaultProfilePictureUrl: jest.fn().mockResolvedValue('https://mocked-default-profile-url'),
   },
 }));
+
 jest.mock('sharp', () => () => ({
   resize: () => ({
     jpeg: () => ({ toBuffer: jest.fn().mockResolvedValue(Buffer.from('mocked-image')) }),
@@ -42,7 +43,6 @@ jest.mock('sharp', () => () => ({
 
 describe('UserService', () => {
   let mongoServer: MongoMemoryServer;
-  let userService: UserService;
 
   // Limpiar completamente todas las colecciones de la base de datos
   const clearDatabase = async () => {
@@ -67,7 +67,6 @@ describe('UserService', () => {
   // Limpiar antes de cada test para asegurar aislamiento
   beforeEach(async () => {
     await clearDatabase();
-    userService = new UserService();
   });
 
   // Limpiar después de cada test para evitar contaminación
@@ -130,81 +129,6 @@ describe('UserService', () => {
 
     return user.save();
   }
-
-  describe('createUser', () => {
-    it('should create a new user successfully', async () => {
-      const userData = {
-        username: 'testuser',
-        email: 'test@example.com',
-        password: 'password123',
-        role: UserRole.SMALL_FARMER,
-        autonomousCommunity: AutonomousComunity.ARAGON,
-      };
-
-      const { user: createdUser, token } = await userService.createUser(userData);
-
-      expect(createdUser).toBeDefined();
-      expect(token).toBeDefined();
-      expect(createdUser.username).toBe(userData.username);
-      expect(createdUser.email).toBe(userData.email);
-      expect(createdUser.role).toBe(userData.role);
-      expect(createdUser.autonomousCommunity).toBe(userData.autonomousCommunity);
-      expect(createdUser.isAdmin).toBe(false);
-      expect(createdUser.profilePicture).toBeUndefined();
-    });
-
-    it('should hash the password before saving', async () => {
-      const userData = {
-        username: 'testuser2',
-        email: 'test2@example.com',
-        password: 'password123',
-        role: UserRole.SMALL_FARMER,
-        autonomousCommunity: AutonomousComunity.ARAGON,
-      };
-
-      await userService.createUser(userData);
-      // Obtener el usuario directamente de la BD para verificar el hash
-      const dbUser = await User.findOne({ email: userData.email }).select('+passwordHash');
-      const isPasswordHashed = await bcrypt.compare(userData.password, dbUser!.passwordHash || '');
-      expect(isPasswordHashed).toBe(true);
-    });
-
-    it('should throw error if username already exists', async () => {
-      const userData = {
-        username: 'testuser3',
-        email: 'test3@example.com',
-        password: 'password123',
-        role: UserRole.SMALL_FARMER,
-        autonomousCommunity: AutonomousComunity.ARAGON,
-      };
-
-      await userService.createUser(userData);
-
-      await expect(userService.createUser(userData)).rejects.toThrow();
-    });
-
-    it('should throw an error if user with email already exists', async () => {
-      // Create user first
-      await createTestUser();
-
-      // Try to create again with the same email
-      await expect(userService.createUser(testUserData)).rejects.toThrow(
-        'A user already exists with this email',
-      );
-    });
-
-    it('should throw an error if user with username already exists', async () => {
-      // Create user first
-      await createTestUser();
-
-      // Try to create again with the same username but different email
-      const userData = { ...testUserData, email: 'different@example.com' };
-
-      await expect(userService.createUser(userData)).rejects.toThrow(
-        'A user already exists with this username',
-      );
-    });
-  });
 
   describe('findUserById', () => {
     it('should find a user by ID', async () => {
@@ -410,46 +334,6 @@ describe('UserService', () => {
     });
   });
 
-  describe('loginUser', () => {
-    it('should login successfully with correct credentials', async () => {
-      await createTestUser();
-
-      const result = await userService.loginUser(testUserData.email, testUserData.password);
-
-      expect(result).toBeDefined();
-      expect(result!.user.email).toBe(testUserData.email);
-      expect(result!.user.passwordHash).toBeUndefined(); // Password should not be included
-      expect(result!.token).toBe('mocked-jwt-token');
-
-      // Verify genJWT was called with correct params
-      expect(genJWT).toHaveBeenCalled();
-      expect(genJWT).toHaveBeenCalledWith(
-        expect.objectContaining({
-          email: testUserData.email,
-          role: testUserData.role,
-        }),
-      );
-    });
-
-    it('should return null with incorrect email', async () => {
-      await createTestUser();
-
-      const result = await userService.loginUser('wrong@example.com', testUserData.password);
-
-      expect(result).toBeNull();
-      expect(genJWT).not.toHaveBeenCalled();
-    });
-
-    it('should return null with incorrect password', async () => {
-      await createTestUser();
-
-      const result = await userService.loginUser(testUserData.email, 'WrongPassword123');
-
-      expect(result).toBeNull();
-      expect(genJWT).not.toHaveBeenCalled();
-    });
-  });
-
   describe('blockUser', () => {
     it('debería bloquear un usuario correctamente', async () => {
       const user = await createTestUser();
@@ -548,7 +432,7 @@ describe('UserService', () => {
       };
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { user: createdUser, token } = await userService.createUser(userData);
+      const { user: createdUser, token } = await authService.createUser(userData);
       const mockFile = {
         buffer: Buffer.from('test-image'),
         originalname: 'test.jpg',
