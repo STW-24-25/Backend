@@ -260,6 +260,11 @@ const parcelSchema: Schema = new Schema(
         required: true,
       },
     ],
+    crop: {
+      type: String,
+      enum: CropType,
+      required: true,
+    },
     provinceCode: {
       type: Number,
       required: true,
