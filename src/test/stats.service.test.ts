@@ -2,7 +2,8 @@ import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import StatsService from '../services/stats.service';
 import UserModel, { AutonomousComunity, UserRole } from '../models/user.model';
-import { ForumModel } from '../models/forum.model';
+import ForumModel from '../models/forum.model';
+import MessageModel from '../models/message.model';
 
 describe('StatsService', () => {
   let mongoServer: MongoMemoryServer;
@@ -21,6 +22,7 @@ describe('StatsService', () => {
   afterEach(async () => {
     await UserModel.deleteMany({});
     await ForumModel.deleteMany({});
+    await MessageModel.deleteMany({});
   });
 
   describe('getAllStats', () => {
@@ -31,6 +33,8 @@ describe('StatsService', () => {
         totalUsers: 0,
         totalBanned: 0,
         totalForums: 0,
+        totalPosts: 0,
+        postsPerMonth: [],
         usersPerMonth: [],
         usersByAutCom: [],
         usersByRole: [],
@@ -83,12 +87,34 @@ describe('StatsService', () => {
         },
       ]);
 
+      // Insert sample messages
+      await MessageModel.create([
+        {
+          forum: (await ForumModel.findOne({ title: 'Forum 1' }))!._id,
+          content: 'This is a test message',
+          author: (await UserModel.findOne({ username: 'user1' }))!._id,
+          createdAt: new Date('2025-01-01T15:00:00Z'),
+          likes: [],
+          flags: [],
+        },
+        {
+          forum: (await ForumModel.findOne({ title: 'Forum 2' }))!._id,
+          content: 'Another test message',
+          author: (await UserModel.findOne({ username: 'user2' }))!._id,
+          createdAt: new Date('2025-01-02T16:00:00Z'),
+          likes: [],
+          flags: [],
+        },
+      ]);
+
       const stats = await StatsService.getAllStats();
 
       expect(stats).toEqual({
         totalUsers: 2,
         totalBanned: 1,
         totalForums: 2,
+        totalPosts: 2,
+        postsPerMonth: [{ postCount: 2, year: 2025, month: 1 }],
         usersPerMonth: [{ year: 2025, month: 1, userCount: 2 }],
         usersByAutCom: [{ autonomousCommunity: AutonomousComunity.ARAGON, userCount: 2 }],
         usersByRole: [
@@ -119,6 +145,8 @@ describe('StatsService', () => {
         totalUsers: 0,
         totalBanned: 0,
         totalForums: 1,
+        totalPosts: 0,
+        postsPerMonth: [],
         usersPerMonth: [],
         usersByAutCom: [],
         usersByRole: [],

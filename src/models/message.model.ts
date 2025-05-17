@@ -74,3 +74,5 @@ messageSchema.index({ parentMessage: 1 });
 messageSchema.index({ createdAt: -1 });
 
 export const MessageModel = mongoose.model<IMessage>('Message', messageSchema);
+
+export default MessageModel;

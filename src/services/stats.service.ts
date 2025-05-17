@@ -1,12 +1,13 @@
 import logger from '../utils/logger';
 import UserModel from '../models/user.model';
-import { ForumModel } from '../models/forum.model';
+import ForumModel from '../models/forum.model';
+import MessageModel from '../models/message.model';
 
 class StatsService {
   async getAllStats() {
-    const runAggregation = async (pipeline: any, desc: string) => {
+    const runAggregation = async (pipeline: any, desc: string, model: any = UserModel) => {
       try {
-        return await UserModel.aggregate(pipeline);
+        return await model.aggregate(pipeline);
       } catch (err) {
         logger.error(`Error runnign aggregate ${desc}:`, err);
         return [];
@@ -32,6 +33,28 @@ class StatsService {
           year: '$_id.year',
           month: '$_id.month',
           userCount: { $size: '$uniqueUsers' },
+        },
+      },
+      { $sort: { year: 1, month: 1 } },
+    ];
+
+    const postsPerMonthPipeline = [
+      { $match: { isDeleted: false, createdAt: { $gte: oneYearAgo } } },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' },
+          },
+          postCount: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          year: '$_id.year',
+          month: '$_id.month',
+          postCount: 1,
         },
       },
       { $sort: { year: 1, month: 1 } },
@@ -115,20 +138,18 @@ class StatsService {
       { $sort: { role: 1 } },
     ];
 
-    const stats = {
+    return {
       totalUsers: await UserModel.countDocuments(),
-      // totalPosts: await ...
       totalBanned: await UserModel.countDocuments({ isBlocked: true }),
       totalForums: await ForumModel.countDocuments(),
+      totalPosts: await MessageModel.countDocuments({ isDeleted: false }),
+      postsPerMonth: await runAggregation(postsPerMonthPipeline, 'postsPerMonth', MessageModel),
       usersPerMonth: await runAggregation(usersPerMonthPipeline, 'usersPerMonth'),
-      // postsPerMonth: await runAggregation(postsPerMonthPipeline, 'postsPerMonth'),
       usersByAutCom: await runAggregation(usersByAutComPipeline, 'usersByAutCom'),
       usersByRole: await runAggregation(usersByRolePipeline, 'usersByRole'),
       loginsPerMonth: await runAggregation(loginsPerMonthPipeline, 'loginsPerMonth'),
       loginsPerHour: await runAggregation(loginsPerHourPipeline, 'loginsPerHour'),
     };
-
-    return stats;
   }
 }
 

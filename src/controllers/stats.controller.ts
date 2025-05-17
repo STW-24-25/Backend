@@ -7,9 +7,9 @@ import statsService from '../services/stats.service';
  * @param req Validated Request object (empty)
  * @param res Response object, either 200 if stats were retrieved succesfully or 500 otherwise
  */
-export const getAllStats = async (req: Request, res: Response): Promise<void> => {
+export const getAllStats = async (_: Request, res: Response): Promise<void> => {
   try {
-    const stats = statsService.getAllStats();
+    const stats = await statsService.getAllStats();
 
     res.status(200).json(stats);
     logger.info('Retrieved all stats');
