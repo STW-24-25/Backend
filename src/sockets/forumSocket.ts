@@ -9,6 +9,7 @@ import {
 import { MessageModel } from '../models/message.model';
 import { JWTPayload, verifyJWT } from '../middleware/auth';
 import messageService from '../services/message.service';
+import userService from '../services/user.service';
 
 const ADMIN_UPDATES_ROOM = 'admin_all_messages_feed';
 
@@ -63,10 +64,12 @@ function setupForumSockets(io: Server) {
             'forum',
           ]);
 
+          await userService.assignProfilePictureUrl(populatedNewMsg!.author);
+
           io.to(ADMIN_UPDATES_ROOM).emit('newMessage', populatedNewMsg);
           io.to(validatedData.forum).emit('newMessage', {
-            ...populatedNewMsg,
-            forum: populatedNewMsg!._id,
+            ...populatedNewMsg!.toObject(),
+            forum: populatedNewMsg!.forum._id,
           });
           logger.info(`Message posted in forum ${data.forum}: ${data.content} by ${data.author}`);
         } catch (err) {
