@@ -5,10 +5,12 @@ import forumRoutes from './forum.routes';
 import productRoutes from './product.routes';
 import statsRoutes from './stats.routes';
 import messageRoutes from './message.routes';
+import authRoutes from './auth.routes';
 
 const router = Router();
 
 router.use('/users', userRoutes);
+router.use('/auth', authRoutes);
 router.use('/parcels', parcelRoutes);
 router.use('/forums', forumRoutes);
 router.use('/products', productRoutes);

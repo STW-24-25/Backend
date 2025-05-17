@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import bcrypt from 'bcrypt';
 import { UserService } from '../services/user.service';
-import User, { UserRole, AutonomousComunity, IUser } from '../models/user.model';
+import User, { UserRole, AutonomousComunity } from '../models/user.model';
 import { genJWT } from '../middleware/auth';
 import { Types } from 'mongoose';
 import dotenv from 'dotenv';
@@ -144,6 +144,7 @@ describe('UserService', () => {
       const { user: createdUser, token } = await userService.createUser(userData);
 
       expect(createdUser).toBeDefined();
+      expect(token).toBeDefined();
       expect(createdUser.username).toBe(userData.username);
       expect(createdUser.email).toBe(userData.email);
       expect(createdUser.role).toBe(userData.role);
@@ -546,6 +547,7 @@ describe('UserService', () => {
         autonomousCommunity: AutonomousComunity.ARAGON,
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { user: createdUser, token } = await userService.createUser(userData);
       const mockFile = {
         buffer: Buffer.from('test-image'),
