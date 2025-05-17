@@ -55,8 +55,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
 export const googleLogin = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { user: googleUser } = req.body;
-    const googlePayload = await authService.verifyGoogleToken(googleUser.id_token, googleUser.id);
+    logger.info('Attempting google login');
+    const googlePayload = await authService.verifyGoogleToken(req.body.id_token, req.body.id);
 
     if (!googlePayload) {
       res.status(401).json({ message: 'Invalid Google ID token' });
@@ -74,9 +74,11 @@ export const googleLogin = async (req: Request, res: Response): Promise<void> =>
         res.status(401).json({ message: 'Somehow invalid credentials' });
       }
 
+      logger.info('Matching account found');
       res.status(200).json(result);
     } else {
-      res.status(200).json({ needsMoreData: true, googlePayload });
+      logger.info('No matching account found, need more data');
+      res.status(202).json({ needsMoreData: true, googlePayload });
     }
   } catch (err: any) {
     res.status(500).json({ message: 'Google login failed', error: err.message });
@@ -86,7 +88,7 @@ export const googleLogin = async (req: Request, res: Response): Promise<void> =>
 
 export const googleRegister = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { user: googleUser, userData } = req.body;
+    const { userData, ...googleUser } = req.body;
     const googlePayload = await authService.verifyGoogleToken(googleUser.id_token, googleUser.id);
 
     if (!googlePayload) {

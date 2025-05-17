@@ -72,41 +72,51 @@ export const loginSchema = z.object({
  *    googleLogin:
  *      type: object
  *      required:
- *        - user
- *        - expires
+ *        - name
+ *        - email
+ *        - picture
+ *        - sub
  *        - accessToken
+ *        - id
+ *        - id_token
+ *        - iat
+ *        - exp
+ *        - jti
  *      properties:
- *        user:
- *          type: object
- *          properties:
- *            name:
- *              type: string
- *            email:
- *              type: string
- *              format: email
- *            image:
- *              type: string
- *            id:
- *              type: string
- *            id_token:
- *              type: string
- *        expires:
+ *        name:
  *          type: string
- *          format: date
+ *        email:
+ *          type: string
+ *          format: email
+ *        picture:
+ *          type: string
+ *        sub:
+ *          type: string
  *        accessToken:
+ *          type: string
+ *        id:
+ *          type: string
+ *        id_token:
+ *          type: string
+ *        iat:
+ *          type: number
+ *        exp:
+ *          type: number
+ *        jti:
  *          type: string
  */
 export const googleLoginSchema = z.object({
   body: z.object({
-    user: z.object({
-      name: z.string(),
-      email: z.string(),
-      image: z.string(),
-      id: z.string(),
-      id_token: z.string(),
-    }),
-    expires: z.string().date(),
+    name: z.string(),
+    email: z.string().email(),
+    picture: z.string(),
+    sub: z.string(),
     accessToken: z.string(),
+    id: z.string(),
+    id_token: z.string(),
+    iat: z.number(),
+    exp: z.number(),
+    jti: z.string(),
   }),
 });
 
@@ -117,40 +127,49 @@ export const googleLoginSchema = z.object({
  *    googleRegister:
  *      type: object
  *      required:
- *        - user
- *        - expires
+ *        - name
+ *        - email
+ *        - picture
+ *        - sub
  *        - accessToken
+ *        - id
+ *        - id_token
+ *        - iat
+ *        - exp
+ *        - jti
  *        - userData
  *      properties:
- *        user:
- *          type: object
- *          properties:
- *            name:
- *              type: string
- *            email:
- *              type: string
- *              format: email
- *            image:
- *              type: string
- *            id:
- *              type: string
- *            id_token:
- *              type: string
- *        expires:
+ *        name:
  *          type: string
- *          format: date
+ *        email:
+ *          type: string
+ *          format: email
+ *        picture:
+ *          type: string
+ *        sub:
+ *          type: string
  *        accessToken:
+ *          type: string
+ *        id:
+ *          type: string
+ *        id_token:
+ *          type: string
+ *        iat:
+ *          type: number
+ *        exp:
+ *          type: number
+ *        jti:
  *          type: string
  *        userData:
  *          type: object
+ *          required:
+ *            - username
+ *            - role
+ *            - autonomousCommunity
  *          properties:
  *            username:
  *              type: string
- *              description: Unique username
- *            email:
- *              type: string
- *              format: email
- *              description: Unique email
+ *              description: Unique username (minimum 3 characters)
  *            role:
  *              $ref: '#/components/schemas/UserRole'
  *            autonomousCommunity:
@@ -158,18 +177,18 @@ export const googleLoginSchema = z.object({
  */
 export const googleRegisterSchema = z.object({
   body: z.object({
-    user: z.object({
-      name: z.string(),
-      email: z.string(),
-      image: z.string(),
-      id: z.string(),
-      id_token: z.string(),
-    }),
-    expires: z.string().date(),
+    name: z.string(),
+    email: z.string().email(),
+    picture: z.string(),
+    sub: z.string(),
     accessToken: z.string(),
+    id: z.string(),
+    id_token: z.string(),
+    iat: z.number(),
+    exp: z.number(),
+    jti: z.string(),
     userData: z.object({
       username: z.string().min(3),
-      email: z.string().email(),
       role: z.nativeEnum(UserRole),
       autonomousCommunity: z.nativeEnum(AutonomousComunity),
     }),

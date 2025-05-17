@@ -54,6 +54,16 @@ const router = Router();
  *                        type: string
  *                        format: MongoId
  *                      description: Array of parcel IDs (empty)
+ *                    loginHistory:
+ *                      type: array
+ *                      items:
+ *                        type: object
+ *                        properties:
+ *                          timestamp:
+ *                            type: string
+ *                            format: date
+ *                          ipAddress:
+ *                            type: string
  *                    profilePicture:
  *                      type: string
  *                      nullable: true
@@ -87,9 +97,6 @@ router.post('/signup', validateSchema(authRequestSchemas.newUserSchema), authCon
  *            schema:
  *              type: object
  *              properties:
- *                token:
- *                  type: string
- *                  description: JWT token for authentication
  *                user:
  *                  type: object
  *                  properties:
@@ -135,6 +142,9 @@ router.post('/signup', validateSchema(authRequestSchemas.newUserSchema), authCon
  *                      type: string
  *                      nullable: true
  *                      description: Signed URL for the user's profile picture (valid for 1 hour)
+ *                token:
+ *                  type: string
+ *                  description: JWT token for authentication
  *      400:
  *        description: Bad request, schema validation failed
  *      401:
@@ -164,22 +174,16 @@ router.post('/login', validateSchema(authRequestSchemas.loginSchema), authCont.l
  *            schema:
  *              type: object
  *              properties:
- *                token:
- *                  type: string
- *                  description: JWT token for authentication
  *                user:
  *                  type: object
  *                  properties:
+ *                    _id:
+ *                      type: string
+ *                      format: MongoId
  *                    username:
  *                      type: string
- *                      description: User's username
  *                    email:
  *                      type: string
- *                      description: User's email address
- *                    profilePicture:
- *                      type: string
- *                      nullable: true
- *                      description: Signed URL for the user's profile picture (valid for 1 hour)
  *                    role:
  *                      $ref: '#/components/schemas/UserRole'
  *                    autonomousCommunity:
@@ -190,6 +194,28 @@ router.post('/login', validateSchema(authRequestSchemas.loginSchema), authCont.l
  *                    isBlocked:
  *                      type: boolean
  *                      default: false
+ *                    profilePicture:
+ *                      type: string
+ *                      nullable: true
+ *                    parcels:
+ *                      type: array
+ *                      items:
+ *                        type: string
+ *                        format: MongoId
+ *                      description: Array of parcel IDs
+ *                    loginHistory:
+ *                      type: array
+ *                      items:
+ *                        type: object
+ *                        properties:
+ *                          timestamp:
+ *                            type: string
+ *                            format: date
+ *                          ipAddress:
+ *                            type: string
+ *                token:
+ *                  type: string
+ *                  description: JWT token for authentication
  *      400:
  *        description: Bad request, schema validation failed
  *      401:
@@ -205,7 +231,7 @@ router.post(
 
 /**
  * @swagger
- * /auth/google/register:
+ * /api/auth/google/register:
  *  post:
  *    summary: Register a new account on AgroNET with a Google account associated or link an existing AgroNET account to a Google account
  *    tags: [Auth]

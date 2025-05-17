@@ -80,7 +80,7 @@ export enum AutonomousComunity {
 export interface IUser extends Document {
   username: string;
   email: string;
-  passwordHash: string;
+  passwordHash?: string;
   profilePicture?: string;
   role: UserRole;
   autonomousCommunity: AutonomousComunity;
@@ -108,7 +108,6 @@ export interface IUser extends Document {
  *      required:
  *      - username
  *      - email
- *      - passwordHash
  *      - role
  *      - autonomousCommunity
  *      - isAdmin
@@ -169,7 +168,7 @@ export interface IUser extends Document {
 const userSchema: Schema = new Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
-  passwordHash: { type: String, required: true },
+  passwordHash: { type: String, required: false },
   profilePicture: { type: String, required: false },
   role: { type: String, enum: UserRole, default: UserRole.SMALL_FARMER, required: true },
   autonomousCommunity: {

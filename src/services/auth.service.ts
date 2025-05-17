@@ -50,23 +50,22 @@ class AuthService {
         throw new Error('A user already exists with this username');
       }
 
-      let passwordHash;
-      if (!userData.password) {
-        logger.info('Creating user from google account, password will be empty');
-        passwordHash = '';
-      } else {
-        // Hash password
-        passwordHash = await bcrypt.hash(userData.password, 12);
-      }
-
-      const userToCreate = {
+      const userToCreate: Partial<UserDocument> & { passwordHash?: string } = {
         username: userData.username,
         email: userData.email,
-        passwordHash,
-        profilePicture: undefined,
         role: userData.role,
         autonomousCommunity: userData.autonomousCommunity,
       };
+
+      if (!userData.password) {
+        logger.info('Creating user from google account, passwordHash will not be set');
+        userToCreate.googleId = userData.googleId;
+      } else {
+        // Hash password
+        userToCreate.passwordHash = await bcrypt.hash(userData.password, 12);
+      }
+
+      logger.debug(JSON.stringify(userToCreate, null, 2));
 
       const user = new User(userToCreate);
       const savedUser = await user.save();
@@ -112,6 +111,13 @@ class AuthService {
 
       if (!user) {
         logger.info(`Authentication failed: No user found with email/username: ${emailOrUsername}`);
+        return null;
+      }
+
+      if (!user.passwordHash) {
+        logger.info(
+          `Authentication failed: User ${emailOrUsername} has no password set. Try Google login.`,
+        );
         return null;
       }
 
