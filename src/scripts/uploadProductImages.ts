@@ -1,9 +1,4 @@
-import dotenv from 'dotenv';
 import path from 'path';
-
-// Cargar variables de entorno desde la raíz del proyecto
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
-
 import mongoose from 'mongoose';
 import ProductModel from '../models/product.model';
 import logger from '../utils/logger';

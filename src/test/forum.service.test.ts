@@ -3,10 +3,6 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import { Types } from 'mongoose';
 import forumService from '../services/forum.service';
 import { ForumModel, IForum } from '../models/forum.model';
-import dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
 
 // No schema needed for this test file
 

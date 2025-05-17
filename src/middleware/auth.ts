@@ -1,7 +1,5 @@
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { expressjwt } from 'express-jwt';
-import dotenv from 'dotenv';
-dotenv.config();
 
 export interface JWTPayload extends JwtPayload {
   id: string;

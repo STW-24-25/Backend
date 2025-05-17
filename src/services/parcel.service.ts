@@ -2,7 +2,6 @@ import mongoose from 'mongoose';
 import ParcelModel from '../models/parcel.model';
 import ProductModel from '../models/product.model';
 import logger from '../utils/logger';
-import dotenv from 'dotenv';
 import { Aemet } from 'aemet-api';
 import { CAPITAL_NAMES } from './constants/location.constants';
 import UserModel from '../models/user.model';
@@ -15,9 +14,6 @@ import {
   USO_SIGPAC_URL,
   VALID_SIGPAC_USES,
 } from './constants/sigpac.constants';
-
-// Load environment variables
-dotenv.config();
 
 // Initialize AEMET client with API key from .env
 const aemetClient = new Aemet(process.env.AEMET_API_KEY || 'YOUR_API_KEY');

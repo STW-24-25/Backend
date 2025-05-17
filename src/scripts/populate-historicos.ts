@@ -1,9 +1,6 @@
 import priceService from '../services/price.service';
-import dotenv from 'dotenv';
 import logger from '../utils/logger';
 import connectDB from '../utils/db';
-
-dotenv.config();
 
 async function populateHistoricos() {
   try {

@@ -4,9 +4,6 @@ import bcrypt from 'bcrypt';
 import authService from '../services/auth.service';
 import User, { UserRole, AutonomousComunity } from '../models/user.model';
 import { genJWT } from '../middleware/auth';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 // Mock del middleware de autenticación
 jest.mock('../middleware/auth', () => ({
