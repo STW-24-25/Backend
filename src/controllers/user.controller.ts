@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import userService from '../services/user.service';
 import logger from '../utils/logger';
 import { AutonomousComunity, UserRole } from '../models/user.model';
-import { AuthRequest } from '../types/auth';
 import { S3Service } from '../services/s3.service';
 
 /**
@@ -37,16 +36,9 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
  * @param res Response object, will have 200 if update was successful, 404 if user not found, or 500 if an error occurred.
  * @returns Promise<void>
  */
-export const updateUser = async (req: AuthRequest, res: Response): Promise<void> => {
+export const updateUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    let userId;
-    if (req.params.id) {
-      // Called from admin endpoint
-      userId = req.params.id;
-    } else {
-      // Called from /profile endpoint, id is of the user making the request
-      userId = req.auth!.id;
-    }
+    const userId = req.params && req.params.id ? req.params.id : req.auth!.id;
 
     if (!userId) {
       res.status(401).json({ message: 'User not authenticated' });
@@ -69,8 +61,6 @@ export const updateUser = async (req: AuthRequest, res: Response): Promise<void>
       res.status(404).json({ message: 'User not found' });
       return;
     }
-
-    // Ya no es necesario manejar la imagen de perfil aquí, lo hace el servicio
 
     res.status(200).json({ message: 'User updated successfully', user: updatedUser });
     logger.info(`User updated: ${userId}`);
@@ -304,7 +294,7 @@ export const makeAdmin = async (req: Request, res: Response): Promise<void> => {
  * @param req Request object con el archivo de imagen
  * @param res Response object
  */
-export const uploadProfilePicture = async (req: AuthRequest, res: Response): Promise<void> => {
+export const uploadProfilePicture = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.auth?.id;
     const file = req.file;
@@ -333,7 +323,7 @@ export const uploadProfilePicture = async (req: AuthRequest, res: Response): Pro
  * @param req Request object with authenticated user
  * @param res Response object
  */
-export const deleteProfilePicture = async (req: AuthRequest, res: Response): Promise<void> => {
+export const deleteProfilePicture = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.auth?.id;
 

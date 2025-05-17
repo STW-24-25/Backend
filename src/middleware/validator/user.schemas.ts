@@ -217,8 +217,14 @@ export const getAllUsersSchema = z.object({
     email: z.string().email().optional(),
     role: z.nativeEnum(UserRole).optional(),
     autonomousCommunity: z.nativeEnum(AutonomousComunity).optional(),
-    isAdmin: z.boolean().optional(),
-    hasAppealed: z.boolean().optional(),
+    isAdmin: z
+      .string()
+      .transform(v => ['true', '1'].includes(v.toLowerCase()))
+      .default('false'),
+    hasAppealed: z
+      .string()
+      .transform(v => ['true', '1'].includes(v.toLowerCase()))
+      .default('false'),
     page: z.string().optional(),
     size: z.string().optional(),
   }),

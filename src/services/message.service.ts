@@ -103,6 +103,12 @@ class MessageService {
         .populate(['author', 'forum'])
         .exec();
 
+      await Promise.all(
+        messages.map(async message => {
+          await userService.assignProfilePictureUrl(message.author);
+        }),
+      );
+
       logger.info(`Found ${messages.length} messages`);
       return { messages: messages as IMessage[], totalPages };
     } catch (err) {

@@ -58,12 +58,16 @@ function setupForumSockets(io: Server) {
           const newMessage = new MessageModel(validatedData);
           await newMessage.save();
 
-          const populatedNewMessage = await MessageModel.findById(newMessage._id).populate(
+          const populatedNewMsg = await MessageModel.findById(newMessage._id).populate([
             'author',
-          );
+            'forum',
+          ]);
 
-          io.to(validatedData.forum).emit('newMessage', populatedNewMessage);
-          io.to(ADMIN_UPDATES_ROOM).emit('newMessage', populatedNewMessage);
+          io.to(ADMIN_UPDATES_ROOM).emit('newMessage', populatedNewMsg);
+          io.to(validatedData.forum).emit('newMessage', {
+            ...populatedNewMsg,
+            forum: populatedNewMsg!._id,
+          });
           logger.info(`Message posted in forum ${data.forum}: ${data.content} by ${data.author}`);
         } catch (err) {
           logger.error(`Error posting message: ${err} from ${socket.id}`);

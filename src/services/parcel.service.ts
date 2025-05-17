@@ -177,7 +177,9 @@ class ParcelService {
       const { properties, ...polygon } = rawParcelGeoJSON.features[0];
 
       if (!this.validParcelUse(properties.uso_sigpac)) {
-        throw new Error('The parcel selected is not of valid use');
+        throw new Error(
+          `The parcel selected is not of valid use: ${await this.mapUsoSigpac(properties.uso_sigpac)}`,
+        );
       }
 
       const provinceCode = String(properties.provincia).padStart(2, '0');
@@ -212,7 +214,7 @@ class ParcelService {
   }
 
   private validParcelUse(parcelUseCode: string) {
-    return parcelUseCode in VALID_SIGPAC_USES;
+    return VALID_SIGPAC_USES.includes(parcelUseCode);
   }
 
   private async mapUsoSigpac(code: string): Promise<string> {

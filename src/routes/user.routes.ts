@@ -44,7 +44,7 @@ router.post('/', validateSchema(userRequestSchemas.newUserSchema), userCont.crea
  *    requestBody:
  *      required: true
  *      content:
- *        multipart/form-data:
+ *        application/json:
  *          schema:
  *            $ref: '#/components/requestBodies/updateProfile'
  *    responses:
