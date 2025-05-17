@@ -42,10 +42,12 @@ class ParcelService {
    */
   async createParcel(userId: string, parcelData: any) {
     try {
-      const parcelToCreate = await this.getParcelGeoJSON(
+      const parcelInfo = await this.getParcelGeoJSON(
         Number(parcelData.location.lng),
         Number(parcelData.location.lat),
       );
+
+      const parcelToCreate = { ...parcelInfo, crop: parcelData.crop };
 
       // Check the product ids given are valid
       if (parcelData.products.length > 0) {

@@ -42,14 +42,20 @@ interface ParcelGeometry extends FeatureCollection {
 export interface IParcel extends Document {
   geometry: ParcelGeometry;
   products: mongoose.Schema.Types.ObjectId[];
+  crop: CropType;
   provinceCode: number;
   provinceName: string;
   municipalityCode: string;
   municipalityName: string;
-  size: number;
+  surface: number;
+  parcelUse: string;
+  coefRegadio: number;
+  altitude: number;
   createdAt: Date;
   updatedAt: Date;
 }
+
+// todo add example so that docs don't break bc swagger is my best friend
 
 /**
  * @swagger
@@ -158,6 +164,8 @@ export interface IParcel extends Document {
  *            type: string
  *            format: MongoId
  *            description: Reference to the products
+ *        crop:
+ *          $ref: '#/components/schemas/CropType'
  *        provinceCode:
  *          type: number
  *          description: Province code
