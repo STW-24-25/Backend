@@ -54,6 +54,93 @@ router.put(
 
 /**
  * @swagger
+ * /api/users/profile/password:
+ *  put:
+ *    summary: Update authenticated user's password
+ *    tags: [User]
+ *    security:
+ *      - bearerAuth: []
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/requestBodies/password'
+ *    responses:
+ *      200:
+ *        description: Password updated successfully
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                message:
+ *                  type: string
+ *                  example: Password updated successfully.
+ *      400:
+ *        description: Bad Request - Invalid input, or a condition like current password required/invalid, or OAuth user needs to set password first.
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                message:
+ *                  type: string
+ *                  examples:
+ *                    invalid_input:
+ *                      value: Invalid input data.
+ *                    current_password_required:
+ *                      value: Current password is required.
+ *                    invalid_current_password:
+ *                      value: Invalid current password.
+ *                    oauth_user_must_set_password_first:
+ *                      value: OAuth user must set a password first or use provider token.
+ *                    provider_verification_failed:
+ *                      value: Provider token verification failed.
+ *      401:
+ *        description: Unauthorized - Invalid or missing authentication token, or invalid provider token for the operation.
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                message:
+ *                  type: string
+ *                  examples:
+ *                    unauthorized:
+ *                      value: Unauthorized.
+ *                    invalid_provider_token:
+ *                      value: Invalid provider token for this user.
+ *      404:
+ *        description: User not found
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                message:
+ *                  type: string
+ *                  example: User not found.
+ *      500:
+ *        description: Internal server error
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                message:
+ *                  type: string
+ *                  example: An unknown error occurred.
+ */
+router.put(
+  '/profile/password',
+  authenticateJWT(),
+  validateSchema(userRequestSchemas.passwordSchema),
+  userCont.updatePassword,
+);
+
+/**
+ * @swagger
  * /api/users/profile-picture:
  *  post:
  *    summary: Sube una foto de perfil para el usuario autenticado

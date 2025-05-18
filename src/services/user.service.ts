@@ -3,6 +3,8 @@ import { Types, Document } from 'mongoose';
 import logger from '../utils/logger';
 import bcrypt from 'bcrypt';
 import { S3Service } from '../services/s3.service';
+import authService from './auth.service';
+import UserModel from '../models/user.model';
 interface UserDocument extends Document {
   username: string;
   email: string;
@@ -21,6 +23,13 @@ interface UpdateUserParams {
   password?: string;
   role?: UserRole;
   autonomousCommunity?: AutonomousComunity;
+}
+
+interface UpdateUserPasswordParams {
+  newPassword: string;
+  currentPassword?: string;
+  providerToken?: string;
+  provider?: 'google' | 'github';
 }
 
 /**
@@ -158,6 +167,79 @@ class UserService {
     } catch (error) {
       logger.error(`Error updating user: ${error}`);
       throw error;
+    }
+  }
+
+  async updateUserPassword(
+    userId: string,
+    params: UpdateUserPasswordParams,
+  ): Promise<
+    | 'success'
+    | 'not_found'
+    | 'invalid_current_password'
+    | 'invalid_provider_token'
+    | 'provider_verification_failed'
+    | 'oauth_user_must_set_password_first'
+    | 'current_password_required'
+    | 'unknown_error'
+  > {
+    try {
+      const user = await User.findById(userId).select('+passwordHash +googleId +githubId');
+      if (!user) {
+        return 'not_found';
+      }
+
+      const { newPassword, currentPassword, providerToken, provider } = params;
+
+      // Update password using provider token
+      if (providerToken && provider) {
+        if (provider === 'google') {
+          if (!user.googleId) return 'invalid_provider_token';
+          const googlePayload = await authService.verifyGoogleToken(providerToken, user.googleId);
+          if (!googlePayload || googlePayload.sub !== user.googleId) {
+            logger.warn(
+              `Google token verification failed for user ${userId}. Payload sub: ${googlePayload?.sub}, User googleId: ${user.googleId}`,
+            );
+            return 'provider_verification_failed';
+          }
+        } else if (provider === 'github') {
+          if (!user.githubId) return 'invalid_provider_token';
+          const githubPayload = await authService.verifyGithubToken(providerToken);
+          if (!githubPayload || githubPayload.id !== user.githubId) {
+            logger.warn(
+              `GitHub token verification failed for user ${userId}. Payload id: ${githubPayload?.id}, User githubId: ${user.githubId}`,
+            );
+            return 'provider_verification_failed';
+          }
+        }
+      }
+
+      // User has an existing password (standard user or OAuth user who previously set one)
+      if (user.passwordHash) {
+        if (!currentPassword) {
+          return 'current_password_required';
+        }
+        const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+        if (!isMatch) {
+          return 'invalid_current_password';
+        }
+        const passwordHash = await bcrypt.hash(newPassword, 12);
+        await UserModel.findByIdAndUpdate(userId, { passwordHash });
+        return 'success';
+      } else {
+        // OAuth user setting a password for the first time (no existing passwordHash)
+        if (!currentPassword) {
+          // Attempting to use "currentPassword" when none is set.
+          return 'oauth_user_must_set_password_first';
+        }
+        // Setting password for the first time
+        const passwordHash = await bcrypt.hash(newPassword, 12);
+        await UserModel.findByIdAndUpdate(userId, { passwordHash });
+        return 'success';
+      }
+    } catch (error: any) {
+      logger.error(`Error updating user password for ${userId}: ${error.message}`, error);
+      return 'unknown_error';
     }
   }
 

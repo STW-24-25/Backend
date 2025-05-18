@@ -425,7 +425,7 @@ router.post(
 
 /**
  * @swagger
- * /api/auth/google/register:
+ * /api/auth/github/register:
  *  post:
  *    summary: Register a new account on AgroNET with a GitHub account associated or link an
  *             existing AgroNET account to a GitHub account
