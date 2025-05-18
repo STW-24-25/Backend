@@ -91,11 +91,19 @@ export const deleteForumSchema = z.object({
  *  parameters:
  *    getAllForumsSearchParameterSchema:
  *      in: query
- *      name: search
+ *      name: title
  *      schema:
  *        type: string
  *      required: false
- *      description: Search term to filter forums
+ *      description: Search term to filter by in forum titles
+ *    getAllForumsCreatedByParameterSchema:
+ *      in: query
+ *      name: createdBy
+ *      schema:
+ *        type: string
+ *        format: MongoId
+ *      required: false
+ *      description: User Id to filter by creator
  *    getAllForumsPageParameterSchema:
  *      in: query
  *      name: page
@@ -117,7 +125,7 @@ export const deleteForumSchema = z.object({
  */
 export const getAllForumsSchema = z.object({
   query: z.object({
-    search: z.string().optional(),
+    title: z.string().optional(),
     page: z
       .string()
       .optional()

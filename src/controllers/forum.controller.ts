@@ -121,9 +121,9 @@ export const getForumById = async (req: Request, res: Response): Promise<void> =
 export const getAllForums = async (req: Request, res: Response): Promise<void> => {
   try {
     const title = req.query.title as string | undefined;
-    const createdBy = req.query.createdBy as string;
-    const page = parseInt(req.query.page as string) || 1; // Default to page 1
-    const size = parseInt(req.query.size as string) || 10; // Default to size 10
+    const createdBy = req.query.createdBy as string | undefined;
+    const page = parseInt(req.query.page as string);
+    const size = parseInt(req.query.size as string);
 
     const { forums, totalPages } = await forumService.getAllForums(title, createdBy, page, size);
     const totalForums = await forumService.countForums();

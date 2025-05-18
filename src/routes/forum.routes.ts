@@ -19,6 +19,7 @@ const router = Router();
  *    tags: [Forum]
  *    parameters:
  *      - $ref: '#/components/parameters/getAllForumsSearchParameterSchema'
+ *      - $ref: '#/components/parameters/getAllForumsCreatedByParameterSchema'
  *      - $ref: '#/components/parameters/getAllForumsPageParameterSchema'
  *      - $ref: '#/components/parameters/getAllForumsSizeParameterSchema'
  *    responses:
