@@ -89,7 +89,7 @@ export interface IUser extends Document {
   isBlocked: boolean;
   blockReason?: string;
   parcels: mongoose.Schema.Types.ObjectId[];
-  loginHistory: [{ content: string; createdAt: Date }];
+  loginHistory: [{ timestamp: Date }];
   unblockAppeal?: {
     content: string;
     createdAt: Date;
@@ -97,8 +97,6 @@ export interface IUser extends Document {
   googleId?: string;
   githubId?: string;
 }
-
-// Swagger schema doc for User
 
 /**
  * @swagger
@@ -151,8 +149,6 @@ export interface IUser extends Document {
  *              timestamp:
  *                type: string
  *                format: date
- *              ipAddress:
- *                type: string
  *        unblockAppeal:
  *          type: object
  *          properties:
@@ -202,7 +198,6 @@ const userSchema: Schema = new Schema({
     type: [
       {
         timestamp: { type: Date, default: Date.now, required: true },
-        ipAddress: { type: String, required: true },
       },
     ],
     required: true,

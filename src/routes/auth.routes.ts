@@ -62,8 +62,6 @@ const router = Router();
  *                          timestamp:
  *                            type: string
  *                            format: date
- *                          ipAddress:
- *                            type: string
  *                    profilePicture:
  *                      type: string
  *                      nullable: true
@@ -136,8 +134,6 @@ router.post('/signup', validateSchema(authRequestSchemas.newUserSchema), authCon
  *                          timestamp:
  *                            type: string
  *                            format: date
- *                          ipAddress:
- *                            type: string
  *                    profilePicture:
  *                      type: string
  *                      nullable: true
@@ -213,8 +209,6 @@ router.post('/login', validateSchema(authRequestSchemas.loginSchema), authCont.l
  *                          timestamp:
  *                            type: string
  *                            format: date
- *                          ipAddress:
- *                            type: string
  *                token:
  *                  type: string
  *                  description: JWT token for authentication
@@ -331,8 +325,6 @@ router.post(
  *                          timestamp:
  *                            type: string
  *                            format: date
- *                          ipAddress:
- *                            type: string
  *                token:
  *                  type: string
  *                  format: MongoId
@@ -405,8 +397,6 @@ router.post(
  *                          timestamp:
  *                            type: string
  *                            format: date
- *                          ipAddress:
- *                            type: string
  *                token:
  *                  type: string
  *                  description: JWT token for authentication
@@ -481,8 +471,6 @@ router.post(
  *                          timestamp:
  *                            type: string
  *                            format: date
- *                          ipAddress:
- *                            type: string
  *                token:
  *                  type: string
  *                  format: MongoId

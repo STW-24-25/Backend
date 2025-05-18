@@ -7,7 +7,7 @@ export const swaggerOptions: swaggerJSDoc.Options = {
       title: 'AgroNET API Documentation',
       version: '1.0.0',
     },
-    servers: [{ url: 'http://localhost:5000' }],
+    servers: [{ url: `http://localhost:${process.env.PORT}` }],
     components: {
       securitySchemes: {
         bearerAuth: {

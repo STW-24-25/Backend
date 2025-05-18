@@ -56,8 +56,8 @@ describe('StatsService', () => {
           isAdmin: false,
           isBlocked: false,
           loginHistory: [
-            { timestamp: new Date('2025-01-02T10:00:00Z'), ipAddress: '127.0.0.1' },
-            { timestamp: new Date('2025-01-02T11:00:00Z'), ipAddress: '127.0.0.1' },
+            { timestamp: new Date('2025-01-02T10:00:00Z') },
+            { timestamp: new Date('2025-01-02T11:00:00Z') },
           ],
         },
         {
@@ -69,7 +69,7 @@ describe('StatsService', () => {
           autonomousCommunity: AutonomousComunity.ARAGON,
           isAdmin: false,
           isBlocked: true,
-          loginHistory: [{ timestamp: new Date('2025-01-02T10:00:00Z'), ipAddress: '127.0.0.2' }],
+          loginHistory: [{ timestamp: new Date('2025-01-02T10:00:00Z') }],
         },
       ]);
 

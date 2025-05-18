@@ -141,7 +141,11 @@ class AuthService {
         isAdmin: user.isAdmin,
       } as JWTPayload);
 
-      // todo add login history (separate to reuse in loginGoogleUser)
+      // Register login history
+      user.loginHistory.push({
+        timestamp: new Date(),
+      });
+      await user.save();
 
       // Remove password from user object
       const loginUserResponse = user.toObject();
@@ -201,6 +205,12 @@ class AuthService {
         return null;
       }
 
+      // Register login history
+      user.loginHistory.push({
+        timestamp: new Date(),
+      });
+      await user.save();
+
       const token = genJWT({
         id: user._id,
         username: user.username,
@@ -256,6 +266,12 @@ class AuthService {
         );
         return null;
       }
+
+      // Register login history
+      user.loginHistory.push({
+        timestamp: new Date(),
+      });
+      await user.save();
 
       const token = genJWT({
         id: user._id,

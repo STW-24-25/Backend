@@ -357,8 +357,6 @@ router.delete(
  *                      timestamp:
  *                        type: string
  *                        format: date
- *                      ipAddress:
- *                        type: string
  *                unblockAppeal:
  *                  type: object
  *                  properties:
@@ -448,8 +446,6 @@ router.get(
  *                            timestamp:
  *                              type: string
  *                              format: date
- *                            ipAddress:
- *                              type: string
  *                      unblockAppeal:
  *                        type: object
  *                        properties:
