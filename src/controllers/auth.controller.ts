@@ -153,13 +153,11 @@ export const googleRegister = async (req: Request, res: Response): Promise<void>
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { passwordHash: _, ...userDataToReturn } = userResponse;
 
-      res
-        .status(200)
-        .json({
-          user: userDataToReturn,
-          token,
-          message: 'Google account successfully linked to existing user.',
-        });
+      res.status(200).json({
+        user: userDataToReturn,
+        token,
+        message: 'Google account successfully linked to existing user.',
+      });
       logger.info(`Google account linked for existing user: ${updatedUser.email}`);
       return;
     }
@@ -292,13 +290,11 @@ export const githubRegister = async (req: Request, res: Response): Promise<void>
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { passwordHash: _, ...userDataToReturn } = userResponse;
 
-      res
-        .status(200)
-        .json({
-          user: userDataToReturn,
-          token,
-          message: 'GitHub account successfully linked to existing user.',
-        });
+      res.status(200).json({
+        user: userDataToReturn,
+        token,
+        message: 'GitHub account successfully linked to existing user.',
+      });
       logger.info(`GitHub account linked for existing user: ${updatedUser.email}`);
       return;
     }
