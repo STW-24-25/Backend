@@ -78,6 +78,7 @@ describe('Forum Controller', () => {
     email: 'Test email',
     role: UserRole.EXPERT,
     isAdmin: false,
+    isBlocked: false,
   };
 
   describe('createForum', () => {

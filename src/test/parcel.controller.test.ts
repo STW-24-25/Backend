@@ -111,6 +111,7 @@ describe('ParcelController', () => {
         email: data.user.email,
         role: data.user.role,
         isAdmin: data.user.isAdmin,
+        isBlocked: data.user.isBlocked,
       };
     }
 

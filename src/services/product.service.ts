@@ -1,7 +1,5 @@
 import ProductModel from '../models/product.model';
 import { S3Service } from '../services/s3.service';
-import sharp from 'sharp';
-import { S3_CONFIG } from '../config/s3.config';
 import logger from '../utils/logger';
 
 class ProductService {
