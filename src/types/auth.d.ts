@@ -1,11 +1,3 @@
-import { Request } from 'express';
+import { JWTPayload } from '../middleware/auth';
 
-export interface AuthPayload {
-  id: string;
-  username: string;
-  email: string;
-  role: string;
-  isAdmin: boolean;
-}
-
-export type AuthRequest = Request & { auth: AuthPayload };
+export type AuthPayload = JWTPayload;

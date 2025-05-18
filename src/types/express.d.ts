@@ -2,7 +2,7 @@ import { AuthPayload } from './auth';
 
 declare global {
   namespace Express {
-    interface Request {
+    export interface Request {
       auth: AuthPayload;
     }
   }

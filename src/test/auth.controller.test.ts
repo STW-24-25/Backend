@@ -77,6 +77,7 @@ describe('AuthController', () => {
     email: mockCreatedUser.email,
     role: mockCreatedUser.role,
     isAdmin: mockCreatedUser.isAdmin,
+    isBlocked: mockCreatedUser.isBlocked,
   });
 
   describe('createUser', () => {

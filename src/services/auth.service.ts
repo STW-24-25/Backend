@@ -79,6 +79,7 @@ class AuthService {
         email: savedUser.email,
         role: savedUser.role,
         isAdmin: savedUser.isAdmin,
+        isBlocked: savedUser.isBlocked,
       } as JWTPayload);
 
       // Remove password from response
@@ -139,6 +140,7 @@ class AuthService {
         email: user.email,
         role: user.role,
         isAdmin: user.isAdmin,
+        isBlocked: user.isBlocked,
       } as JWTPayload);
 
       // Register login history
@@ -217,6 +219,7 @@ class AuthService {
         email: user.email,
         role: user.role,
         isAdmin: user.isAdmin,
+        isBlocked: user.isBlocked,
       } as JWTPayload);
       const userDataToReturn = user.toObject();
       await userService.assignProfilePictureUrl(userDataToReturn);
@@ -279,6 +282,7 @@ class AuthService {
         email: user.email,
         role: user.role,
         isAdmin: user.isAdmin,
+        isBlocked: user.isBlocked,
       } as JWTPayload);
       const userDataToReturn = user.toObject();
       await userService.assignProfilePictureUrl(userDataToReturn);

@@ -13,6 +13,7 @@ interface UserDocument extends Document {
   role: UserRole;
   autonomousCommunity: AutonomousComunity;
   isAdmin: boolean;
+  isBlocked: boolean;
   createdAt: Date;
   googleId?: string;
   githubId?: string;

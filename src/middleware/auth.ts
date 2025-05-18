@@ -1,5 +1,7 @@
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { expressjwt } from 'express-jwt';
+import { Request, Response, NextFunction } from 'express';
+import logger from '../utils/logger';
 
 export interface JWTPayload extends JwtPayload {
   id: string;
@@ -7,7 +9,10 @@ export interface JWTPayload extends JwtPayload {
   email: string;
   role: string;
   isAdmin: boolean;
+  isBlocked: boolean;
 }
+
+const allowedPathsForBlockedUsers: string[] = ['/api/users/request-unblock'];
 
 /**
  * Generates a JWT token for the given payload.
@@ -15,7 +20,7 @@ export interface JWTPayload extends JwtPayload {
  * @param expiresIn Time in seconds until the token expires (default: 7 days)
  * @returns JWT token string
  */
-export const genJWT = (payload: object, expiresIn: number = 604800): string => {
+export const genJWT = (payload: JWTPayload, expiresIn: number = 604800): string => {
   return jwt.sign(payload, process.env.JWT_SECRET || 'your-secret-key', { expiresIn });
 };
 
@@ -25,12 +30,33 @@ export const genJWT = (payload: object, expiresIn: number = 604800): string => {
  * If valid, adds the user data to the request object.
  */
 export const authenticateJWT = () => {
-  return expressjwt({
+  const jwtMiddleware = expressjwt({
     secret: process.env.JWT_SECRET || 'your-secret-key',
     algorithms: ['HS256'],
     credentialsRequired: true,
     requestProperty: 'auth',
   });
+
+  const checkBLockedStatus = (req: Request, res: Response, next: NextFunction) => {
+    if (req.auth) {
+      if (req.auth.isBlocked) {
+        const isPathAllowed = allowedPathsForBlockedUsers.some(allowedPath => {
+          return req.path === allowedPath || req.path.startsWith(`${allowedPath}/`);
+        });
+
+        if (!isPathAllowed) {
+          logger.warn(
+            `Blocked user ID: ${req.auth.id} (${req.auth.username}) attempted to access restricted path: ${req.path}`,
+          );
+          res.status(403).json({ message: 'Forbidden: Your account is blocked.' });
+          return;
+        }
+      }
+    }
+    next();
+  };
+
+  return [jwtMiddleware, checkBLockedStatus];
 };
 
 /**

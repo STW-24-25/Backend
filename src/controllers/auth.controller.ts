@@ -194,6 +194,7 @@ export const googleRegister = async (req: Request, res: Response): Promise<void>
         email: updatedUser.email,
         role: updatedUser.role,
         isAdmin: updatedUser.isAdmin,
+        isBlocked: updatedUser.isBlocked,
       } as JWTPayload);
 
       const userResponse = updatedUser.toObject();
@@ -380,6 +381,7 @@ export const githubRegister = async (req: Request, res: Response): Promise<void>
         email: updatedUser.email,
         role: updatedUser.role,
         isAdmin: updatedUser.isAdmin,
+        isBlocked: updatedUser.isBlocked,
       } as JWTPayload);
 
       const userResponse = updatedUser.toObject();
