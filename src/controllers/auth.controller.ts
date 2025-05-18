@@ -70,13 +70,9 @@ export const googleLogin = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-    const existingUser = await userService.getUserByProviderId(googlePayload.sub, 'google');
-    if (existingUser) {
-      const result = await authService.loginGoogleUser(
-        existingUser.username,
-        existingUser.email,
-        existingUser.googleId!,
-      );
+    const user = await userService.getUserByProviderId(googlePayload.sub, 'google');
+    if (user) {
+      const result = await authService.loginGoogleUser(user.username, user.email, user.googleId!);
       if (!result) {
         res.status(401).json({ message: 'Somehow invalid credentials' });
       }
@@ -84,8 +80,59 @@ export const googleLogin = async (req: Request, res: Response): Promise<void> =>
       logger.info('Matching account found');
       res.status(200).json(result);
     } else {
-      logger.info('No matching account found, need more data');
-      res.status(202).json({ needsMoreData: true, googlePayload });
+      // No user with this googleId, check by email
+      logger.info(
+        `No user found with googleId ${googlePayload.sub}. Checking by email ${googlePayload.email}.`,
+      );
+      const userByEmail = await userService.getUserByEmail(googlePayload.email!);
+
+      if (userByEmail) {
+        if (userByEmail.googleId && userByEmail.googleId !== googlePayload.sub) {
+          logger.warn(
+            `User with email ${googlePayload.email} found, but already linked to a different googleId ${userByEmail.googleId}. New payload sub is ${googlePayload.sub}.`,
+          );
+          res.status(409).json({
+            message:
+              'This email is already linked to a different Google account. Please log in with that Google account or contact support.',
+          });
+          return;
+        }
+
+        // Link the new googleId to this existing user account
+        logger.info(
+          `User ${userByEmail.email} found by email. Linking Google ID: ${googlePayload.sub}`,
+        );
+        const updatedUser = await userService.addProviderIdToUser(
+          userByEmail._id as string,
+          googlePayload.sub,
+          'google',
+        );
+
+        if (!updatedUser) {
+          logger.error(`Could not link googleId ${googlePayload.sub} to user ${userByEmail._id}`);
+          res.status(500).json({ message: 'Failed to link Google account to existing user.' });
+          return;
+        }
+
+        // Log in the user with the newly linked account
+        const result = await authService.loginGoogleUser(
+          updatedUser.username,
+          updatedUser.email,
+          updatedUser.googleId!,
+        );
+        if (!result) {
+          res.status(500).json({ message: 'Login failed after linking Google account.' });
+          return;
+        }
+        logger.info(`Google account linked for existing user ${updatedUser.email} and logged in.`);
+        res
+          .status(200)
+          .json({ ...result, message: 'Google account successfully linked and logged in.' });
+      } else {
+        // No user found by googleId AND no user found by email
+        logger.info('No matching account found by provider ID or email, need more data');
+        res.status(202).json({ needsMoreData: true, googlePayload });
+      }
     }
   } catch (err: any) {
     res.status(500).json({ message: 'Google login failed', error: err.message });
@@ -194,20 +241,17 @@ export const googleRegister = async (req: Request, res: Response): Promise<void>
 export const githubLogin = async (req: Request, res: Response): Promise<void> => {
   try {
     logger.info('Attempting GitHub login');
-    const githubPayload = await authService.verifyGithubToken(req.body.accessToken);
+    const { accessToken, email: clientEmail } = req.body;
+    const githubPayload = await authService.verifyGithubToken(accessToken);
 
     if (!githubPayload) {
       res.status(401).json({ message: 'Invalid GitHub token' });
       return;
     }
 
-    const existingUser = await userService.getUserByProviderId(githubPayload.id, 'github');
-    if (existingUser) {
-      const result = await authService.loginGithubUser(
-        existingUser.username,
-        existingUser.email,
-        existingUser.githubId!,
-      );
+    const user = await userService.getUserByProviderId(githubPayload.id, 'github');
+    if (user) {
+      const result = await authService.loginGithubUser(user.username, user.email, user.githubId!);
       if (!result) {
         res.status(401).json({ message: 'Somehow invalid credentials' });
       }
@@ -215,8 +259,60 @@ export const githubLogin = async (req: Request, res: Response): Promise<void> =>
       logger.info('Matching account found');
       res.status(200).json(result);
     } else {
-      logger.info('No matching account found, need more data');
-      res.status(202).json({ needsMoreData: true, githubPayload });
+      // No user with this githubId, check by email from client
+      logger.info(
+        `No user found with githubId ${githubPayload.id}. Checking by email ${clientEmail}.`,
+      );
+      const userByEmail = await userService.getUserByEmail(clientEmail);
+
+      if (userByEmail) {
+        if (userByEmail.githubId && userByEmail.githubId !== githubPayload.id) {
+          logger.warn(
+            `User with email ${clientEmail} found, but already linked to a different githubId ${userByEmail.githubId}. New payload id is ${githubPayload.id}.`,
+          );
+          res.status(409).json({
+            message: 'This email is already linked to a different GitHub account.',
+          });
+          return;
+        }
+
+        // Link the new githubId to this existing user account
+        logger.info(
+          `User ${userByEmail.email} found by email. Linking GitHub ID: ${githubPayload.id}`,
+        );
+        const updatedUser = await userService.addProviderIdToUser(
+          userByEmail._id as string,
+          githubPayload.id,
+          'github',
+        );
+
+        if (!updatedUser) {
+          logger.error(`Could not link githubId ${githubPayload.id} to user ${userByEmail._id}`);
+          res.status(500).json({ message: 'Failed to link GitHub account to existing user.' });
+          return;
+        }
+
+        const result = await authService.loginGithubUser(
+          updatedUser.username,
+          updatedUser.email,
+          updatedUser.githubId!,
+        );
+        if (!result) {
+          res.status(500).json({ message: 'Login failed after linking GitHub account.' });
+          return;
+        }
+        logger.info(`GitHub account linked for existing user ${updatedUser.email} and logged in.`);
+        res
+          .status(200)
+          .json({ ...result, message: 'GitHub account successfully linked and logged in.' });
+      } else {
+        // No user found by githubId AND no user found by email
+        logger.info('No matching account found by provider ID or email, need more data');
+        // Pass clientEmail along with githubPayload if it's needed by the frontend for the register step
+        res
+          .status(202)
+          .json({ needsMoreData: true, githubPayload: { ...githubPayload, email: clientEmail } });
+      }
     }
   } catch (err: any) {
     res.status(500).json({ message: 'Github login failed', error: err.message });
