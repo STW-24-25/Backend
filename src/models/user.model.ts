@@ -95,6 +95,7 @@ export interface IUser extends Document {
     createdAt: Date;
   };
   googleId?: string;
+  githubId?: string;
 }
 
 // Swagger schema doc for User
@@ -163,7 +164,12 @@ export interface IUser extends Document {
  *          nullable: true
  *        googleId:
  *          type: string
- *          description: An identifier for the user, unique among all Google accounts and never reused. Present if the account is linked to a google profile
+ *          description: An identifier for the user, unique among all Google accounts and never
+ *                       reused. Present if the account is linked to a Google profile
+ *        githubId:
+ *          type: string
+ *          description: An identifier for the user, unique among all GitHub accounts and never
+ *                       reused. Present if the account is linked to a GitHub profile
  */
 const userSchema: Schema = new Schema({
   username: { type: String, required: true, unique: true },
@@ -209,6 +215,7 @@ const userSchema: Schema = new Schema({
     required: false,
   },
   googleId: { type: String, required: false },
+  githubId: { type: String, required: false },
 });
 
 const UserModel = mongoose.model<IUser>('User', userSchema);

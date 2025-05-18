@@ -13,6 +13,7 @@ interface UserDocument extends Document {
   isAdmin: boolean;
   createdAt: Date;
   googleId?: string;
+  githubId?: string;
 }
 
 interface UpdateUserParams {
@@ -22,6 +23,20 @@ interface UpdateUserParams {
   autonomousCommunity?: AutonomousComunity;
 }
 
+/**
+ * Service for managing user operations in the application.
+ *
+ * This service handles various user-related functionalities, including:
+ * - User profile management (retrieve, update, delete)
+ * - Profile picture handling (upload, delete, URL signing)
+ * - User blocking and unblocking operations
+ * - Admin role management
+ * - OAuth provider integration (Google, GitHub)
+ * - User search and filtering
+ *
+ * It interfaces with the User model for database operations and the S3Service
+ * for handling file storage operations related to profile pictures.
+ */
 class UserService {
   /**
    * Asigna una URL de imagen de perfil al objeto de usuario
@@ -58,22 +73,39 @@ class UserService {
         .select(includePassword ? '+passwordHash' : '-passwordHash')
         .lean();
 
-      logger.debug(`User: ${JSON.stringify(user)}`);
-
       if (!user) {
-        logger.info(`No user found with ID: ${userId}`);
+        logger.info(`No user found with Id: ${userId}`);
         return null;
       }
 
-      logger.info(`User found with ID: ${userId}`);
+      logger.info(`User found with Id: ${userId}`);
 
       // Convertir a objeto plano para agregar la URL de imagen
       await this.assignProfilePictureUrl(user);
 
       return user as UserDocument;
     } catch (error) {
-      logger.error(`Error finding user by ID: ${error}`);
+      logger.error(`Error finding user by Id: ${error}`);
       throw error;
+    }
+  }
+
+  async getUserByEmail(email: string): Promise<UserDocument | null> {
+    try {
+      logger.info('Finding user by email');
+
+      const user = await User.findOne({ email }).lean();
+      if (!user) {
+        logger.info(`No user found with email: ${email}`);
+        return null;
+      }
+
+      await this.assignProfilePictureUrl(user);
+
+      return user as UserDocument;
+    } catch (err) {
+      logger.error(`Error finding user by email: ${err}`);
+      throw err;
     }
   }
 
@@ -412,11 +444,57 @@ class UserService {
     }
   }
 
-  async getUserByGoogleId(googleId: string): Promise<UserDocument | null> {
-    const user = await User.findOne({ googleId }).select('-passwordHash');
+  /**
+   * Adds a provider ID (Google or GitHub) to a user account
+   * @param userId The ID of the user to update
+   * @param providerId The provider's unique identifier for this user
+   * @param provider The authentication provider ('google' or 'github')
+   * @returns Updated user document or null if user not found
+   */
+  async addProviderIdToUser(
+    userId: string,
+    providerId: string,
+    provider: string,
+  ): Promise<UserDocument | null> {
+    try {
+      logger.info(`Adding ${provider} Id to user with id ${userId}`);
+
+      const updateObject = {
+        [provider === 'google' ? 'googleId' : 'githubId']: providerId,
+      };
+      const user = await User.findByIdAndUpdate(
+        userId,
+        { $set: updateObject },
+        { new: true },
+      ).select('-passwordHash');
+
+      if (!user) {
+        logger.warn(`No user found with id ${userId}`);
+        return null;
+      }
+
+      return user;
+    } catch (err) {
+      logger.error(`Error adding ${provider} Id to user: ${err}`);
+      return null;
+    }
+  }
+
+  /**
+   * Returns a user by its provider id (Google or GitHub)
+   * @param providerId the provider id (Google or GitHub)
+   * @param provider the provider type ('google' or 'github')
+   * @returns the user or null
+   */
+  async getUserByProviderId(
+    providerId: string,
+    provider: 'google' | 'github',
+  ): Promise<UserDocument | null> {
+    const query = provider === 'google' ? { googleId: providerId } : { githubId: providerId };
+    const user = await User.findOne(query).select('-passwordHash');
 
     if (!user) {
-      logger.warn(`No user found with googleId = ${googleId}`);
+      logger.warn(`No user found with ${provider}Id = ${providerId}`);
       return null;
     }
 

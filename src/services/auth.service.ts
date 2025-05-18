@@ -4,6 +4,8 @@ import bcrypt from 'bcrypt';
 import { genJWT, JWTPayload } from '../middleware/auth';
 import userService from './user.service';
 import { OAuth2Client, TokenPayload } from 'google-auth-library';
+import { GITHUB_API_URL, GithubPayload } from './constants';
+import axios from 'axios';
 
 export interface CreateUserParams {
   username: string;
@@ -12,6 +14,7 @@ export interface CreateUserParams {
   role: UserRole;
   autonomousCommunity: AutonomousComunity;
   googleId?: string;
+  githubId?: string;
 }
 
 interface UserDocument extends Document {
@@ -24,6 +27,7 @@ interface UserDocument extends Document {
   createdAt: Date;
   profilePicture?: string;
   googleId?: string;
+  githubId?: string;
 }
 
 class AuthService {
@@ -58,14 +62,13 @@ class AuthService {
       };
 
       if (!userData.password) {
-        logger.info('Creating user from google account, passwordHash will not be set');
+        logger.info('Creating user from external provider account, passwordHash will not be set');
         userToCreate.googleId = userData.googleId;
+        userToCreate.githubId = userData.githubId;
       } else {
         // Hash password
         userToCreate.passwordHash = await bcrypt.hash(userData.password, 12);
       }
-
-      logger.debug(JSON.stringify(userToCreate, null, 2));
 
       const user = new User(userToCreate);
       const savedUser = await user.save();
@@ -211,6 +214,62 @@ class AuthService {
       return { user: userDataToReturn as unknown as UserDocument, token };
     } catch (err) {
       logger.error(`Error authenticating google user: ${err}`);
+      throw err;
+    }
+  }
+
+  async verifyGithubToken(accessToken: string): Promise<GithubPayload | null> {
+    try {
+      const res = await axios.get(`${GITHUB_API_URL}/user`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      const userData = res.data;
+      if (userData) {
+        return {
+          // There's much more data, maybe useful in the future
+          id: userData.id.toString(),
+          login: userData.login,
+          name: userData.name,
+        };
+      }
+      return null;
+    } catch (err: any) {
+      logger.error('Error verifying GitHub token', err.message);
+      return null;
+    }
+  }
+
+  async loginGithubUser(
+    username: string,
+    email: string,
+    githubId: string,
+  ): Promise<{ user: UserDocument; token: string } | null> {
+    try {
+      // Find user by email or username
+      const user = await User.findOne({ email, username, githubId }).select('-passwordHash');
+
+      if (!user) {
+        logger.info(
+          `Authentication failed: No user found with email/username/githubId: ${email}/${username}/${githubId}`,
+        );
+        return null;
+      }
+
+      const token = genJWT({
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        isAdmin: user.isAdmin,
+      } as JWTPayload);
+      const userDataToReturn = user.toObject();
+      await userService.assignProfilePictureUrl(userDataToReturn);
+
+      return { user: userDataToReturn as unknown as UserDocument, token };
+    } catch (err) {
+      logger.error(`Error authenticating GitHub user: ${err}`);
       throw err;
     }
   }

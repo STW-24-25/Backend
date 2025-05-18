@@ -194,3 +194,125 @@ export const googleRegisterSchema = z.object({
     }),
   }),
 });
+
+/**
+ * @swagger
+ * components:
+ *  requestBodies:
+ *    githubLogin:
+ *      type: object
+ *      required:
+ *        - name
+ *        - email
+ *        - picture
+ *        - sub
+ *        - accessToken
+ *        - id
+ *        - iat
+ *        - exp
+ *        - jti
+ *      properties:
+ *        name:
+ *          type: string
+ *        email:
+ *          type: string
+ *          format: email
+ *        picture:
+ *          type: string
+ *        sub:
+ *          type: string
+ *        accessToken:
+ *          type: string
+ *        id:
+ *          type: string
+ *        iat:
+ *          type: number
+ *        exp:
+ *          type: number
+ *        jti:
+ *          type: string
+ */
+export const githubLoginSchema = z.object({
+  body: z.object({
+    name: z.string(),
+    email: z.string().email(),
+    picture: z.string(),
+    sub: z.string(),
+    accessToken: z.string(),
+    id: z.string(),
+    iat: z.number(),
+    exp: z.number(),
+    jti: z.string(),
+  }),
+});
+
+/**
+ * @swagger
+ * components:
+ *  requestBodies:
+ *    githubRegister:
+ *      type: object
+ *      required:
+ *        - name
+ *        - email
+ *        - picture
+ *        - sub
+ *        - accessToken
+ *        - id
+ *        - iat
+ *        - exp
+ *        - jti
+ *        - userData
+ *      properties:
+ *        name:
+ *          type: string
+ *        email:
+ *          type: string
+ *          format: email
+ *        picture:
+ *          type: string
+ *        sub:
+ *          type: string
+ *        accessToken:
+ *          type: string
+ *        id:
+ *          type: string
+ *        iat:
+ *          type: number
+ *        exp:
+ *          type: number
+ *        jti:
+ *          type: string
+ *        userData:
+ *          type: object
+ *          required:
+ *            - username
+ *            - role
+ *            - autonomousCommunity
+ *          properties:
+ *            username:
+ *              type: string
+ *              description: Unique username (minimum 3 characters)
+ *            role:
+ *              $ref: '#/components/schemas/UserRole'
+ *            autonomousCommunity:
+ *              $ref: '#/components/schemas/AutonomousCommunity'
+ */
+export const githubRegisterSchema = z.object({
+  body: z.object({
+    name: z.string(),
+    email: z.string().email(),
+    picture: z.string(),
+    sub: z.string(),
+    accessToken: z.string(),
+    id: z.string(),
+    iat: z.number(),
+    exp: z.number(),
+    jti: z.string(),
+    userData: z.object({
+      username: z.string().min(3),
+      role: z.nativeEnum(UserRole),
+      autonomousCommunity: z.nativeEnum(AutonomousComunity),
+    }),
+  }),
+});

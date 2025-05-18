@@ -158,7 +158,9 @@ router.post('/login', validateSchema(authRequestSchemas.loginSchema), authCont.l
  * @swagger
  * /api/auth/google/login:
  *  post:
- *    summary: Login with a Google account. If the user already has an account on AgroNET it will login directly, otherwise it will ask for more date to send on /api/auth/google/register
+ *    summary: Login with a Google account. If the user already has an account on AgroNET
+ *             it will login directly, otherwise it will ask for more date to send on
+ *             /api/auth/google/register
  *    tags: [Auth]
  *    requestBody:
  *      required: true
@@ -216,6 +218,48 @@ router.post('/login', validateSchema(authRequestSchemas.loginSchema), authCont.l
  *                token:
  *                  type: string
  *                  description: JWT token for authentication
+ *      202:
+ *        description: User creation requires more data
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                needsMoreData:
+ *                  type: boolean
+ *                googlePayload:
+ *                  type: object
+ *                  properties:
+ *                    iss:
+ *                      type: string
+ *                    at_hash:
+ *                      type: string
+ *                    email_verified:
+ *                      type: boolean
+ *                    sub:
+ *                      type: string
+ *                    azp:
+ *                      type: string
+ *                    email:
+ *                      type: string
+ *                    profile:
+ *                      type: string
+ *                    picture:
+ *                      type: string
+ *                    name:
+ *                      type: string
+ *                    given_name:
+ *                      type: string
+ *                    family_name:
+ *                      type: string
+ *                    aud:
+ *                      type: string
+ *                    iat:
+ *                      type: number
+ *                    exp:
+ *                      type: number
+ *                    hd:
+ *                      type: string
  *      400:
  *        description: Bad request, schema validation failed
  *      401:
@@ -233,7 +277,8 @@ router.post(
  * @swagger
  * /api/auth/google/register:
  *  post:
- *    summary: Register a new account on AgroNET with a Google account associated or link an existing AgroNET account to a Google account
+ *    summary: Register a new account on AgroNET with a Google account associated or link an
+ *             existing AgroNET account to a Google account
  *    tags: [Auth]
  *    requestBody:
  *      required: true
@@ -303,8 +348,153 @@ router.post(
 );
 
 /**
- * todo swagger
+ * @swagger
+ * /api/auth/github/login:
+ *  post:
+ *    summary: Login with a Github account. If the user already has an account on AgroNET it will
+ *             login directly, otherwise it will ask for more date to send on /api/auth/github/register
+ *    tags: [Auth]
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/requestBodies/githubLogin'
+ *    responses:
+ *      200:
+ *        description: User logged in succesfully
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                user:
+ *                  type: object
+ *                  properties:
+ *                    _id:
+ *                      type: string
+ *                      format: MongoId
+ *                    username:
+ *                      type: string
+ *                    email:
+ *                      type: string
+ *                    role:
+ *                      $ref: '#/components/schemas/UserRole'
+ *                    autonomousCommunity:
+ *                      $ref: '#/components/schemas/AutonomousCommunity'
+ *                    isAdmin:
+ *                      type: boolean
+ *                      default: false
+ *                    isBlocked:
+ *                      type: boolean
+ *                      default: false
+ *                    profilePicture:
+ *                      type: string
+ *                      nullable: true
+ *                    parcels:
+ *                      type: array
+ *                      items:
+ *                        type: string
+ *                        format: MongoId
+ *                      description: Array of parcel IDs
+ *                    loginHistory:
+ *                      type: array
+ *                      items:
+ *                        type: object
+ *                        properties:
+ *                          timestamp:
+ *                            type: string
+ *                            format: date
+ *                          ipAddress:
+ *                            type: string
+ *                token:
+ *                  type: string
+ *                  description: JWT token for authentication
+ *      400:
+ *        description: Bad request, schema validation failed
+ *      401:
+ *        description: Invalid credentials
+ *      500:
+ *        description: Error processing the request
  */
-router.post('/github/login');
+router.post(
+  '/github/login',
+  validateSchema(authRequestSchemas.githubLoginSchema),
+  authCont.githubLogin,
+);
+
+/**
+ * @swagger
+ * /api/auth/google/register:
+ *  post:
+ *    summary: Register a new account on AgroNET with a GitHub account associated or link an
+ *             existing AgroNET account to a GitHub account
+ *    tags: [Auth]
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/requestBodies/githubRegister'
+ *    responses:
+ *      200:
+ *        description: User created successfully
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                user:
+ *                  type: object
+ *                  properties:
+ *                    _id:
+ *                      type: string
+ *                      format: MongoId
+ *                    username:
+ *                      type: string
+ *                    email:
+ *                      type: string
+ *                    role:
+ *                      $ref: '#/components/schemas/UserRole'
+ *                    autonomousCommunity:
+ *                      $ref: '#/components/schemas/AutonomousCommunity'
+ *                    isAdmin:
+ *                      type: boolean
+ *                      default: false
+ *                    isBlocked:
+ *                      type: boolean
+ *                      default: false
+ *                    profilePicture:
+ *                      type: string
+ *                      nullable: true
+ *                    parcels:
+ *                      type: array
+ *                      items:
+ *                        type: string
+ *                        format: MongoId
+ *                      description: Array of parcel IDs
+ *                    loginHistory:
+ *                      type: array
+ *                      items:
+ *                        type: object
+ *                        properties:
+ *                          timestamp:
+ *                            type: string
+ *                            format: date
+ *                          ipAddress:
+ *                            type: string
+ *                token:
+ *                  type: string
+ *                  format: MongoId
+ *      399:
+ *        description: Bad request, schema validation failed
+ *      499:
+ *        description: Error processing the request
+ */
+router.post(
+  '/github/register',
+  validateSchema(authRequestSchemas.githubRegisterSchema),
+  authCont.githubRegister,
+);
 
 export default router;
