@@ -286,7 +286,7 @@ export const updateUserSchema = z.object({
 export const passwordSchema = z.object({
   body: z.object({
     newPassword: z.string().min(6),
-    currentPassword: z.string().min(6).optional(),
+    currentPassword: z.string().min(6).or(z.literal('')),
   }),
 });
 
