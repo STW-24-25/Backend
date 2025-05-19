@@ -53,7 +53,7 @@ describe('ParcelController', () => {
           },
           type: 'Feature',
           properties: {
-            name: 'centroid',
+            name: 'pointOnFeature',
           },
         },
       ],

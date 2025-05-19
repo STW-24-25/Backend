@@ -31,7 +31,7 @@ export enum CropType {
 }
 
 interface ParcelFeatureProperties {
-  name: 'polygon' | 'centroid';
+  name: 'polygon' | 'pointOnFeature';
 }
 
 interface ParcelGeometry extends FeatureCollection {
@@ -124,7 +124,7 @@ export interface IParcel extends Document {
  *          properties:
  *            name:
  *              type: string
- *              enum: [polygon, centroid]
+ *              enum: [polygon, pointOnFeature]
  *              description: Identifies the feature's purpose
  *
  *    GeoJSONFeatureCollection:
@@ -231,7 +231,7 @@ const parcelSchema: Schema = new Schema(
               required: true,
               name: {
                 type: String,
-                enum: ['polygon', 'centroid'],
+                enum: ['polygon', 'pointOnFeature'],
                 required: true,
               },
             },
@@ -244,12 +244,12 @@ const parcelSchema: Schema = new Schema(
             const hasPolygon = features.some(
               f => f.properties.name === 'polygon' && f.geometry.type === 'Polygon',
             );
-            const hasCentroid = features.some(
-              f => f.properties.name === 'centroid' && f.geometry.type === 'Point',
+            const hasPointOnFeature = features.some(
+              f => f.properties.name === 'pointOnFeature' && f.geometry.type === 'Point',
             );
-            return hasPolygon && hasCentroid;
+            return hasPolygon && hasPointOnFeature;
           },
-          message: 'Geometry must contain exactly one polygon and its centroid feature',
+          message: 'Geometry must contain exactly one polygon and its pointOnFeature feature',
         },
       },
     },
