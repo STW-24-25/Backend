@@ -78,7 +78,7 @@ router.put(
  *                  type: string
  *                  example: Password updated successfully.
  *      400:
- *        description: Bad Request - Invalid input, or a condition like current password required/invalid, or OAuth user needs to set password first.
+ *        description: Bad Request - Invalid input, or a condition like current password required/invalid, or providing current password when not expected.
  *        content:
  *          application/json:
  *            schema:
@@ -90,15 +90,11 @@ router.put(
  *                    invalid_input:
  *                      value: Invalid input data.
  *                    current_password_required:
- *                      value: Current password is required.
- *                    invalid_current_password:
- *                      value: Invalid current password.
- *                    oauth_user_must_set_password_first:
- *                      value: OAuth user must set a password first or use provider token.
- *                    provider_verification_failed:
- *                      value: Provider token verification failed.
+ *                      value: Current password is required to change your existing password.
+ *                    oauth_user_no_current_password_expected:
+ *                      value: Cannot provide current password when setting a password for the first time for an OAuth account.
  *      401:
- *        description: Unauthorized - Invalid or missing authentication token, or invalid provider token for the operation.
+ *        description: Unauthorized - Invalid or missing authentication token, or invalid current password.
  *        content:
  *          application/json:
  *            schema:
@@ -109,8 +105,8 @@ router.put(
  *                  examples:
  *                    unauthorized:
  *                      value: Unauthorized.
- *                    invalid_provider_token:
- *                      value: Invalid provider token for this user.
+ *                    invalid_current_password:
+ *                      value: Current password is incorrect.
  *      404:
  *        description: User not found
  *        content:

@@ -52,46 +52,25 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
  */
 export const updatePassword = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.auth!.id;
-    const { currentPassword, newPassword, providerToken, provider } = req.body;
+    const userId = req.auth.id;
+    const { currentPassword, newPassword } = req.body;
 
     if (!userId) {
       res.status(401).json({ message: 'User not authenticated' });
       return;
     }
 
-    if (!currentPassword || !newPassword) {
-      res.status(400).json({ message: 'Current password and new password are required' });
+    if (!newPassword) {
+      res.status(400).json({ message: 'New password is required' });
       return;
     }
 
     const serviceParams: {
       currentPassword?: string;
       newPassword: string;
-      provider?: 'google' | 'github'; // Specify expected provider types
-      providerToken?: string;
     } = { newPassword };
 
-    if (providerToken) {
-      if (provider !== 'google' && provider !== 'github') {
-        res
-          .status(400)
-          .json({ message: 'Invalid provider specified. Must be "google" or "github".' });
-        return;
-      }
-
-      serviceParams.provider = provider;
-      serviceParams.providerToken = providerToken;
-      if (currentPassword) {
-        serviceParams.currentPassword = currentPassword;
-      }
-    } else {
-      if (!currentPassword) {
-        res
-          .status(400)
-          .json({ message: 'Current password is required for standard password change' });
-        return;
-      }
+    if (currentPassword) {
       serviceParams.currentPassword = currentPassword;
     }
 
@@ -108,16 +87,19 @@ export const updatePassword = async (req: Request, res: Response): Promise<void>
       case 'invalid_current_password':
         res.status(401).json({ message: 'Current password is incorrect' });
         break;
-      case 'invalid_provider_token':
-        res.status(401).json({ message: 'Invalid provider token or provider mismatch' });
+      case 'invalid_current_password':
+        res.status(401).json({ message: 'Current password is incorrect' });
         break;
-      case 'provider_verification_failed':
-        res.status(401).json({ message: 'Provider token verification failed' });
+      case 'oauth_user_no_current_password_expected':
+        res.status(400).json({
+          message:
+            'Cannot provide current password when setting a password for the first time for an OAuth account.',
+        });
         break;
-      case 'oauth_user_must_set_password_first': // Example if service determines OAuth user has no password and tries to "change"
+      case 'current_password_required':
         res
           .status(400)
-          .json({ message: 'OAuth user has no password set. Please set a password first.' });
+          .json({ message: 'Current password is required to change your existing password.' });
         break;
       default:
         logger.warn(`Unhandled result from userService.updateUserPassword: ${result}`);

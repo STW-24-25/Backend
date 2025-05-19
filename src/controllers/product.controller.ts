@@ -18,7 +18,7 @@ export const getAllProducts = async (req: Request, res: Response) => {
 
     const data = await ProductService.getProductsByName(name as string, pageNumber, pageSize);
 
-    res.status(200).json({ data });
+    res.status(200).json(data);
 
     logger.info(`Retrieved products (page ${pageNumber}, size ${pageSize})`);
   } catch (err) {

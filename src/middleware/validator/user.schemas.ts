@@ -282,15 +282,11 @@ export const updateUserSchema = z.object({
  *        currentPassword:
  *          type: string
  *          description: Current password
- *        provider:
- *          type: string
- *          description: Authentication provider
  */
 export const passwordSchema = z.object({
   body: z.object({
     newPassword: z.string().min(6),
     currentPassword: z.string().min(6).optional(),
-    provider: z.string().optional(),
   }),
 });
 
