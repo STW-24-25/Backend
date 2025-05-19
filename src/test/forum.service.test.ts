@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { Types } from 'mongoose';
 import forumService from '../services/forum.service';
-import { ForumModel, IForum } from '../models/forum.model';
+import ForumModel, { IForum } from '../models/forum.model';
 
 // No schema needed for this test file
 

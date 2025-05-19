@@ -6,7 +6,7 @@ import {
   joinForumSchema,
   postMessageSchema,
 } from '../middleware/validator/forum.schemas';
-import { MessageModel } from '../models/message.model';
+import MessageModel from '../models/message.model';
 import { JWTPayload, verifyJWT } from '../middleware/auth';
 import messageService from '../services/message.service';
 import userService from '../services/user.service';

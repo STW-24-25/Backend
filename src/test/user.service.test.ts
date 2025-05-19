@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import bcrypt from 'bcrypt';
 import userService from '../services/user.service';
-import User, { UserRole, AutonomousComunity } from '../models/user.model';
+import UserModel, { UserRole, AutonomousComunity } from '../models/user.model';
 import { Types } from 'mongoose';
 import authService from '../services/auth.service';
 
@@ -118,7 +118,7 @@ describe('UserService', () => {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(userData.password!, salt);
 
-    const user = new User({
+    const user = new UserModel({
       ...userData,
       passwordHash,
     });
@@ -184,7 +184,7 @@ describe('UserService', () => {
       expect(result!.username).toBe(updateData.username);
 
       // Verify DB was updated
-      const updatedUser = await User.findById(createdUser._id);
+      const updatedUser = await UserModel.findById(createdUser._id);
       expect(updatedUser!.username).toBe(updateData.username);
     });
 
@@ -201,7 +201,7 @@ describe('UserService', () => {
       );
 
       // Get the user with password
-      const updatedUser = await User.findById(createdUser._id).select('+passwordHash');
+      const updatedUser = await UserModel.findById(createdUser._id).select('+passwordHash');
 
       // Verify the password was hashed
       const isMatch = await bcrypt.compare(updateData.password, updatedUser!.passwordHash!);
@@ -244,7 +244,7 @@ describe('UserService', () => {
       expect(result).toBe(true);
 
       // Verify user was deleted from DB
-      const deletedUser = await User.findById(createdUser._id);
+      const deletedUser = await UserModel.findOne({ _id: createdUser._id });
       expect(deletedUser).toBeNull();
     });
 
@@ -316,7 +316,7 @@ describe('UserService', () => {
       const user = await createTestUser();
       const result = await userService.blockUser((user._id as any).toString(), 'Razón de bloqueo');
       expect(result).toBe(true);
-      const updatedUser = await User.findById((user._id as any).toString());
+      const updatedUser = await UserModel.findById((user._id as any).toString());
       expect(updatedUser?.isBlocked).toBe(true);
       expect(updatedUser?.blockReason).toBe('Razón de bloqueo');
     });
@@ -332,7 +332,7 @@ describe('UserService', () => {
       await userService.blockUser((user._id as any).toString(), 'Razón');
       const result = await userService.unblockUser((user._id as any).toString());
       expect(result).toBe(true);
-      const updatedUser = await User.findById((user._id as any).toString());
+      const updatedUser = await UserModel.findById((user._id as any).toString());
       expect(updatedUser?.isBlocked).toBe(false);
       expect(updatedUser?.blockReason).toBeUndefined();
     });
@@ -346,11 +346,11 @@ describe('UserService', () => {
     it('debería registrar una apelación de desbloqueo', async () => {
       const user = await createTestUser();
       const result = await userService.requestUnblock(
-        (user._id as any).toString(),
+        user._id as string,
         'Quiero ser desbloqueado',
       );
       expect(result).toBe(true);
-      const updatedUser = await User.findById((user._id as any).toString());
+      const updatedUser = await UserModel.findOne({ _id: user._id });
       expect(updatedUser?.unblockAppeal?.content).toBe('Quiero ser desbloqueado');
     });
     it('debería devolver false si el usuario no existe', async () => {
@@ -367,7 +367,7 @@ describe('UserService', () => {
       const user = await createTestUser();
       const result = await userService.makeAdmin((user._id as any).toString());
       expect(result).toBe(true);
-      const updatedUser = await User.findById((user._id as any).toString());
+      const updatedUser = await UserModel.findById((user._id as any).toString());
       expect(updatedUser?.isAdmin).toBe(true);
     });
     it('debería devolver false si el usuario no existe', async () => {

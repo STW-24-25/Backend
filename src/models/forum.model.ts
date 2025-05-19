@@ -48,6 +48,6 @@ forumSchema.pre<IForum>(['save', 'updateOne'], function (next) {
   next();
 });
 
-export const ForumModel = mongoose.model<IForum>('Forum', forumSchema);
+const ForumModel = mongoose.model<IForum>('Forum', forumSchema);
 
 export default ForumModel;

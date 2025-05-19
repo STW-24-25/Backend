@@ -1,4 +1,4 @@
-import { MessageModel, IMessage } from '../models/message.model';
+import MessageModel, { IMessage } from '../models/message.model';
 import logger from '../utils/logger';
 import userService from './user.service';
 

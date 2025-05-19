@@ -1,4 +1,3 @@
-import mongoose from 'mongoose';
 import ParcelModel from '../models/parcel.model';
 import ProductModel from '../models/product.model';
 import logger from '../utils/logger';
@@ -68,7 +67,7 @@ class ParcelService {
       // Save and update the user's array of parcels
       const parcel = new ParcelModel(parcelToCreate);
       const savedParcel = await parcel.save();
-      await UserModel.findByIdAndUpdate(userId, { $push: { parcels: savedParcel._id } });
+      await UserModel.findOneAndUpdate({ _id: userId }, { $push: { parcels: savedParcel._id } });
 
       return savedParcel;
     } catch (error: any) {
@@ -346,7 +345,7 @@ class ParcelService {
   async getAllParcels(userId: string) {
     try {
       // Get user with populated parcels
-      const user = await mongoose.model('User').findById(userId).populate('parcels');
+      const user = await UserModel.findOne({ _id: userId }).populate('parcels');
 
       if (!user) {
         throw new Error('User not found');

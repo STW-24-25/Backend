@@ -96,6 +96,8 @@ export interface IUser extends Document {
   };
   googleId?: string;
   githubId?: string;
+  isDeleted?: boolean;
+  deletedAt?: Date;
 }
 
 /**
@@ -166,6 +168,13 @@ export interface IUser extends Document {
  *          type: string
  *          description: An identifier for the user, unique among all GitHub accounts and never
  *                       reused. Present if the account is linked to a GitHub profile
+ *        isDeleted:
+ *          type: boolean
+ *          default: false
+ *        deletedAt:
+ *          type: string
+ *          format: date-time
+ *          nullable: true
  */
 const userSchema: Schema = new Schema({
   username: { type: String, required: true, unique: true },
@@ -211,7 +220,27 @@ const userSchema: Schema = new Schema({
   },
   googleId: { type: String, required: false },
   githubId: { type: String, required: false },
+  isDeleted: { type: Boolean, default: false, index: true },
+  deletedAt: { type: Date, required: false },
 });
+
+// Middleware to exclude soft-deleted documents from queries by default
+const excludeSoftDeleted = function (this: any, next: (err?: Error) => void) {
+  if (this.getFilter().isDeleted === undefined) {
+    this.where({ isDeleted: { $ne: true } });
+  }
+  next();
+};
+
+userSchema.pre('find', excludeSoftDeleted);
+userSchema.pre('findOne', excludeSoftDeleted);
+userSchema.pre('countDocuments', excludeSoftDeleted);
+userSchema.pre('findOneAndUpdate', excludeSoftDeleted);
+userSchema.pre('updateMany', excludeSoftDeleted);
+
+userSchema.methods.isSoftDeleted = function (): boolean {
+  return this.isDeleted === true;
+};
 
 const UserModel = mongoose.model<IUser>('User', userSchema);
 
