@@ -29,6 +29,10 @@ import { AutonomousComunity, UserRole } from '../../models/user.model';
  *          $ref: '#/components/schemas/UserRole'
  *        autonomousCommunity:
  *          $ref: '#/components/schemas/AutonomousCommunity'
+ *        phoneNumber:
+ *          type: string
+ *          description: Número de teléfono en formato E.164 (ej. +34612345678)
+ *          required: false
  */
 export const newUserSchema = z.object({
   body: z.object({
@@ -37,6 +41,10 @@ export const newUserSchema = z.object({
     password: z.string().min(6),
     role: z.nativeEnum(UserRole),
     autonomousCommunity: z.nativeEnum(AutonomousComunity),
+    phoneNumber: z
+      .string()
+      .regex(/^\+[1-9]\d{1,14}$/)
+      .optional(),
   }),
 });
 

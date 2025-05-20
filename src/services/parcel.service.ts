@@ -201,9 +201,9 @@ class ParcelService {
         municipalityCode,
         municipalityName,
         parcelUse,
-        coefRegadio: properties.coef_regadio,
-        altitude: properties.altitud,
-        surface: properties.dn_surface / 10000, // convert to hectares
+        coefRegadio: properties.coef_regadio || 0,
+        altitude: properties.altitud || 0,
+        surface: properties.dn_surface / 10000 || 0,
       };
     } catch (error: any) {
       logger.error('Error fetching GeoJSON from Sigpac', error);

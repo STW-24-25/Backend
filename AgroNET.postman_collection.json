@@ -16,7 +16,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"test2\",\n  \"email\": \"test@test.test\",\n  \"password\": \"UnaBuenaClave\",\n  \"role\": \"Agricultor pequeño\",\n  \"autonomousCommunity\": \"Aragón\",\n  \"isAdmin\": false\n}",
+              "raw": "{\n  \"username\": \"test2\",\n  \"email\": \"test@test.test\",\n  \"password\": \"UnaBuenaClave\",\n  \"role\": \"Agricultor pequeño\",\n  \"autonomousCommunity\": \"Aragón\",\n  \"isAdmin\": false,\n  \"phoneNumber\": \"+34612345678\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -281,6 +281,77 @@
                   "value": "40.451413888888894"
                 }
               ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Notification",
+      "item": [
+        {
+          "name": "Process Weather Alerts",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"alerts\": [\n    {\n      \"type\": \"Feature\",\n      \"properties\": {\n        \"alertType\": \"Temporal\",\n        \"severity\": \"Alta\",\n        \"title\": \"Alerta por fuertes lluvias\",\n        \"description\": \"Se esperan precipitaciones intensas en las próximas 24 horas\",\n        \"startTime\": \"2025-05-20T14:00:00Z\",\n        \"endTime\": \"2025-05-21T14:00:00Z\"\n      },\n      \"geometry\": {\n        \"type\": \"Polygon\",\n        \"coordinates\": [\n          [\n            [-2.57, 40.46],\n            [-2.56, 40.46],\n            [-2.56, 40.45],\n            [-2.57, 40.45],\n            [-2.57, 40.46]\n          ]\n        ]\n      }\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/notifications/weather-alerts",
+              "host": ["{{url}}"],
+              "path": ["notifications", "weather-alerts"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test Notification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": {\n    \"title\": \"Alerta de prueba\",\n    \"message\": \"Esta es una notificación de prueba para verificar el sistema\",\n    \"alertType\": \"Prueba\",\n    \"severity\": \"Baja\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/notifications/test/{{userId}}",
+              "host": ["{{url}}"],
+              "path": ["notifications", "test", "{{userId}}"]
             }
           },
           "response": []

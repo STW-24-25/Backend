@@ -6,6 +6,7 @@ import userService from './user.service';
 import { OAuth2Client, TokenPayload } from 'google-auth-library';
 import { GITHUB_API_URL, GithubPayload } from './constants';
 import axios from 'axios';
+import subscriptionService from './subscription.service';
 
 export interface CreateUserParams {
   username: string;
@@ -15,6 +16,7 @@ export interface CreateUserParams {
   autonomousCommunity: AutonomousComunity;
   googleId?: string;
   githubId?: string;
+  phoneNumber?: string;
 }
 
 interface UserDocument extends Document {
@@ -28,6 +30,7 @@ interface UserDocument extends Document {
   profilePicture?: string;
   googleId?: string;
   githubId?: string;
+  phoneNumber?: string;
 }
 
 class AuthService {
@@ -59,6 +62,7 @@ class AuthService {
         email: userData.email,
         role: userData.role,
         autonomousCommunity: userData.autonomousCommunity,
+        phoneNumber: userData.phoneNumber,
       };
 
       if (!userData.password) {
@@ -72,6 +76,15 @@ class AuthService {
 
       const user = new User(userToCreate);
       const savedUser = await user.save();
+
+      // Suscribir usuario a tópicos SNS
+      try {
+        await subscriptionService.manageUserSubscriptions(savedUser.email, savedUser.phoneNumber);
+        logger.info(`User subscribed to SNS topics: ${savedUser.email}`);
+      } catch (subsError) {
+        logger.error(`Error subscribing user to SNS topics: ${subsError}`);
+        // No lanzamos error para no interrumpir el registro del usuario
+      }
 
       const token = genJWT({
         id: savedUser._id,

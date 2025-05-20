@@ -4,6 +4,8 @@ import logger from '../utils/logger';
 import bcrypt from 'bcrypt';
 import { S3Service } from '../services/s3.service';
 import UserModel from '../models/user.model';
+import subscriptionService from './subscription.service';
+
 interface UserDocument extends Document {
   username: string;
   email: string;
@@ -16,6 +18,7 @@ interface UserDocument extends Document {
   createdAt: Date;
   googleId?: string;
   githubId?: string;
+  phoneNumber?: string;
 }
 
 interface UpdateUserParams {
@@ -23,6 +26,8 @@ interface UpdateUserParams {
   password?: string;
   role?: UserRole;
   autonomousCommunity?: AutonomousComunity;
+  email?: string;
+  phoneNumber?: string;
 }
 
 interface UpdateUserPasswordParams {
@@ -149,6 +154,9 @@ class UserService {
         delete updateFields.password; // Eliminar password del objeto
       }
 
+      // Obtener usuario antes de actualizar para comparar email/teléfono
+      const oldUser = await User.findById(userId);
+
       const user = await User.findByIdAndUpdate(
         userId,
         { $set: updateFields },
@@ -158,6 +166,21 @@ class UserService {
       if (!user) {
         logger.info(`No user found to update with ID: ${userId}`);
         return null;
+      }
+
+      // Actualizar suscripciones SNS si cambió el email o teléfono
+      if (
+        oldUser &&
+        ((updateFields.email && oldUser.email !== updateFields.email) ||
+          (updateFields.phoneNumber && oldUser.phoneNumber !== updateFields.phoneNumber))
+      ) {
+        try {
+          await subscriptionService.updateUserSubscriptions(user.email, user.phoneNumber);
+          logger.info(`Updated SNS subscriptions for user: ${user.email}`);
+        } catch (subsError) {
+          logger.error(`Error updating SNS subscriptions: ${subsError}`);
+          // No interrumpimos la actualización si falla la suscripción
+        }
       }
 
       logger.info(`User updated successfully with ID: ${userId}`);
@@ -329,6 +352,21 @@ class UserService {
    */
   async blockUser(userId: string, reason: string): Promise<boolean> {
     try {
+      const user = await User.findById(userId);
+      if (!user) {
+        logger.warn(`Failed to find user with id ${userId} for blocking`);
+        return false;
+      }
+
+      // Eliminar suscripciones del usuario
+      try {
+        await subscriptionService.removeUserSubscriptions(user.email, user.phoneNumber);
+        logger.info(`Removed SNS subscriptions for blocked user: ${user.email}`);
+      } catch (subsError) {
+        logger.error(`Error removing SNS subscriptions: ${subsError}`);
+        // Continuamos con el bloqueo aunque falle la eliminación de suscripciones
+      }
+
       const result = await User.findByIdAndUpdate(userId, {
         $set: { isBlocked: true, blockReason: reason },
       });
@@ -350,6 +388,12 @@ class UserService {
    */
   async unblockUser(userId: string): Promise<boolean> {
     try {
+      const user = await User.findById(userId);
+      if (!user) {
+        logger.warn(`Failed to find user with id ${userId} for unblocking`);
+        return false;
+      }
+
       const result = await User.findByIdAndUpdate(userId, {
         $set: { isBlocked: false },
         $unset: { blockReason: '', unblockAppeal: '' },
@@ -359,6 +403,16 @@ class UserService {
         logger.warn(`Failed to unblock user with id ${userId}`);
         return false;
       }
+
+      // Restaurar suscripciones del usuario
+      try {
+        await subscriptionService.manageUserSubscriptions(user.email, user.phoneNumber);
+        logger.info(`Restored SNS subscriptions for unblocked user: ${user.email}`);
+      } catch (subsError) {
+        logger.error(`Error restoring SNS subscriptions: ${subsError}`);
+        // No interrumpimos el desbloqueo si falla la suscripción
+      }
+
       return true;
     } catch (err) {
       logger.error(`Error unblocking user: ${err}`);

@@ -18,6 +18,7 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       password: req.body.password,
       role: req.body.role,
       autonomousCommunity: req.body.autonomousCommunity,
+      phoneNumber: req.body.phoneNumber,
     };
 
     const data = await authService.createUser(userData);

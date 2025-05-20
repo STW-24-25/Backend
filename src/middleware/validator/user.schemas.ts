@@ -311,6 +311,9 @@ export const passwordSchema = z.object({
  *          $ref: '#/components/schemas/UserRole'
  *        autonomousCommunity:
  *          $ref: '#/components/schemas/AutonomousCommunity'
+ *        phoneNumber:
+ *          type: string
+ *          description: Número de teléfono en formato E.164 (ej. +34612345678)
  *
  *  parameters:
  *    deleteUserUserIdParameterSchema:
@@ -328,5 +331,9 @@ export const updateProfileSchema = z.object({
     password: z.string().min(6).optional(),
     role: z.nativeEnum(UserRole).optional(),
     autonomousCommunity: z.nativeEnum(AutonomousComunity).optional(),
+    phoneNumber: z
+      .string()
+      .regex(/^\+[1-9]\d{1,14}$/)
+      .optional(),
   }),
 });

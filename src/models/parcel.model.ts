@@ -253,16 +253,18 @@ const parcelSchema: Schema = new Schema(
         },
       },
     },
-    products: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Products',
-        required: true,
-      },
-    ],
+    products: {
+      type: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Product',
+        },
+      ],
+      default: [],
+    },
     crop: {
       type: String,
-      enum: CropType,
+      enum: Object.values(CropType),
       required: true,
     },
     provinceCode: {
@@ -281,6 +283,10 @@ const parcelSchema: Schema = new Schema(
       type: String,
       required: true,
     },
+    surface: {
+      type: Number,
+      required: true,
+    },
     parcelUse: {
       type: String,
       required: true,
@@ -288,14 +294,12 @@ const parcelSchema: Schema = new Schema(
     coefRegadio: {
       type: Number,
       required: true,
+      default: 0,
     },
     altitude: {
       type: Number,
       required: true,
-    },
-    surface: {
-      type: Number,
-      required: true,
+      default: 0,
     },
   },
   {

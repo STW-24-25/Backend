@@ -6,6 +6,7 @@ import productRoutes from './product.routes';
 import statsRoutes from './stats.routes';
 import messageRoutes from './message.routes';
 import authRoutes from './auth.routes';
+import notificationRoutes from './notification.routes';
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use('/forums', forumRoutes);
 router.use('/products', productRoutes);
 router.use('/stats', statsRoutes);
 router.use('/messages', messageRoutes);
+router.use('/notifications', notificationRoutes);
 
 export default router;

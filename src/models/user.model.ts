@@ -96,6 +96,7 @@ export interface IUser extends Document {
   };
   googleId?: string;
   githubId?: string;
+  phoneNumber?: string; // Número de teléfono en formato E.164 (ej. +34612345678)
 }
 
 /**
@@ -166,6 +167,10 @@ export interface IUser extends Document {
  *          type: string
  *          description: An identifier for the user, unique among all GitHub accounts and never
  *                       reused. Present if the account is linked to a GitHub profile
+ *        phoneNumber:
+ *          type: string
+ *          description: Número de teléfono del usuario en formato E.164 (ej. +34612345678)
+ *          nullable: true
  */
 const userSchema: Schema = new Schema({
   username: { type: String, required: true, unique: true },
@@ -211,6 +216,7 @@ const userSchema: Schema = new Schema({
   },
   googleId: { type: String, required: false },
   githubId: { type: String, required: false },
+  phoneNumber: { type: String, required: false },
 });
 
 const UserModel = mongoose.model<IUser>('User', userSchema);
