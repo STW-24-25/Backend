@@ -1,0 +1,207 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Plantilla principal de AgroNet - 2025 (Versión Actualizada con Endpoints, ASG multi-AZ y scale in/out policies) - Versión S3'
+
+Parameters:
+  EnvironmentName:
+    Description: Nombre del entorno
+    Type: String
+    Default: prod
+
+  KeyName:
+    Description: Nombre del Key Pair de EC2 para acceso SSH
+    Type: AWS::EC2::KeyPair::KeyName
+  
+  MongoDBConnectionString:
+    Description: Connection string para MongoDB Atlas
+    Type: String
+    Default: "mongodb+srv://server:CNEj8ZBi99e3zJst@agronetcluster.sk9pr.mongodb.net/?retryWrites=true&w=majority&appName=AgroNETCluster"
+    NoEcho: true
+
+  GitHubToken:
+    Description: GitHub fine-grained personal access token para acceder a repositorios
+    Type: String
+    Default: "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"
+    NoEcho: true
+
+  JWTSecret:
+    Description: Secret para firmar los tokens JWT
+    Type: String
+    Default: "4e992bee8411b55f320502fd271c2a69c194a6e5dd50e90109c28bf0d78e1ba6be23453dbff226f37ff040918e604608b49ea4d15b239aa28239ecda5a4ca61d432dfbce0a7948b41f5c7818fab69550f96d0251d2c515af64c07b96229a3c68a3a33cc7f63bf80bc042858ff6448137323e1b53325579ff5873344915b830278e39938634998eafd2cdd605a8994aa56dfc04ea014cd88d8a64d2bd0e076bfd5e1470fe4ad91192690dde8c37b032d78b52569a2093821b5fde7e9ecea6e8333b200f16cc461fccc850853fcaefa3c0bded4286351a31194af9e6a56b8015c6cb8ac44d36b21b3cf28a3116622f872a9dea540083377646c795ad2ec011da5a"
+    NoEcho: true
+
+  AWSAccessKeyId:
+    Description: Access Key ID para AWS
+    Type: String
+    Default: "AKIA33FMH3JPRUIB4URW"
+    NoEcho: true
+
+  AWSSecretAccessKey:
+    Description: Secret Access Key para AWS
+    Type: String
+    Default: "EHbrAZxu1XwvzSy+h4Y3WuvEG3vp59f/gl7Iweb/"
+    NoEcho: true
+
+  AWSRegion:
+    Description: Región de AWS
+    Type: String
+    Default: "eu-north-1"
+
+  S3BucketName:
+    Description: Nombre del bucket S3 para almacenar imágenes
+    Type: String
+    Default: "agronet-images"
+
+  NotificationLambdaName:
+    Description: Nombre de la función Lambda para notificaciones
+    Type: String
+    Default: "AgroAlertNotificationsHandler"
+
+  SNSTopicARN:
+    Description: ARN del tema SNS para notificaciones
+    Type: String
+    Default: "arn:aws:sns:eu-north-1:814257527391:AgroNETAlertNotifications"
+
+  SSLCertificateArn:
+    Description: ARN del certificado SSL en ACM
+    Type: String
+    Default: "arn:aws:acm:eu-north-1:814257527391:certificate/example"
+
+  S3BucketTemplatesName:
+    Description: Nombre del bucket S3 donde se almacenan las plantillas
+    Type: String
+    Default: "agronet-cloudformation-templates-1000"
+
+  S3BucketTemplatesRegion:
+    Description: Región del bucket S3 de las plantillas
+    Type: String
+    Default: "eu-north-1"
+
+Resources:
+  # Stack de red - VPCs, subredes, NAT, etc.
+  NetworkStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${S3BucketTemplatesName}.s3.${S3BucketTemplatesRegion}.amazonaws.com/prod/network/vpc.yml"
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+
+  # Stack de endpoints de VPC
+  EndpointsStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${S3BucketTemplatesName}.s3.${S3BucketTemplatesRegion}.amazonaws.com/prod/network/endpoints.yml"
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        S3BucketName: !Ref S3BucketName
+    DependsOn: NetworkStack
+
+  # Stack de seguridad - grupos de seguridad
+  SecurityStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${S3BucketTemplatesName}.s3.${S3BucketTemplatesRegion}.amazonaws.com/prod/security/security-groups.yml"
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+    DependsOn: NetworkStack
+
+  # Stack de balanceadores de carga - ALB, NLBs
+  LoadBalancerStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${S3BucketTemplatesName}.s3.${S3BucketTemplatesRegion}.amazonaws.com/prod/network/load-balancers.yml"
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        SSLCertificateArn: !Ref SSLCertificateArn
+    DependsOn: 
+      - NetworkStack
+      - SecurityStack
+
+  # Stack de computo para Backend - ASG, Launch Template, métricas
+  ComputeBackendStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${S3BucketTemplatesName}.s3.${S3BucketTemplatesRegion}.amazonaws.com/prod/compute/backend-compute.yml"
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        KeyName: !Ref KeyName
+        MongoDBConnectionString: !Ref MongoDBConnectionString
+        GitHubToken: !Ref GitHubToken
+        JWTSecret: !Ref JWTSecret
+        AWSAccessKeyId: !Ref AWSAccessKeyId
+        AWSSecretAccessKey: !Ref AWSSecretAccessKey
+        AWSRegion: !Ref AWSRegion
+        S3BucketName: !Ref S3BucketName
+        NotificationLambdaName: !Ref NotificationLambdaName
+        SNSTopicARN: !Ref SNSTopicARN
+        MinSize: 1
+        MaxSize: 3
+        DesiredCapacity: 2
+        ScaleOutThreshold: 70
+        ScaleInThreshold: 30
+    DependsOn:
+      - NetworkStack
+      - SecurityStack
+      - LoadBalancerStack
+      - EndpointsStack
+
+  # Stack de computo para Frontend - ASG, Launch Template
+  ComputeFrontendStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${S3BucketTemplatesName}.s3.${S3BucketTemplatesRegion}.amazonaws.com/prod/compute/frontend-compute.yml"
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        KeyName: !Ref KeyName
+        GitHubToken: !Ref GitHubToken
+        AWSAccessKeyId: !Ref AWSAccessKeyId
+        AWSSecretAccessKey: !Ref AWSSecretAccessKey
+        AWSRegion: !Ref AWSRegion
+        S3BucketName: !Ref S3BucketName
+        MinSize: 1
+        MaxSize: 3
+        DesiredCapacity: 2
+        ScaleOutThreshold: 70
+        ScaleInThreshold: 30
+    DependsOn:
+      - NetworkStack
+      - SecurityStack
+      - LoadBalancerStack
+      - ComputeBackendStack
+      - EndpointsStack
+
+Outputs:
+  ALBDNSName:
+    Description: DNS del Application Load Balancer (ALB)
+    Value: !GetAtt LoadBalancerStack.Outputs.ALBDNSName
+
+  FrontendASG1Name:
+    Description: Nombre del ASG 1 de Frontend
+    Value: !GetAtt ComputeFrontendStack.Outputs.FrontendASG1Name
+
+  FrontendASG2Name:
+    Description: Nombre del ASG 2 de Frontend
+    Value: !GetAtt ComputeFrontendStack.Outputs.FrontendASG2Name
+
+  FrontendASG3Name:
+    Description: Nombre del ASG 3 de Frontend
+    Value: !GetAtt ComputeFrontendStack.Outputs.FrontendASG3Name
+
+  BackendASG1Name:
+    Description: Nombre del ASG 1 de Backend
+    Value: !GetAtt ComputeBackendStack.Outputs.BackendASG1Name
+
+  BackendASG2Name:
+    Description: Nombre del ASG 2 de Backend
+    Value: !GetAtt ComputeBackendStack.Outputs.BackendASG2Name
+
+  BackendASG3Name:
+    Description: Nombre del ASG 3 de Backend
+    Value: !GetAtt ComputeBackendStack.Outputs.BackendASG3Name
+
+  S3EndpointFrontendId:
+    Description: ID del Endpoint de S3 para Frontend VPC
+    Value: !GetAtt EndpointsStack.Outputs.S3EndpointFrontendId
+
+  S3EndpointBackendId:
+    Description: ID del Endpoint de S3 para Backend VPC
+    Value: !GetAtt EndpointsStack.Outputs.S3EndpointBackendId 

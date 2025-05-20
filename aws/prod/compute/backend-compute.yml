@@ -29,7 +29,7 @@ Parameters:
   MongoDBConnectionString:
     Description: Connection string para MongoDB Atlas
     Type: String
-    Default: "mongodb+srv://user:password@cluster.mongodb.net/agronet?retryWrites=true&w=majority"
+    Default: "mongodb+srv://server:CNEj8ZBi99e3zJst@agronetcluster.sk9pr.mongodb.net/?retryWrites=true&w=majority&appName=AgroNETCluster"
     NoEcho: true
 
   GitHubToken:
@@ -38,6 +38,67 @@ Parameters:
     Default: "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"
     NoEcho: true
     
+  JWTSecret:
+    Description: Secret para firmar los tokens JWT
+    Type: String
+    Default: "4e992bee8411b55f320502fd271c2a69c194a6e5dd50e90109c28bf0d78e1ba6be23453dbff226f37ff040918e604608b49ea4d15b239aa28239ecda5a4ca61d432dfbce0a7948b41f5c7818fab69550f96d0251d2c515af64c07b96229a3c68a3a33cc7f63bf80bc042858ff6448137323e1b53325579ff5873344915b830278e39938634998eafd2cdd605a8994aa56dfc04ea014cd88d8a64d2bd0e076bfd5e1470fe4ad91192690dde8c37b032d78b52569a2093821b5fde7e9ecea6e8333b200f16cc461fccc850853fcaefa3c0bded4286351a31194af9e6a56b8015c6cb8ac44d36b21b3cf28a3116622f872a9dea540083377646c795ad2ec011da5a"
+    NoEcho: true
+
+  AWSAccessKeyId:
+    Description: Access Key ID para AWS
+    Type: String
+    Default: "AKIA33FMH3JPRUIB4URW"
+    NoEcho: true
+
+  AWSSecretAccessKey:
+    Description: Secret Access Key para AWS
+    Type: String
+    Default: "EHbrAZxu1XwvzSy+h4Y3WuvEG3vp59f/gl7Iweb/"
+    NoEcho: true
+
+  AWSRegion:
+    Description: Región de AWS
+    Type: String
+    Default: "eu-north-1"
+
+  S3BucketName:
+    Description: Nombre del bucket S3 para almacenar imágenes
+    Type: String
+    Default: "agronet-images"
+
+  NotificationLambdaName:
+    Description: Nombre de la función Lambda para notificaciones
+    Type: String
+    Default: "AgroAlertNotificationsHandler"
+
+  SNSTopicARN:
+    Description: ARN del tema SNS para notificaciones
+    Type: String
+    Default: "arn:aws:sns:eu-north-1:814257527391:AgroNETAlertNotifications"
+
+  ScaleOutThreshold:
+    Description: Umbral de CPU para escalar hacia fuera (%)
+    Type: Number
+    Default: 70
+    MinValue: 1
+    MaxValue: 100
+
+  ScaleInThreshold:
+    Description: Umbral de CPU para escalar hacia dentro (%)
+    Type: Number
+    Default: 30
+    MinValue: 1
+    MaxValue: 100
+
+  ScaleOutCooldown:
+    Description: Tiempo de espera para escalar hacia fuera (segundos)
+    Type: Number
+    Default: 300
+
+  ScaleInCooldown:
+    Description: Tiempo de espera para escalar hacia dentro (segundos)
+    Type: Number
+    Default: 300
 
   MinSize:
     Description: Número mínimo de instancias en Auto Scaling Group
@@ -84,6 +145,12 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                   - secretsmanager:GetSecretValue
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                  - sns:Publish
+                  - lambda:InvokeFunction
                 Resource: '*'
 
   BackendInstanceProfile:
@@ -238,15 +305,56 @@ Resources:
             sudo -u ec2-user git clone https://oauth2:$GITHUB_TOKEN@github.com/STW-24-25/Backend.git
             cd Backend
             sudo -u ec2-user npm install
+            
+            # Instalar la dependencia faltante @turf/jsts
+            sudo -u ec2-user npm install @turf/jsts --save
 
             # Configurar variables de entorno
             cat > .env << EOL
             PORT=3000
             NODE_ENV=production
             MONGO_URI=${MongoDBConnectionString}
-            JWT_SECRET=8b7932e4bb244a689bb47a1c7572582a
+            JWT_SECRET=${JWTSecret}
             AEMET_API_KEY=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZ3JvbmV0QGVqZW1wbG8uY29tIiwianRpIjoiMTM0MjNhYzktNTIzYi00YzFkLThkMjYtOWVhZWIzYTljZTIzIiwiaXNzIjoiQUVNRVQiLCJpYXQiOjE3MTM3OTk5NzksInVzZXJJZCI6IjEzNDIzYWM5LTUyM2ItNGMxZC04ZDI2LTllYWViM2E5Y2UyMyIsInJvbGUiOiIifQ.Dau0-Z6Qk_G7cSQR9UHKHvMc_uxrI_awz-xvYFtL_50
+            AWS_ACCESS_KEY_ID=${AWSAccessKeyId}
+            AWS_SECRET_ACCESS_KEY=${AWSSecretAccessKey}
+            AWS_REGION=${AWSRegion}
+            S3_BUCKET_NAME=${S3BucketName}
+            NOTIFICATION_LAMBDA_FUNCTION_NAME=${NotificationLambdaName}
+            SNS_TOPIC_ARN=${SNSTopicARN}
             EOL
+           
+            # Configurar AWS SDK para usar el endpoint VPC de S3 de forma transparente mediante variables de entorno del sistema
+            cat >> /etc/environment << EOL
+            AWS_SDK_LOAD_CONFIG=1
+            AWS_CONFIG_FILE=/home/ec2-user/.aws/config
+            EOL
+
+            # Configurar el archivo de configuración de AWS para el uso de endpoints VPC
+            mkdir -p /home/ec2-user/.aws
+            cat > /home/ec2-user/.aws/config << EOL
+            [default]
+            region = ${AWSRegion}
+            s3 = 
+                use_accelerate_endpoint = false
+                addressing_style = virtual
+                use_dualstack_endpoint = false
+            
+            [plugins]
+            endpoint = endpoint-data
+
+            [services]
+            s3 = 
+                endpoints = 
+                    *=https://s3.${AWSRegion}.amazonaws.com
+            EOL
+
+            chown -R ec2-user:ec2-user /home/ec2-user/.aws
+            chmod 700 /home/ec2-user/.aws
+            chmod 600 /home/ec2-user/.aws/config
+
+            # Recargar variables de entorno
+            source /etc/environment
 
             # Construir la aplicación
             sudo -u ec2-user npm run build
@@ -373,7 +481,7 @@ Resources:
           Value: !Sub ${EnvironmentName}-Backend-ASG-3
           PropagateAtLaunch: true
 
-  # Alarmas de CloudWatch para monitorizar CPU
+  # Alarmas de CloudWatch para monitorizar CPU - Scale Out (Alto uso)
   HighCPUAlarm1:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -384,7 +492,7 @@ Resources:
       Statistic: Average
       Period: 300
       EvaluationPeriods: 2
-      Threshold: 80
+      Threshold: !Ref ScaleOutThreshold
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
         - Name: AutoScalingGroupName
@@ -402,7 +510,7 @@ Resources:
       Statistic: Average
       Period: 300
       EvaluationPeriods: 2
-      Threshold: 80
+      Threshold: !Ref ScaleOutThreshold
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
         - Name: AutoScalingGroupName
@@ -420,7 +528,7 @@ Resources:
       Statistic: Average
       Period: 300
       EvaluationPeriods: 2
-      Threshold: 80
+      Threshold: !Ref ScaleOutThreshold
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
         - Name: AutoScalingGroupName
@@ -428,30 +536,116 @@ Resources:
       AlarmActions:
         - !Ref BackendScaleOutPolicy3
 
-  # Políticas de Auto Scaling
+  # Alarmas de CloudWatch para monitorizar CPU - Scale In (Bajo uso)
+  LowCPUAlarm1:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${EnvironmentName}-Backend-ASG1-LowCPU"
+      AlarmDescription: "Alarma por bajo uso de CPU en Backend ASG1"
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: !Ref ScaleInThreshold
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !Ref BackendASG1
+      AlarmActions:
+        - !Ref BackendScaleInPolicy1
+
+  LowCPUAlarm2:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${EnvironmentName}-Backend-ASG2-LowCPU"
+      AlarmDescription: "Alarma por bajo uso de CPU en Backend ASG2"
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: !Ref ScaleInThreshold
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !Ref BackendASG2
+      AlarmActions:
+        - !Ref BackendScaleInPolicy2
+
+  LowCPUAlarm3:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${EnvironmentName}-Backend-ASG3-LowCPU"
+      AlarmDescription: "Alarma por bajo uso de CPU en Backend ASG3"
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: !Ref ScaleInThreshold
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !Ref BackendASG3
+      AlarmActions:
+        - !Ref BackendScaleInPolicy3
+
+  # Políticas de Scale Out
   BackendScaleOutPolicy1:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:
-      AdjustmentType: ChangeInCapacity
       AutoScalingGroupName: !Ref BackendASG1
-      Cooldown: 300
+      PolicyType: SimpleScaling
+      AdjustmentType: ChangeInCapacity
       ScalingAdjustment: 1
+      Cooldown: !Ref ScaleOutCooldown
 
   BackendScaleOutPolicy2:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:
-      AdjustmentType: ChangeInCapacity
       AutoScalingGroupName: !Ref BackendASG2
-      Cooldown: 300
+      PolicyType: SimpleScaling
+      AdjustmentType: ChangeInCapacity
       ScalingAdjustment: 1
+      Cooldown: !Ref ScaleOutCooldown
 
   BackendScaleOutPolicy3:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:
-      AdjustmentType: ChangeInCapacity
       AutoScalingGroupName: !Ref BackendASG3
-      Cooldown: 300
+      PolicyType: SimpleScaling
+      AdjustmentType: ChangeInCapacity
       ScalingAdjustment: 1
+      Cooldown: !Ref ScaleOutCooldown
+
+  # Políticas de Scale In
+  BackendScaleInPolicy1:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref BackendASG1
+      PolicyType: SimpleScaling
+      AdjustmentType: ChangeInCapacity
+      ScalingAdjustment: -1
+      Cooldown: !Ref ScaleInCooldown
+
+  BackendScaleInPolicy2:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref BackendASG2
+      PolicyType: SimpleScaling
+      AdjustmentType: ChangeInCapacity
+      ScalingAdjustment: -1
+      Cooldown: !Ref ScaleInCooldown
+
+  BackendScaleInPolicy3:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref BackendASG3
+      PolicyType: SimpleScaling
+      AdjustmentType: ChangeInCapacity
+      ScalingAdjustment: -1
+      Cooldown: !Ref ScaleInCooldown
 
 Outputs:
   BackendLaunchTemplateId:
