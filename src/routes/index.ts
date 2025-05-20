@@ -7,6 +7,7 @@ import statsRoutes from './stats.routes';
 import messageRoutes from './message.routes';
 import authRoutes from './auth.routes';
 import notificationRoutes from './notification.routes';
+import alertRoutes from './alert.routes';
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use('/products', productRoutes);
 router.use('/stats', statsRoutes);
 router.use('/messages', messageRoutes);
 router.use('/notifications', notificationRoutes);
+router.use('/alerts', alertRoutes);
 
 export default router;

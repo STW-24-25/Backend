@@ -14,12 +14,7 @@ import {
   VALID_SIGPAC_USES,
 } from './constants/sigpac.constants';
 
-// Initialize AEMET client with API key from .env
-if (!process.env.AEMET_API_KEY) {
-  throw new Error('No AEMET API key found');
-}
-
-const aemetClient = new Aemet(process.env.AEMET_API_KEY);
+const aemetClient = new Aemet(process.env.AEMET_API_KEY as string);
 
 /**
  * Service class that handles parcel-related operations.

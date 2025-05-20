@@ -1,5 +1,6 @@
 import { updatePricesJob } from './precios.job';
 import { cleanSignedUrlCacheJob } from './cache-cleanup.job';
+import { refreshWeatherAlertsJob } from './aemet.job';
 import cron from 'node-cron';
 import logger from '../utils/logger';
 
@@ -16,7 +17,7 @@ export const pricesUpdateJob = cron.schedule(
     }
   },
   {
-    scheduled: false, // La tarea se crea pero no se activa automáticamente
+    scheduled: false,
   },
 );
 
@@ -33,7 +34,23 @@ export const cacheCleanupJob = cron.schedule(
     }
   },
   {
-    scheduled: false, // La tarea se crea pero no se activa automáticamente
+    scheduled: false,
+  },
+);
+
+export const alertsCacheJob = cron.schedule(
+  '15 * * * *', // Run 15 minutes after each hour to stagger API calls
+  async () => {
+    logger.info('Running scheduled weather alerts cache refresh job');
+    try {
+      await refreshWeatherAlertsJob();
+      logger.info('Weather alerts cache refresh job completed');
+    } catch (error) {
+      logger.error('Error in scheduled weather alerts cache refresh job:', error);
+    }
+  },
+  {
+    scheduled: false,
   },
 );
 
@@ -46,6 +63,8 @@ export function configurarJobs() {
 
   // Iniciar la tarea de limpieza de caché
   cacheCleanupJob.start();
+
+  alertsCacheJob.start();
 
   logger.info('Jobs scheduled succesfully');
 }
