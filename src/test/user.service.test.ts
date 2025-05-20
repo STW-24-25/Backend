@@ -5,6 +5,7 @@ import userService from '../services/user.service';
 import UserModel, { UserRole, AutonomousComunity } from '../models/user.model';
 import { Types } from 'mongoose';
 import authService from '../services/auth.service';
+import S3Service from '../services/s3.service'; // Import S3Service
 
 // Mock del middleware de autenticación
 jest.mock('../middleware/auth', () => ({
@@ -19,23 +20,13 @@ jest.mock('../utils/logger', () => ({
   debug: jest.fn(),
 }));
 
-// Mock de S3Service y sharp para los métodos que lo usan
-jest.mock('../services/s3.service', () => ({
-  S3Service: {
-    uploadFile: jest.fn().mockResolvedValue('users/profile-pictures/mocked-key.jpg'),
-    deleteFile: jest.fn().mockResolvedValue(true),
-    getSignedUrl: jest.fn().mockResolvedValue('https://mocked-s3-url'),
-    generateUserProfileKey: jest.fn().mockReturnValue('users/profile-pictures/mock-key.jpg'),
-    processImage: jest.fn().mockResolvedValue(Buffer.from('processed-image')),
-    getDefaultProfilePictureUrl: jest.fn().mockResolvedValue('https://mocked-default-profile-url'),
-  },
-}));
-
 jest.mock('sharp', () => () => ({
   resize: () => ({
     jpeg: () => ({ toBuffer: jest.fn().mockResolvedValue(Buffer.from('mocked-image')) }),
   }),
 }));
+
+jest.mock('../services/s3.service');
 
 describe('UserService', () => {
   let mongoServer: MongoMemoryServer;
@@ -63,6 +54,20 @@ describe('UserService', () => {
   // Limpiar antes de cada test para asegurar aislamiento
   beforeEach(async () => {
     await clearDatabase();
+
+    jest.clearAllMocks(); // Ensure mocks are cleared
+
+    // Setup S3Service mocks for UserService
+    (S3Service.getSignedUrl as jest.Mock).mockResolvedValue('https://mocked-s3-url');
+    (S3Service.getDefaultProfilePictureUrl as jest.Mock).mockResolvedValue(
+      'https://mocked-default-profile-url',
+    );
+    (S3Service.processImage as jest.Mock).mockResolvedValue(Buffer.from('processed-image'));
+    (S3Service.generateUserProfileKey as jest.Mock).mockReturnValue(
+      'users/profile-pictures/mock-key.jpg',
+    );
+    (S3Service.uploadFile as jest.Mock).mockResolvedValue('users/profile-pictures/mocked-key.jpg');
+    (S3Service.deleteFile as jest.Mock).mockResolvedValue(undefined); // deleteFile is void
   });
 
   // Limpiar después de cada test para evitar contaminación
@@ -430,6 +435,7 @@ describe('UserService', () => {
       await user.save();
       const result = await userService.deleteProfilePicture((user._id as any).toString());
       expect(result).toBe(true);
+      expect(S3Service.deleteFile).toHaveBeenCalledWith('mocked-image-key');
     });
   });
 });

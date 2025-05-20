@@ -86,8 +86,8 @@ export const getForumById = async (req: Request, res: Response): Promise<void> =
   try {
     const forumId = req.params.id;
     const forum = await forumService.getForumById(forumId);
-    const page = parseInt(req.query.page as string) || 1;
-    const size = parseInt(req.query.size as string) || 10;
+    const page = parseInt(req.query.page as string);
+    const size = parseInt(req.query.size as string);
     const { messages, totalPages } = await messageService.getMessagesByForumId(forumId, page, size);
     const totalMessages = await messageService.countMessagesByForumId(forumId);
 

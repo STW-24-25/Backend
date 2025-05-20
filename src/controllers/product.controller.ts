@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import logger from '../utils/logger';
 import ProductService from '../services/product.service';
-import { S3Service } from '../services/s3.service';
+import S3Service from '../services/s3.service';
 import ProductModel from '../models/product.model';
 
 /**

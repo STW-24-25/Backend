@@ -1,4 +1,4 @@
-import ParcelModel from '../models/parcel.model';
+import ParcelModel, { IParcel } from '../models/parcel.model';
 import ProductModel from '../models/product.model';
 import logger from '../utils/logger';
 import { Aemet } from 'aemet-api';
@@ -124,9 +124,11 @@ class ParcelService {
 
       // If it's registered return the owner together with the rest of the data
       if (parcel) {
+        logger.info('Parcel registered');
         result = { parcel, owner: user };
       } else {
         // Parcel is not registered, get just the geoJSON from SIGPAC
+        logger.info('Parcel not registered');
         const parcelData = await this.getParcelGeoJSON(lng, lat);
         result = { parcel: parcelData };
       }
@@ -343,15 +345,13 @@ class ParcelService {
    */
   async getAllParcels(userId: string) {
     try {
-      // Get user with populated parcels
-      const user = await UserModel.findOne({ _id: userId }).populate('parcels');
+      const user = await UserModel.findOne({ _id: userId }).populate('parcels').lean();
 
       if (!user) {
         throw new Error('User not found');
       }
 
-      // Transform parcels to required format
-      return user.parcels;
+      return user.parcels as unknown as IParcel[];
     } catch (error: any) {
       logger.error('Error getting all parcels', error);
       throw new Error(`Failed to get all parcels: ${error.message}`);

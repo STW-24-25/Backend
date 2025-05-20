@@ -11,7 +11,7 @@ import logger from '../utils/logger';
 export const getParcel = async (req: Request, res: Response): Promise<void> => {
   try {
     // Get user ID from headers
-    const userId = req.auth!.id;
+    const userId = req.auth.id;
 
     // Get coordinates from query parameters
     const lng = parseFloat(req.query.lng as string);
@@ -48,7 +48,7 @@ export const getParcel = async (req: Request, res: Response): Promise<void> => {
  */
 export const createParcel = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.auth!.id;
+    const userId = req.auth.id;
 
     const parcel = await parcelService.createParcel(userId, req.body);
 
@@ -70,7 +70,7 @@ export const createParcel = async (req: Request, res: Response): Promise<void> =
 export const getParcels = async (req: Request, res: Response): Promise<void> => {
   try {
     // Get user ID from headers
-    const userId = req.auth!.id;
+    const userId = req.auth.id;
 
     // Get parcels for the user
     const parcels = await parcelService.getAllParcels(userId);

@@ -74,7 +74,7 @@ export const googleLogin = async (req: Request, res: Response): Promise<void> =>
     if (user) {
       const result = await authService.loginGoogleUser(user.username, user.email, user.googleId!);
       if (!result) {
-        res.status(401).json({ message: 'Somehow invalid credentials' });
+        res.status(401).json({ message: 'Invalid credentials' });
       }
 
       logger.info('Matching account found');
@@ -229,7 +229,7 @@ export const googleRegister = async (req: Request, res: Response): Promise<void>
     } else {
       res.status(500).json({ message: 'Google registration failed', error: err.message });
     }
-    logger.error('GitHub registration error', err);
+    logger.error('Google registration error', err);
   }
 };
 

@@ -2,7 +2,7 @@ import User, { UserRole, AutonomousComunity } from '../models/user.model';
 import { Types, Document } from 'mongoose';
 import logger from '../utils/logger';
 import bcrypt from 'bcrypt';
-import { S3Service } from '../services/s3.service';
+import S3Service from '../services/s3.service';
 import UserModel from '../models/user.model';
 import MessageModel from '../models/message.model';
 import ParcelModel from '../models/parcel.model';

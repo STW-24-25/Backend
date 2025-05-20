@@ -2,6 +2,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose, { Types } from 'mongoose';
 import productService from '../services/product.service';
 import ProductModel, { ProductSector } from '../models/product.model';
+import S3Service from '../services/s3.service'; // Import S3Service
 
 jest.mock('../utils/logger', () => ({
   info: jest.fn(),
@@ -10,20 +11,13 @@ jest.mock('../utils/logger', () => ({
   debug: jest.fn(),
 }));
 
-// Mock de S3Service y sharp para los métodos que lo usan
-jest.mock('../services/s3.service', () => ({
-  S3Service: {
-    uploadFile: jest.fn().mockResolvedValue('mocked-s3-key'),
-    getSignedUrl: jest.fn().mockResolvedValue('https://mocked-s3-url'),
-    generateProductImageKey: jest.fn().mockReturnValue('products/images/mock-key.jpg'),
-    processImage: jest.fn().mockResolvedValue(Buffer.from('processed-image')),
-  },
-}));
 jest.mock('sharp', () => () => ({
   resize: () => ({
     jpeg: () => ({ toBuffer: jest.fn().mockResolvedValue(Buffer.from('mocked-image')) }),
   }),
 }));
+
+jest.mock('../services/s3.service');
 
 describe('ProductService', () => {
   let mongoServer: MongoMemoryServer;
@@ -172,6 +166,17 @@ describe('ProductService', () => {
 
   beforeEach(async () => {
     await clearDatabase();
+
+    jest.clearAllMocks();
+    (S3Service.getSignedUrl as jest.Mock).mockResolvedValue('https://mocked-s3-url');
+    (S3Service.processImage as jest.Mock).mockResolvedValue(Buffer.from('processed-image'));
+    (S3Service.generateProductImageKey as jest.Mock).mockReturnValue(
+      'products/images/mock-key.jpg',
+    );
+    (S3Service.uploadFile as jest.Mock).mockResolvedValue('mocked-s3-key');
+    (S3Service.getDefaultProfilePictureUrl as jest.Mock).mockResolvedValue(
+      'https://mocked-default-profile-url',
+    ); // If needed by product service indirectly
   });
 
   afterEach(async () => {
@@ -246,18 +251,28 @@ describe('ProductService', () => {
   });
 
   describe('refreshProductImages', () => {
-    it('debería refrescar las imágenes de los productos', async () => {
-      const [p1, p2] = await createTestProducts();
-      p1.image = 'mocked-image-key';
-      p2.image = 'mocked-image-key';
-      await p1.save();
-      await p2.save();
-      const id1 = String(p1._id);
-      const id2 = String(p2._id);
-      const result = await productService.refreshProductImages([id1, id2]);
-      expect(result).toHaveProperty(id1);
-      expect(result).toHaveProperty(id2);
-      expect(result[id1]).toContain('mocked-s3-url');
+    describe('refreshProductImages', () => {
+      it('debería refrescar las imágenes de los productos', async () => {
+        const [p1, p2] = await createTestProducts();
+        p1.image = 'mocked-image-key1';
+        p2.image = 'mocked-image-key2';
+        await p1.save();
+        await p2.save();
+        const id1 = String(p1._id);
+        const id2 = String(p2._id);
+
+        (S3Service.getSignedUrl as jest.Mock).mockImplementation(
+          async key => `https://mocked-s3-url/${key}`,
+        );
+
+        const result = await productService.refreshProductImages([id1, id2]);
+        expect(S3Service.getSignedUrl).toHaveBeenCalledWith(p1.image);
+        expect(S3Service.getSignedUrl).toHaveBeenCalledWith(p2.image);
+        expect(result).toHaveProperty(id1);
+        expect(result).toHaveProperty(id2);
+        expect(result[id1]).toContain('https://mocked-s3-url/mocked-image-key1');
+        expect(result[id2]).toContain('https://mocked-s3-url/mocked-image-key2');
+      });
     });
   });
 

@@ -3,6 +3,7 @@ import * as userController from '../controllers/user.controller';
 import { UserRole, AutonomousComunity } from '../models/user.model';
 import { Request, Response } from 'express';
 import userService from '../services/user.service';
+import S3Service from '../services/s3.service';
 
 jest.mock('../utils/logger', () => ({
   info: jest.fn(),
@@ -20,13 +21,17 @@ jest.mock('../services/user.service', () => ({
   loginUser: jest.fn(),
   getAllUsers: jest.fn(),
   countUsers: jest.fn(),
-  changePassword: jest.fn(),
-  findUsersBySearchCriteria: jest.fn(),
-  validateUserToken: jest.fn(),
   blockUser: jest.fn(),
   unblockUser: jest.fn(),
   requestUnblock: jest.fn(),
+  updateUserPassword: jest.fn(), // Was changePassword, ensure it's updateUserPassword
+  makeAdmin: jest.fn(),
+  uploadProfilePicture: jest.fn(),
+  deleteProfilePicture: jest.fn(),
+  refreshUserImages: jest.fn(),
 }));
+
+jest.mock('../services/s3.service');
 
 // Mock para Request y Response de Express
 const mockRequest = (
@@ -35,6 +40,7 @@ const mockRequest = (
     params?: any;
     query?: any;
     auth?: any;
+    file?: any;
   } = {},
 ): Request => {
   const req: Partial<Request> = {};
@@ -42,6 +48,7 @@ const mockRequest = (
   req.params = data.params || {};
   req.query = data.query || {};
   req.auth = data.auth;
+  req.file = data.file;
 
   return req as Request;
 };
@@ -56,6 +63,12 @@ const mockResponse = () => {
 describe('UserController', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (S3Service.getSignedUrl as jest.Mock).mockResolvedValue(
+      'https://s3.example.com/mocked-url?signature=mock',
+    );
+    (S3Service.getSignedUrl as jest.Mock).mockResolvedValue(
+      'https://s3.example.com/mocked-url?signature=mock',
+    );
   });
 
   const testUserId = new mongoose.Types.ObjectId().toString();
@@ -129,6 +142,14 @@ describe('UserController', () => {
       email: 'updated@example.com',
     };
     const updatedUserResult = { ...mockCreatedUser, ...updateData };
+    const mockFile = {
+      fieldname: 'profilePicture',
+      originalname: 'new_pic.jpg',
+      encoding: '7bit',
+      mimetype: 'image/jpeg',
+      buffer: Buffer.from('new image data'),
+      size: 54321,
+    } as Express.Multer.File;
 
     it('should call userService.updateUser and return 200 with updated user', async () => {
       const req = mockRequest({
@@ -142,11 +163,56 @@ describe('UserController', () => {
       await userController.updateUser(req, res);
 
       expect(userService.updateUser).toHaveBeenCalledWith(testUserId, updateData);
-
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         message: 'User updated successfully',
         user: updatedUserResult,
+      });
+    });
+
+    it('should update current user (no req.params.id) and return 200', async () => {
+      const req = mockRequest({
+        auth: { id: testUserId }, // User updates their own profile
+        body: updateData,
+      });
+      const res = mockResponse();
+
+      (userService.updateUser as jest.Mock).mockResolvedValue(updatedUserResult);
+
+      await userController.updateUser(req, res);
+
+      expect(userService.updateUser).toHaveBeenCalledWith(testUserId, updateData);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'User updated successfully',
+        user: updatedUserResult,
+      });
+    });
+
+    it('should update user with profile picture file and return 200', async () => {
+      const req = mockRequest({
+        auth: { id: testUserId },
+        body: updateData,
+        file: mockFile, // File is present
+      });
+      const res = mockResponse();
+      const s3Key = `users/${testUserId}/profile.jpg`;
+      const updatedUserWithPicResult = { ...updatedUserResult, profilePicture: s3Key };
+
+      (userService.uploadProfilePicture as jest.Mock).mockResolvedValue(s3Key);
+      (userService.updateUser as jest.Mock).mockResolvedValue(updatedUserWithPicResult);
+
+      await userController.updateUser(req, res);
+
+      expect(userService.uploadProfilePicture).toHaveBeenCalledWith(testUserId, mockFile);
+      expect(userService.updateUser).toHaveBeenCalledWith(testUserId, {
+        ...updateData,
+        profilePicture: s3Key,
+      });
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'User updated successfully',
+        user: updatedUserWithPicResult,
       });
     });
 
@@ -191,6 +257,140 @@ describe('UserController', () => {
         error: errorMessage,
       });
     });
+
+    it('should return 500 if uploadProfilePicture fails during update', async () => {
+      const req = mockRequest({
+        auth: { id: testUserId },
+        body: updateData,
+        file: mockFile,
+      });
+      const res = mockResponse();
+      const uploadError = 'S3 upload failed';
+      (userService.uploadProfilePicture as jest.Mock).mockRejectedValue(new Error(uploadError));
+
+      await userController.updateUser(req, res);
+
+      expect(userService.uploadProfilePicture).toHaveBeenCalledWith(testUserId, mockFile);
+      expect(userService.updateUser).not.toHaveBeenCalled(); // updateUser should not be called if upload fails
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Error updating user',
+        error: uploadError,
+      });
+    });
+  });
+
+  describe('updatePassword', () => {
+    const passwordData = {
+      currentPassword: 'OldPassword123',
+      newPassword: 'NewPassword456',
+    };
+
+    it('should update password successfully and return 200', async () => {
+      const req = mockRequest({ auth: { id: testUserId }, body: passwordData });
+      const res = mockResponse();
+      (userService.updateUserPassword as jest.Mock).mockResolvedValue('success');
+
+      await userController.updatePassword(req, res);
+
+      expect(userService.updateUserPassword).toHaveBeenCalledWith(testUserId, passwordData);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ message: 'Password updated successfully' });
+    });
+
+    it('should return 400 if newPassword is not provided', async () => {
+      const req = mockRequest({
+        auth: { id: testUserId },
+        body: { currentPassword: 'OldPassword123' },
+      });
+      const res = mockResponse();
+
+      await userController.updatePassword(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ message: 'New password is required' });
+    });
+
+    it('should return 404 if user not found by service', async () => {
+      const req = mockRequest({ auth: { id: testUserId }, body: passwordData });
+      const res = mockResponse();
+      (userService.updateUserPassword as jest.Mock).mockResolvedValue('not_found');
+
+      await userController.updatePassword(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({ message: 'User not found' });
+    });
+
+    it('should return 401 if current password is incorrect', async () => {
+      const req = mockRequest({ auth: { id: testUserId }, body: passwordData });
+      const res = mockResponse();
+      (userService.updateUserPassword as jest.Mock).mockResolvedValue('invalid_current_password');
+
+      await userController.updatePassword(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({ message: 'Current password is incorrect' });
+    });
+
+    it('should return 400 if current password provided for OAuth user setting first password', async () => {
+      const req = mockRequest({ auth: { id: testUserId }, body: passwordData });
+      const res = mockResponse();
+      (userService.updateUserPassword as jest.Mock).mockResolvedValue(
+        'oauth_user_no_current_password_expected',
+      );
+
+      await userController.updatePassword(req, res);
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        message:
+          'Cannot provide current password when setting a password for the first time for an OAuth account.',
+      });
+    });
+
+    it('should return 400 if current password is required but not provided', async () => {
+      const req = mockRequest({
+        auth: { id: testUserId },
+        body: { newPassword: 'NewPassword456' },
+      }); // No currentPassword
+      const res = mockResponse();
+      (userService.updateUserPassword as jest.Mock).mockResolvedValue('current_password_required');
+
+      await userController.updatePassword(req, res);
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Current password is required to change your existing password.',
+      });
+    });
+
+    it('should return 500 for unhandled service result (default switch case)', async () => {
+      const req = mockRequest({ auth: { id: testUserId }, body: passwordData });
+      const res = mockResponse();
+      (userService.updateUserPassword as jest.Mock).mockResolvedValue('some_unknown_result'); // Simulate an unhandled string
+
+      await userController.updatePassword(req, res);
+
+      expect(userService.updateUserPassword).toHaveBeenCalledWith(testUserId, passwordData);
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'An unexpected error occurred during password update',
+      });
+    });
+
+    it('should return 500 if service throws an unexpected error', async () => {
+      const req = mockRequest({ auth: { id: testUserId }, body: passwordData });
+      const res = mockResponse();
+      const errorMessage = 'Service unavailable';
+      (userService.updateUserPassword as jest.Mock).mockRejectedValue(new Error(errorMessage));
+
+      await userController.updatePassword(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Error updating password',
+        error: errorMessage,
+      });
+    });
   });
 
   describe('deleteUser', () => {
@@ -209,6 +409,23 @@ describe('UserController', () => {
 
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({ message: 'User deleted successfully' });
+    });
+
+    it('should return 403 if non-admin tries to delete another user', async () => {
+      const otherUserId = new mongoose.Types.ObjectId().toString();
+      const req = mockRequest({
+        params: { id: otherUserId }, // Trying to delete otherUserId
+        auth: { id: testUserId, isAdmin: false }, // Authenticated as testUserId, not an admin
+      });
+      const res = mockResponse();
+
+      await userController.deleteUser(req, res);
+
+      expect(userService.deleteUser).not.toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Forbidden: You do not have permission to delete this user',
+      });
     });
 
     it('should return 404 if userService.deleteUser returns false', async () => {
@@ -246,6 +463,47 @@ describe('UserController', () => {
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({
         message: 'Error deleting user',
+        error: errorMessage,
+      });
+    });
+  });
+
+  describe('makeAdmin', () => {
+    const targetUserId = new mongoose.Types.ObjectId().toString();
+    it('should make a user admin and return 200', async () => {
+      const req = mockRequest({ body: { id: targetUserId } });
+      const res = mockResponse();
+      (userService.makeAdmin as jest.Mock).mockResolvedValue(true);
+
+      await userController.makeAdmin(req, res);
+
+      expect(userService.makeAdmin).toHaveBeenCalledWith(targetUserId);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ message: 'User promoted to admin successfully' });
+    });
+
+    it('should return 404 if user to make admin is not found', async () => {
+      const req = mockRequest({ body: { id: targetUserId } });
+      const res = mockResponse();
+      (userService.makeAdmin as jest.Mock).mockResolvedValue(false);
+
+      await userController.makeAdmin(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({ message: 'User not found' });
+    });
+
+    it('should return 500 if service throws an error', async () => {
+      const req = mockRequest({ body: { id: targetUserId } });
+      const res = mockResponse();
+      const errorMessage = 'Promotion failed';
+      (userService.makeAdmin as jest.Mock).mockRejectedValue(new Error(errorMessage));
+
+      await userController.makeAdmin(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Error promoting user to admin',
         error: errorMessage,
       });
     });
@@ -529,6 +787,140 @@ describe('UserController', () => {
         message: 'Error requesting to unblock user', // Adjust based on controller
         error: errorMessage,
       });
+    });
+  });
+
+  describe('uploadProfilePicture', () => {
+    const mockFile = {
+      fieldname: 'profilePicture',
+      originalname: 'test.jpg',
+      encoding: '7bit',
+      mimetype: 'image/jpeg',
+      buffer: Buffer.from('test image data'),
+      size: 12345,
+    } as Express.Multer.File;
+
+    it('should upload profile picture and return 200 with image URL', async () => {
+      const req = mockRequest({ auth: { id: testUserId }, file: mockFile });
+      const res = mockResponse();
+      const s3Key = `users/${testUserId}/profile.jpg`;
+      const signedUrl = `https://s3.example.com/${s3Key}?signature=mock`;
+
+      (userService.uploadProfilePicture as jest.Mock).mockResolvedValue(s3Key);
+      // S3Service.getSignedUrl is mocked in beforeEach or can be specifically set here if needed
+      (S3Service.getSignedUrl as jest.Mock).mockResolvedValue(signedUrl); // Specific mock for this test
+
+      await userController.uploadProfilePicture(req, res);
+
+      expect(userService.uploadProfilePicture).toHaveBeenCalledWith(testUserId, mockFile);
+      expect(S3Service.getSignedUrl).toHaveBeenCalledWith(s3Key);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'User profile picture uploaded succesfully',
+        imageUrl: signedUrl,
+      });
+    });
+
+    it('should return 400 if no file is uploaded', async () => {
+      const req = mockRequest({ auth: { id: testUserId } }); // No file
+      const res = mockResponse();
+
+      await userController.uploadProfilePicture(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ message: 'No file was uploaded' });
+    });
+
+    it('should return 500 if userService.uploadProfilePicture throws', async () => {
+      const req = mockRequest({ auth: { id: testUserId }, file: mockFile });
+      const res = mockResponse();
+      const errorMessage = 'Upload failed';
+      (userService.uploadProfilePicture as jest.Mock).mockRejectedValue(new Error(errorMessage));
+
+      await userController.uploadProfilePicture(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Error uploading user profile picture:',
+        error: errorMessage,
+      });
+    });
+  });
+
+  describe('deleteProfilePicture', () => {
+    it('should delete profile picture and return 200', async () => {
+      const req = mockRequest({ auth: { id: testUserId } });
+      const res = mockResponse();
+      (userService.deleteProfilePicture as jest.Mock).mockResolvedValue(true);
+
+      await userController.deleteProfilePicture(req, res);
+
+      expect(userService.deleteProfilePicture).toHaveBeenCalledWith(testUserId);
+      expect(res.status).toHaveBeenCalledWith(200); // Controller sends 200
+      expect(res.json).toHaveBeenCalledWith({ message: 'Profile picture successfully deleted' });
+    });
+
+    it('should return 404 if userService.deleteProfilePicture returns false', async () => {
+      const req = mockRequest({ auth: { id: testUserId } });
+      const res = mockResponse();
+      (userService.deleteProfilePicture as jest.Mock).mockResolvedValue(false);
+
+      await userController.deleteProfilePicture(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'User not found or has no profile picture',
+      });
+    });
+
+    it('should return 500 if userService.deleteProfilePicture throws', async () => {
+      const req = mockRequest({ auth: { id: testUserId } });
+      const res = mockResponse();
+      const errorMessage = 'Deletion failed';
+      (userService.deleteProfilePicture as jest.Mock).mockRejectedValue(new Error(errorMessage));
+
+      await userController.deleteProfilePicture(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Error deleting profile picture',
+        error: errorMessage,
+      });
+    });
+  });
+
+  describe('refreshUserImages', () => {
+    const userIdsToRefresh = [
+      new mongoose.Types.ObjectId().toString(),
+      new mongoose.Types.ObjectId().toString(),
+    ];
+    const refreshedImageUrls = {
+      [userIdsToRefresh[0]]: 'signed-url-1',
+      [userIdsToRefresh[1]]: 'signed-url-2',
+    };
+
+    it('should refresh user images and return 200', async () => {
+      const req = mockRequest({ body: { userIds: userIdsToRefresh } });
+      const res = mockResponse();
+      (userService.refreshUserImages as jest.Mock).mockResolvedValue(refreshedImageUrls);
+
+      await userController.refreshUserImages(req, res);
+
+      expect(userService.refreshUserImages).toHaveBeenCalledWith(userIdsToRefresh);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ images: refreshedImageUrls });
+    });
+
+    it('should return 500 if userService.refreshUserImages throws', async () => {
+      const req = mockRequest({ body: { userIds: userIdsToRefresh } });
+      const res = mockResponse();
+      const errorMessage = 'Refresh failed';
+      (userService.refreshUserImages as jest.Mock).mockRejectedValue(new Error(errorMessage));
+
+      await userController.refreshUserImages(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ message: 'Error refreshing images' }); // Error message from controller
     });
   });
 });
