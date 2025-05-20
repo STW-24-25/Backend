@@ -15,14 +15,18 @@ import {
 } from './constants/sigpac.constants';
 
 // Initialize AEMET client with API key from .env
-const aemetClient = new Aemet(process.env.AEMET_API_KEY || 'YOUR_API_KEY');
+if (!process.env.AEMET_API_KEY) {
+  throw new Error('No AEMET API key found');
+}
+
+const aemetClient = new Aemet(process.env.AEMET_API_KEY);
 
 /**
  * Service class that handles parcel-related operations.
  * Includes operations against the database and external API calls to Sigpac.
  */
 class ParcelService {
-  private municipalitiesCache: { [key: string]: { [key: string]: string } } = {};
+  private municipalitiesCache: { [key: number]: { [key: string]: string } } = {};
 
   /**
    * Formatea un nombre para tener la primera letra en mayúscula y el resto en minúsculas
@@ -30,7 +34,6 @@ class ParcelService {
    * @returns Nombre formateado
    */
   private formatName(name: string): string {
-    if (!name) return '';
     return name.toLowerCase().replace(/(?:^|\s)\S/g, c => c.toUpperCase());
   }
 
@@ -175,12 +178,9 @@ class ParcelService {
       const { properties, ...polygon } = rawParcelGeoJSON.features[0];
 
       if (!this.validParcelUse(properties.uso_sigpac)) {
-        throw new Error(
-          `The parcel selected is not of valid use: ${await this.mapUsoSigpac(properties.uso_sigpac)}`,
-        );
+        throw new Error(`The parcel selected is not of valid use: ${properties.uso_sigpac}`);
       }
-
-      const provinceCode = String(properties.provincia).padStart(2, '0');
+      const provinceCode = properties.provincia;
       const municipalityCode = Number(properties.municipio);
       const [{ provinceName, municipalityName }, parcelUse] = await Promise.all([
         this.getLocationInfo(provinceCode, municipalityCode),
@@ -237,8 +237,7 @@ class ParcelService {
       return code;
     } catch (error: any) {
       logger.error('Error mapping SIGPAC usage code', error);
-      // Return the original code if there was an error
-      return code;
+      throw new Error(`Error mapping SIGPAC usage code: ${error.message}`);
     }
   }
 
@@ -248,7 +247,7 @@ class ParcelService {
    * @param municipalityCode - Código de municipio
    * @returns Información formateada de provincia y municipio
    */
-  private async getLocationInfo(provinceCode: string, municipalityCode: number) {
+  private async getLocationInfo(provinceCode: number, municipalityCode: number) {
     try {
       // Get province name and ensure it exists
       const provinceName = CAPITAL_NAMES[provinceCode];
@@ -258,29 +257,24 @@ class ParcelService {
 
       // Get municipality name from cached data or fetch it
       if (!this.municipalitiesCache[provinceCode]) {
-        try {
-          const municResponse = await axios.get(getMunicSigpacUrl(provinceCode), {
-            headers: {
-              Accept: 'application/json',
-            },
-          });
-          const municipalityData = municResponse.data;
+        const municResponse = await axios.get(getMunicSigpacUrl(provinceCode), {
+          headers: {
+            Accept: 'application/json',
+          },
+        });
+        const municipalityData = municResponse.data;
 
-          // Convert the array format to our cache format
-          this.municipalitiesCache[provinceCode] = {};
-          if (municipalityData.codigos && Array.isArray(municipalityData.codigos)) {
-            municipalityData.codigos.forEach((item: { codigo: number; descripcion: string }) => {
-              this.municipalitiesCache[provinceCode][item.codigo] = item.descripcion;
-            });
-          }
-        } catch (error) {
-          logger.error('Error fetching municipality data:', error);
-          this.municipalitiesCache[provinceCode] = {};
+        // Convert the array format to our cache format
+        this.municipalitiesCache[provinceCode] = {};
+        if (municipalityData.codigos && Array.isArray(municipalityData.codigos)) {
+          municipalityData.codigos.forEach((item: { codigo: number; descripcion: string }) => {
+            this.municipalitiesCache[provinceCode][item.codigo] = item.descripcion;
+          });
         }
       }
 
       const municipalityName = this.formatName(
-        this.municipalitiesCache[provinceCode][municipalityCode] || '',
+        this.municipalitiesCache[provinceCode][municipalityCode],
       );
       const formattedProvinceName = this.formatName(provinceName);
 
@@ -304,7 +298,8 @@ class ParcelService {
   private async getWeatherData(lng: number, lat: number) {
     try {
       const weatherResponse = await aemetClient.getWeatherByCoordinates(lat, lng);
-      logger.info('AEMET RESPONSE', weatherResponse);
+      logger.info('Retrieved data from AEMET');
+      logger.debug('AEMET RESPONSE', weatherResponse);
 
       return {
         main: {
