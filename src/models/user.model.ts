@@ -181,8 +181,8 @@ export interface IUser extends Document {
  *          nullable: true
  */
 const userSchema: Schema = new Schema({
-  username: { type: String, required: true, unique: true },
-  email: { type: String, required: true, unique: true },
+  username: { type: String, required: true },
+  email: { type: String, required: true },
   passwordHash: { type: String, required: false },
   profilePicture: { type: String, required: false },
   role: { type: String, enum: UserRole, default: UserRole.SMALL_FARMER, required: true },
@@ -228,6 +228,22 @@ const userSchema: Schema = new Schema({
   isDeleted: { type: Boolean, default: false, index: true },
   deletedAt: { type: Date, required: false },
 });
+
+userSchema.index(
+  { username: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { isDeleted: { $ne: true } },
+  },
+);
+
+userSchema.index(
+  { email: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { isDeleted: { $ne: true } },
+  },
+);
 
 // Middleware to exclude soft-deleted documents from queries by default
 const excludeSoftDeleted = function (this: any, next: (err?: Error) => void) {
