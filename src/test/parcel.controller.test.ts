@@ -53,7 +53,7 @@ describe('ParcelController', () => {
           },
           type: 'Feature',
           properties: {
-            name: 'centroid',
+            name: 'pointOnFeature',
           },
         },
       ],
@@ -260,6 +260,45 @@ describe('ParcelController', () => {
       expect(res.json).toHaveBeenCalledWith({
         message: 'Error creating parcel',
         error: 'Failed to create parcel',
+      });
+    });
+
+    describe('getParcels', () => {
+      it('should return all parcels for a user and return 200', async () => {
+        const req = mockRequest({
+          user: { id: userId }, // Ensures req.auth.id is set
+        });
+        const res = mockResponse();
+
+        const mockUserParcels = [
+          mockParcel,
+          { ...mockParcel, _id: new mongoose.Types.ObjectId().toString() },
+        ];
+        (parcelService.getAllParcels as jest.Mock).mockResolvedValue(mockUserParcels);
+
+        await parcelController.getParcels(req, res);
+
+        expect(parcelService.getAllParcels).toHaveBeenCalledWith(userId);
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith(mockUserParcels);
+      });
+
+      it('should return 500 if service throws an error', async () => {
+        const req = mockRequest({
+          user: { id: userId },
+        });
+        const res = mockResponse();
+        const errorMessage = 'Failed to retrieve parcels';
+        (parcelService.getAllParcels as jest.Mock).mockRejectedValue(new Error(errorMessage));
+
+        await parcelController.getParcels(req, res);
+
+        expect(parcelService.getAllParcels).toHaveBeenCalledWith(userId);
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+          message: 'Error retrieving parcels',
+          error: errorMessage,
+        });
       });
     });
   });

@@ -1,5 +1,5 @@
 import { Types } from 'mongoose';
-import { ForumModel, IForum } from '../models/forum.model';
+import ForumModel, { IForum } from '../models/forum.model';
 
 interface ForumData {
   title: string;

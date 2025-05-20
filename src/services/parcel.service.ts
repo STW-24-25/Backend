@@ -1,12 +1,11 @@
-import mongoose from 'mongoose';
-import ParcelModel from '../models/parcel.model';
+import ParcelModel, { IParcel } from '../models/parcel.model';
 import ProductModel from '../models/product.model';
 import logger from '../utils/logger';
 import { Aemet } from 'aemet-api';
 import { CAPITAL_NAMES } from './constants/location.constants';
 import UserModel from '../models/user.model';
 import userService from './user.service';
-import { centroid } from '@turf/centroid';
+import { pointOnFeature } from '@turf/point-on-feature';
 import axios from 'axios';
 import {
   getGeoJSONSigpacUrl,
@@ -68,7 +67,7 @@ class ParcelService {
       // Save and update the user's array of parcels
       const parcel = new ParcelModel(parcelToCreate);
       const savedParcel = await parcel.save();
-      await UserModel.findByIdAndUpdate(userId, { $push: { parcels: savedParcel._id } });
+      await UserModel.findOneAndUpdate({ _id: userId }, { $push: { parcels: savedParcel._id } });
 
       return savedParcel;
     } catch (error: any) {
@@ -104,7 +103,6 @@ class ParcelService {
         {
           'geometry.features.geometry': {
             $near: {
-              // Use $nearSphere for 2dsphere indexes
               $geometry: {
                 type: 'Point',
                 coordinates: [lng, lat],
@@ -114,21 +112,23 @@ class ParcelService {
           },
           'geometry.features': {
             $elemMatch: {
-              'properties.name': 'centroid',
-              'geometry.type': 'Point', // Ensure the centroid feature is a Point
+              'properties.name': 'pointOnFeature',
+              'geometry.type': 'Point',
             },
           },
         },
         {
-          'geometry.features._id': 0, // Don't project _id fields from features array
+          'geometry.features._id': 0,
         },
       );
 
       // If it's registered return the owner together with the rest of the data
       if (parcel) {
+        logger.info('Parcel registered');
         result = { parcel, owner: user };
       } else {
         // Parcel is not registered, get just the geoJSON from SIGPAC
+        logger.info('Parcel not registered');
         const parcelData = await this.getParcelGeoJSON(lng, lat);
         result = { parcel: parcelData };
       }
@@ -192,7 +192,7 @@ class ParcelService {
           type: 'FeatureCollection',
           features: [
             { ...polygon, properties: { name: 'polygon' } },
-            { ...centroid(polygon), properties: { name: 'centroid' } },
+            { ...pointOnFeature(polygon), properties: { name: 'pointOnFeature' } },
           ],
         },
         products: [],
@@ -345,15 +345,13 @@ class ParcelService {
    */
   async getAllParcels(userId: string) {
     try {
-      // Get user with populated parcels
-      const user = await mongoose.model('User').findById(userId).populate('parcels');
+      const user = await UserModel.findOne({ _id: userId }).populate('parcels').lean();
 
       if (!user) {
         throw new Error('User not found');
       }
 
-      // Transform parcels to required format
-      return user.parcels;
+      return user.parcels as unknown as IParcel[];
     } catch (error: any) {
       logger.error('Error getting all parcels', error);
       throw new Error(`Failed to get all parcels: ${error.message}`);

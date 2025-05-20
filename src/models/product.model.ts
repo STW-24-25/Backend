@@ -36,7 +36,7 @@ export enum ProductSector {
 }
 
 // Product interface
-interface IProduct extends Document {
+export interface IProduct extends Document {
   name: string;
   sector: ProductSector;
   prices: {

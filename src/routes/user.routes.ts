@@ -5,7 +5,7 @@ import * as userRequestSchemas from '../middleware/validator/user.schemas';
 import { authenticateJWT } from '../middleware/auth';
 import { isAdmin } from '../middleware/admin';
 import { validateImage } from '../middleware/image.middleware';
-import { S3Service } from '../services/s3.service';
+import S3Service from '../services/s3.service';
 
 const router = Router();
 

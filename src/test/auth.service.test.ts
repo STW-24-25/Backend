@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt';
 import authService from '../services/auth.service';
 import User, { UserRole, AutonomousComunity } from '../models/user.model';
 import { genJWT } from '../middleware/auth';
+import S3Service from '../services/s3.service'; // Import S3Service
 
 // Mock del middleware de autenticación
 jest.mock('../middleware/auth', () => ({
@@ -18,17 +19,7 @@ jest.mock('../utils/logger', () => ({
   debug: jest.fn(),
 }));
 
-// Mock de S3Service y sharp para los métodos que lo usan
-jest.mock('../services/s3.service', () => ({
-  S3Service: {
-    uploadFile: jest.fn().mockResolvedValue('users/profile-pictures/mocked-key.jpg'),
-    deleteFile: jest.fn().mockResolvedValue(true),
-    getSignedUrl: jest.fn().mockResolvedValue('https://mocked-s3-url'),
-    generateUserProfileKey: jest.fn().mockReturnValue('users/profile-pictures/mock-key.jpg'),
-    processImage: jest.fn().mockResolvedValue(Buffer.from('processed-image')),
-    getDefaultProfilePictureUrl: jest.fn().mockResolvedValue('https://mocked-default-profile-url'),
-  },
-}));
+jest.mock('../services/s3.service');
 
 jest.mock('sharp', () => () => ({
   resize: () => ({
@@ -62,6 +53,20 @@ describe('AuthService', () => {
   // Limpiar antes de cada test para asegurar aislamiento
   beforeEach(async () => {
     await clearDatabase();
+    jest.clearAllMocks();
+
+    // Setup S3Service mocks for AuthService (mainly for assignProfilePictureUrl in user.service)
+    (S3Service.getSignedUrl as jest.Mock).mockResolvedValue('https://mocked-s3-url');
+    (S3Service.getDefaultProfilePictureUrl as jest.Mock).mockResolvedValue(
+      'https://mocked-default-profile-url',
+    );
+    // Add other S3 mocks if userService methods called by authService use them
+    (S3Service.deleteFile as jest.Mock).mockResolvedValue(undefined);
+    (S3Service.generateUserProfileKey as jest.Mock).mockReturnValue(
+      'users/profile-pictures/mock-key.jpg',
+    );
+    (S3Service.processImage as jest.Mock).mockResolvedValue(Buffer.from('processed-image'));
+    (S3Service.uploadFile as jest.Mock).mockResolvedValue('users/profile-pictures/mocked-key.jpg');
   });
 
   // Limpiar después de cada test para evitar contaminación

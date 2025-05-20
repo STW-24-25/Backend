@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import userService from '../services/user.service';
 import logger from '../utils/logger';
 import { AutonomousComunity, UserRole } from '../models/user.model';
-import { S3Service } from '../services/s3.service';
+import S3Service from '../services/s3.service';
 
 /**
  * Updates an existing user.
@@ -12,13 +12,7 @@ import { S3Service } from '../services/s3.service';
  */
 export const updateUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.params && req.params.id ? req.params.id : req.auth!.id;
-
-    if (!userId) {
-      res.status(401).json({ message: 'User not authenticated' });
-      return;
-    }
-
+    const userId = req.params && req.params.id ? req.params.id : req.auth.id;
     const updateData = req.body;
 
     // Handle profile picture if it's a file
@@ -55,11 +49,6 @@ export const updatePassword = async (req: Request, res: Response): Promise<void>
     const userId = req.auth.id;
     const { currentPassword, newPassword } = req.body;
 
-    if (!userId) {
-      res.status(401).json({ message: 'User not authenticated' });
-      return;
-    }
-
     if (!newPassword) {
       res.status(400).json({ message: 'New password is required' });
       return;
@@ -83,9 +72,6 @@ export const updatePassword = async (req: Request, res: Response): Promise<void>
         break;
       case 'not_found':
         res.status(404).json({ message: 'User not found' });
-        break;
-      case 'invalid_current_password':
-        res.status(401).json({ message: 'Current password is incorrect' });
         break;
       case 'invalid_current_password':
         res.status(401).json({ message: 'Current password is incorrect' });
@@ -122,11 +108,11 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
     const userId = req.params.id;
 
     // Check if the user being deleted is the authenticated or the one deleting is an admin
-    if (userId !== req.auth!.id && !req.auth!.isAdmin) {
+    if (userId !== req.auth.id && !req.auth.isAdmin) {
       res
         .status(403)
         .json({ message: 'Forbidden: You do not have permission to delete this user' });
-      logger.warn(`Unauthorized delete attempt by user: ${req.auth!.id}`);
+      logger.warn(`Unauthorized delete attempt by user: ${req.auth.id}`);
       return;
     }
 
@@ -185,8 +171,8 @@ export const getAllUsers = async (req: Request, res: Response): Promise<void> =>
     const autCom = req.query.autCom as AutonomousComunity | undefined;
     const isAdmin = req.query.isAdmin as boolean | undefined;
     const hasAppealed = req.query.hasAppealed as boolean | undefined;
-    const page = parseInt(req.query.page as string) || 1; // Default to page 1
-    const size = parseInt(req.query.size as string) || 16; // Default to size 16
+    const page = parseInt(req.query.page as string); // Default to page 1
+    const size = parseInt(req.query.size as string); // Default to size 16
 
     const { users, totalPages } = await userService.getAllUsers(
       username,
@@ -222,7 +208,7 @@ export const getAllUsers = async (req: Request, res: Response): Promise<void> =>
  */
 export const requestUnblock = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.auth!.id;
+    const userId = req.auth.id;
     const unblockAppeal = req.body.appeal;
     const blockedUser = await userService.requestUnblock(userId, unblockAppeal);
 
@@ -312,25 +298,24 @@ export const makeAdmin = async (req: Request, res: Response): Promise<void> => {
  */
 export const uploadProfilePicture = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.auth?.id;
+    const userId = req.auth.id;
     const file = req.file;
 
-    if (!userId) {
-      res.status(401).json({ message: 'Usuario no autenticado' });
-      return;
-    }
-
     if (!file) {
-      res.status(400).json({ message: 'No se ha subido ningún archivo' });
+      res.status(400).json({ message: 'No file was uploaded' });
       return;
     }
 
     const s3Key = await userService.uploadProfilePicture(userId, file);
     const signedUrl = await S3Service.getSignedUrl(s3Key);
-    res.json({ message: 'Foto de perfil subida exitosamente', imageUrl: signedUrl });
+    res
+      .status(200)
+      .json({ message: 'User profile picture uploaded succesfully', imageUrl: signedUrl });
   } catch (error: any) {
-    logger.error('Error al subir foto de perfil:', error);
-    res.status(500).json({ message: 'Error al subir foto de perfil', error: error.message });
+    logger.error('Error uploading user profile picture:', error);
+    res
+      .status(500)
+      .json({ message: 'Error uploading user profile picture:', error: error.message });
   }
 };
 
@@ -341,13 +326,7 @@ export const uploadProfilePicture = async (req: Request, res: Response): Promise
  */
 export const deleteProfilePicture = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.auth?.id;
-
-    if (!userId) {
-      res.status(401).json({ message: 'User not authenticated' });
-      return;
-    }
-
+    const userId = req.auth.id;
     const deleted = await userService.deleteProfilePicture(userId);
 
     if (!deleted) {
@@ -355,7 +334,7 @@ export const deleteProfilePicture = async (req: Request, res: Response): Promise
       return;
     }
 
-    res.json({ message: 'Profile picture successfully deleted' });
+    res.status(200).json({ message: 'Profile picture successfully deleted' });
   } catch (error: any) {
     logger.error('Error deleting profile picture:', error);
     res.status(500).json({ message: 'Error deleting profile picture', error: error.message });
@@ -372,7 +351,7 @@ export const refreshUserImages = async (req: Request, res: Response): Promise<vo
   try {
     const { userIds } = req.body;
     const images = await userService.refreshUserImages(userIds);
-    res.json({ images });
+    res.status(200).json({ images });
   } catch (error) {
     logger.error('Error refreshing user images:', error);
     res.status(500).json({ message: 'Error refreshing images' });

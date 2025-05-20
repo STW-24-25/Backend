@@ -2,10 +2,12 @@ import User, { UserRole, AutonomousComunity } from '../models/user.model';
 import { Types, Document } from 'mongoose';
 import logger from '../utils/logger';
 import bcrypt from 'bcrypt';
-import { S3Service } from '../services/s3.service';
+import S3Service from '../services/s3.service';
 import UserModel from '../models/user.model';
 import subscriptionService from './subscription.service';
 
+import MessageModel from '../models/message.model';
+import ParcelModel from '../models/parcel.model';
 interface UserDocument extends Document {
   username: string;
   email: string;
@@ -81,7 +83,7 @@ class UserService {
         return null;
       }
 
-      const user = await User.findById(userId)
+      const user = await User.findOne({ _id: userId })
         .select(includePassword ? '+passwordHash' : '-passwordHash')
         .lean();
 
@@ -157,8 +159,13 @@ class UserService {
       // Obtener usuario antes de actualizar para comparar email/teléfono
       const oldUser = await User.findById(userId);
 
-      const user = await User.findByIdAndUpdate(
-        userId,
+      if (!oldUser) {
+        logger.info(`No user found with ID: ${userId}`);
+        return null;
+      }
+
+      const user = await User.findOneAndUpdate(
+        { _id: oldUser._id },
         { $set: updateFields },
         { new: true, runValidators: true },
       ).select('-passwordHash');
@@ -203,7 +210,7 @@ class UserService {
     | 'unknown_error'
   > {
     try {
-      const user = await User.findById(userId).select('+passwordHash +googleId +githubId');
+      const user = await User.findOne({ _id: userId }).select('+passwordHash +googleId +githubId');
       if (!user) {
         return 'not_found';
       }
@@ -219,22 +226,19 @@ class UserService {
         if (!isMatch) {
           return 'invalid_current_password';
         }
-        const passwordHash = await bcrypt.hash(newPassword, 12);
-        await UserModel.findByIdAndUpdate(userId, { passwordHash });
-        return 'success';
       } else {
+        // User has no existing password
         if (currentPassword) {
           logger.warn(
             `User ${userId} (OAuth user) attempted to set first password but provided a currentPassword.`,
           );
           return 'oauth_user_no_current_password_expected';
         }
-
-        // Setting password for the first time
-        const passwordHash = await bcrypt.hash(newPassword, 12);
-        await UserModel.findByIdAndUpdate(userId, { passwordHash });
-        return 'success';
       }
+
+      const passwordHash = await bcrypt.hash(newPassword, 12);
+      await UserModel.findOneAndUpdate({ _id: userId }, { passwordHash });
+      return 'success';
     } catch (error: any) {
       logger.error(`Error updating user password for ${userId}: ${error.message}`, error);
       return 'unknown_error';
@@ -250,17 +254,38 @@ class UserService {
     try {
       logger.info(`Deleting user with ID: ${userId}`);
 
-      const result = await User.findByIdAndDelete(userId);
+      // Soft-delete messages authored by this user
+      const messageUpdateResult = await MessageModel.updateMany(
+        { author: userId, isDeleted: { $ne: true } }, // Find messages by this author that are not already soft-deleted
+        { $set: { isDeleted: true } }, // Set isDeleted to true
+      );
 
-      if (!result) {
-        logger.info(`No user found to delete with ID: ${userId}`);
+      // Hard-delete the parcels of the user
+      const parcelsUpdateResult = await ParcelModel.deleteMany({ owner: userId });
+
+      const user = await User.findOneAndUpdate(
+        // Use findOneAndUpdate to apply the pre-hook correctly if needed, or directly update
+        { _id: userId, isDeleted: { $ne: true } }, // Ensure we only soft-delete non-deleted users
+        { $set: { isDeleted: true, deletedAt: new Date(), parcels: [] } },
+        { new: true }, // Optional: if you want to return the updated document
+      );
+
+      if (!user) {
+        logger.info(`No active user found to soft delete with ID: ${userId}`);
         return false;
       }
 
-      logger.info(`User deleted successfully with ID: ${userId}`);
+      logger.info(
+        `Hard-Deleted ${parcelsUpdateResult.deletedCount} parcels for user ID: ${userId}`,
+      );
+      logger.info(
+        `Soft-deleted ${messageUpdateResult.modifiedCount} messages for user ID: ${userId}`,
+      );
+
+      logger.info(`User soft-deleted successfully with ID: ${userId}`);
       return true;
     } catch (error) {
-      logger.error(`Error deleting user: ${error}`);
+      logger.error(`Error soft-deleting user: ${error}`);
       throw error;
     }
   }
@@ -367,9 +392,12 @@ class UserService {
         // Continuamos con el bloqueo aunque falle la eliminación de suscripciones
       }
 
-      const result = await User.findByIdAndUpdate(userId, {
-        $set: { isBlocked: true, blockReason: reason },
-      });
+      const result = await User.findOneAndUpdate(
+        { _id: userId },
+        {
+          $set: { isBlocked: true, blockReason: reason },
+        },
+      );
 
       if (!result) {
         logger.warn(`Failed to block user with id ${userId}`);
@@ -394,10 +422,13 @@ class UserService {
         return false;
       }
 
-      const result = await User.findByIdAndUpdate(userId, {
-        $set: { isBlocked: false },
-        $unset: { blockReason: '', unblockAppeal: '' },
-      });
+      const result = await User.findOneAndUpdate(
+        { _id: userId },
+        {
+          $set: { isBlocked: false },
+          $unset: { blockReason: '', unblockAppeal: '' },
+        },
+      );
 
       if (!result) {
         logger.warn(`Failed to unblock user with id ${userId}`);
@@ -428,14 +459,17 @@ class UserService {
    */
   async requestUnblock(userId: string, appeal: string): Promise<boolean> {
     try {
-      const result = await User.findByIdAndUpdate(userId, {
-        $set: {
-          unblockAppeal: {
-            content: appeal,
-            createdAt: new Date(),
+      const result = await User.findOneAndUpdate(
+        { _id: userId },
+        {
+          $set: {
+            unblockAppeal: {
+              content: appeal,
+              createdAt: new Date(),
+            },
           },
         },
-      });
+      );
       if (!result) {
         logger.warn(`Failed to unblock user with id ${userId}`);
         return false;
@@ -454,7 +488,7 @@ class UserService {
    */
   async makeAdmin(userId: string): Promise<boolean> {
     try {
-      const result = await User.findByIdAndUpdate(userId, { $set: { isAdmin: true } });
+      const result = await User.findOneAndUpdate({ _id: userId }, { $set: { isAdmin: true } });
 
       if (!result) {
         logger.warn(`Failed to promote user with id ${userId}`);
@@ -477,7 +511,7 @@ class UserService {
 
     await Promise.all(
       userIds.map(async (userId: string) => {
-        const user = await User.findById(userId);
+        const user = await User.findOne({ _id: userId });
         if (user?.profilePicture) {
           images[userId] = await S3Service.getSignedUrl(user.profilePicture);
         } else {
@@ -507,7 +541,11 @@ class UserService {
 
       const s3Key = await S3Service.uploadFile(processedImageBuffer, key, 'image/jpeg');
 
-      const user = await User.findByIdAndUpdate(userId, { profilePicture: s3Key }, { new: true });
+      const user = await User.findOneAndUpdate(
+        { _id: userId },
+        { profilePicture: s3Key },
+        { new: true },
+      );
 
       if (!user) {
         logger.warn(`User not found: ${userId}`);
@@ -531,7 +569,7 @@ class UserService {
     try {
       logger.info(`Deleting profile picture for user: ${userId}`);
 
-      const user = await User.findById(userId);
+      const user = await User.findOne({ _id: userId });
       if (!user) {
         logger.warn(`User not found: ${userId}`);
         return false;
@@ -573,8 +611,8 @@ class UserService {
       const updateObject = {
         [provider === 'google' ? 'googleId' : 'githubId']: providerId,
       };
-      const user = await User.findByIdAndUpdate(
-        userId,
+      const user = await User.findOneAndUpdate(
+        { _id: userId },
         { $set: updateObject },
         { new: true },
       ).select('-passwordHash');

@@ -1,5 +1,5 @@
 import ProductModel from '../models/product.model';
-import { S3Service } from '../services/s3.service';
+import S3Service from '../services/s3.service';
 import logger from '../utils/logger';
 
 class ProductService {

@@ -1,4 +1,4 @@
-import { S3Service } from '../services/s3.service';
+import S3Service from '../services/s3.service';
 import { s3Client } from '../config/s3.config';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 

@@ -16,7 +16,7 @@ interface SignedUrlCacheItem {
 /**
  * Service for handling S3 operations
  */
-export class S3Service {
+export default class S3Service {
   /**
    * Caché de URLs firmadas
    * Clave: ruta en el bucket de S3
