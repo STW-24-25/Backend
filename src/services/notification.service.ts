@@ -1,7 +1,7 @@
 import { InvokeCommand } from '@aws-sdk/client-lambda';
 import { lambdaClient } from '../config/lambda.config';
 import logger from '../utils/logger';
-import UserModel, { IUser } from '../models/user.model';
+import UserModel from '../models/user.model';
 import ParcelModel from '../models/parcel.model';
 import * as turf from '@turf/turf';
 
