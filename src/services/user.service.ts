@@ -162,7 +162,7 @@ class UserService {
       }
 
       // Obtener usuario antes de actualizar para comparar email/teléfono
-      const oldUser = await User.findById(userId);
+      const oldUser = await User.findOne({ _id: userId });
 
       if (!oldUser) {
         logger.info(`No user found with ID: ${userId}`);
@@ -266,19 +266,24 @@ class UserService {
       );
 
       // Hard-delete the parcels of the user
-      const parcelsUpdateResult = await ParcelModel.deleteMany({ owner: userId });
+      // Fetch the user document to get the list of parcel IDs
+      const userDocForParcels = await User.findById(userId).select('parcels').lean();
+      let parcelsUpdateResult = { deletedCount: 0 };
 
-      const user = await User.findOneAndUpdate(
-        // Use findOneAndUpdate to apply the pre-hook correctly if needed, or directly update
-        { _id: userId, isDeleted: { $ne: true } }, // Ensure we only soft-delete non-deleted users
-        { $set: { isDeleted: true, deletedAt: new Date(), parcels: [] } },
-        { new: true }, // Optional: if you want to return the updated document
-      );
-
-      if (!user) {
+      if (!userDocForParcels) {
         logger.info(`No active user found to soft delete with ID: ${userId}`);
         return false;
       }
+
+      parcelsUpdateResult = await ParcelModel.deleteMany({
+        _id: { $in: userDocForParcels.parcels },
+      });
+
+      await User.findOneAndUpdate(
+        { _id: userId, isDeleted: { $ne: true } }, // Ensure we only soft-delete non-deleted users
+        { $set: { isDeleted: true, deletedAt: new Date(), parcels: [] } },
+        { new: true },
+      );
 
       logger.info(
         `Hard-Deleted ${parcelsUpdateResult.deletedCount} parcels for user ID: ${userId}`,
@@ -644,15 +649,21 @@ class UserService {
     providerId: string,
     provider: 'google' | 'github',
   ): Promise<UserDocument | null> {
-    const query = provider === 'google' ? { googleId: providerId } : { githubId: providerId };
-    const user = await User.findOne(query).select('-passwordHash');
+    try {
+      const query = provider === 'google' ? { googleId: providerId } : { githubId: providerId };
+      const user = await User.findOne(query).select('-passwordHash');
 
-    if (!user) {
-      logger.warn(`No user found with ${provider}Id = ${providerId}`);
-      return null;
+      if (!user) {
+        logger.warn(`No user found with ${provider}Id = ${providerId}`);
+        return null;
+      }
+      await this.assignProfilePictureUrl(user);
+
+      return user as UserDocument;
+    } catch (err) {
+      logger.error(`Error finding user by ${provider}Id ${providerId}: ${err}`);
+      throw err;
     }
-
-    return user as UserDocument;
   }
 }
 
