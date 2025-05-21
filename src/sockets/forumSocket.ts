@@ -87,7 +87,7 @@ function setupForumSockets(io: Server) {
           const validatedData = await validate(editMessageSchema, data);
           const decodedToken = verifyJWT(data.token) as JWTPayload;
           const originalMsg = await MessageModel.findById(validatedData.messageId);
-          logger.debug('originalMsg: ', originalMsg);
+          logger.debug('originalMsg: ', originalMsg?.toObject());
 
           if (!originalMsg) {
             logger.warn(
@@ -124,7 +124,7 @@ function setupForumSockets(io: Server) {
             { new: true },
           ).populate(['author', 'forum']);
 
-          logger.debug('updatedMsg: ', updatedMsg);
+          logger.debug('updatedMsg: ', updatedMsg?.toObject());
 
           await userService.assignProfilePictureUrl(updatedMsg!.author);
 

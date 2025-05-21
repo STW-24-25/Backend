@@ -21,7 +21,12 @@ class ProductService {
         let signedImageUrl = null;
 
         if (product.image) {
-          signedImageUrl = await S3Service.getSignedUrl(product.image);
+          try {
+            signedImageUrl = await S3Service.getSignedUrl(product.image);
+          } catch (err) {
+            logger.error(`Failed to generate signed image url for product: ${err}`);
+            signedImageUrl = null;
+          }
         }
 
         return {
@@ -73,7 +78,12 @@ class ProductService {
 
     let signedImageUrl = null;
     if (product.image) {
-      signedImageUrl = await S3Service.getSignedUrl(product.image);
+      try {
+        signedImageUrl = await S3Service.getSignedUrl(product.image);
+      } catch (err) {
+        logger.error(`Failed to generate signed image url for product: ${err}`);
+        signedImageUrl = null;
+      }
     }
 
     return {
