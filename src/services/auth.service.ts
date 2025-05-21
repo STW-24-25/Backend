@@ -168,7 +168,11 @@ class AuthService {
       const { passwordHash: loginPasswordHash, ...loginUserData } = loginUserResponse;
 
       // Asignar URL de imagen de perfil (propia o por defecto)
-      await userService.assignProfilePictureUrl(loginUserData);
+      try {
+        await userService.assignProfilePictureUrl(loginUserData);
+      } catch (err) {
+        logger.error(`Failed to assign profile picture url: ${err}`);
+      }
 
       logger.info(`User authenticated successfully: ${emailOrUsername}`);
       return { user: loginUserData as unknown as UserDocument, token };
@@ -235,7 +239,11 @@ class AuthService {
         isBlocked: user.isBlocked,
       } as JWTPayload);
       const userDataToReturn = user.toObject();
-      await userService.assignProfilePictureUrl(userDataToReturn);
+      try {
+        await userService.assignProfilePictureUrl(userDataToReturn);
+      } catch (err) {
+        logger.error(`Failed to assign profile picture url: ${err}`);
+      }
 
       return { user: userDataToReturn as unknown as UserDocument, token };
     } catch (err) {
@@ -298,7 +306,11 @@ class AuthService {
         isBlocked: user.isBlocked,
       } as JWTPayload);
       const userDataToReturn = user.toObject();
-      await userService.assignProfilePictureUrl(userDataToReturn);
+      try {
+        await userService.assignProfilePictureUrl(userDataToReturn);
+      } catch (err) {
+        logger.error(`Failed to assign profile picture url: ${err}`);
+      }
 
       return { user: userDataToReturn as unknown as UserDocument, token };
     } catch (err) {

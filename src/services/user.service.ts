@@ -58,14 +58,19 @@ class UserService {
    * @returns Promise con el objeto modificado
    */
   async assignProfilePictureUrl(userObject: any): Promise<any> {
-    if (userObject.profilePicture) {
-      // Si el usuario tiene foto de perfil, usa esa
-      userObject.profilePicture = await S3Service.getSignedUrl(userObject.profilePicture);
-    } else {
-      // Si no tiene, usa la foto por defecto
-      userObject.profilePicture = await S3Service.getDefaultProfilePictureUrl();
+    try {
+      if (userObject.profilePicture) {
+        // Si el usuario tiene foto de perfil, usa esa
+        userObject.profilePicture = await S3Service.getSignedUrl(userObject.profilePicture);
+      } else {
+        // Si no tiene, usa la foto por defecto
+        userObject.profilePicture = await S3Service.getDefaultProfilePictureUrl();
+      }
+      return userObject;
+    } catch (err) {
+      logger.error(`Error assigning profile picture url: ${err}`);
+      throw new Error(`Error assigning profile picture url: ${err}`);
     }
-    return userObject;
   }
 
   /**

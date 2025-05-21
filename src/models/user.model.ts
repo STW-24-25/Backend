@@ -89,7 +89,7 @@ export interface IUser extends Document {
   isBlocked: boolean;
   blockReason?: string;
   parcels: mongoose.Schema.Types.ObjectId[];
-  loginHistory: [{ timestamp: Date }];
+  loginHistory: { timestamp: Date }[];
   unblockAppeal?: {
     content: string;
     createdAt: Date;
@@ -206,13 +206,13 @@ const userSchema: Schema = new Schema({
     ],
     required: true,
   },
-
   loginHistory: {
     type: [
       {
         timestamp: { type: Date, default: Date.now, required: true },
       },
     ],
+    default: [],
     required: true,
   },
   unblockAppeal: {
