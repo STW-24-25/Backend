@@ -6,6 +6,8 @@ Este documento recoge los detalles técnicos del proyecto desde el acceso al sis
 
 ## Estructura de la documentación
 
+referencias otros readme (repos, org)
+
 ## Metodología
 
 ## Arquitectura
@@ -106,7 +108,7 @@ La elección de paquetes externos ha seguido la filosofía del proyecto de utili
 
 ### Tecnología Utilizada
 
-El frontend se ha construido utilizando \***\*[Astro](https://astro.build)\*\*** como framework base, aprovechando su capacidad para crear sitios web rápidos y optimizados e integrar otros frameworks. Para los componentes interactivos se ha utilizado **[React](https://react.dev)** en la creación de interfaces de usuario reactivas. El diseño y la personalización de la interfaz se han realizado con **[Tailwind CSS](https://tailwindcss.com)**, que permite desarrollar con rapidez y consistencia.
+El frontend se ha construido utilizando **[Astro](https://astro.build)** como framework base, aprovechando su capacidad para crear sitios web rápidos y optimizados e integrar otros frameworks. Para los componentes interactivos se ha utilizado **[React](https://react.dev)** en la creación de interfaces de usuario reactivas. El diseño y la personalización de la interfaz se han realizado con **[Tailwind CSS](https://tailwindcss.com)**, que permite desarrollar con rapidez y consistencia.
 
 ### Módulos externos
 
@@ -118,6 +120,8 @@ El frontend se ha construido utilizando \***\*[Astro](https://astro.build)\*\***
 
 ## Validación y Pruebas
 
+@pablo
+
 ### Backend
 
 Todos los controladores, servicios, configuraciones y demás componentes del servidor se han validado con tests unitarios. Un informe con la covertura de estos tests está disponible en **[este fichero](../coverage/lcov-report/index.html)**, alcanzando una covertura del 98%.
@@ -128,6 +132,12 @@ Como ya se ha comentado en la parte de metodología, se han desarrollado scripts
 
 ## Mejoras Implementadas
 
+¿?¿?
+
 ## Valoración Global del Proyecto
 
+TODO los 4
+
 ## Mejoras Propuestas
+
+TODO los 4

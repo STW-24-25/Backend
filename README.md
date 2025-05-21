@@ -1,18 +1,17 @@
-# Backend
+<p align="center">
+  <img src="images/favicon.svg" height="150">
+</p>
 
-REST API documentation is in `/api/docs`.
+<h1 align="center">
+  AgroNET Backend
+</h1>
 
-## Primary dependencies
+La documentación swagger se encuentra en la ruta `/api/docs` de la API.
+
+## Versiones de las principales dependencias
 
 - NodeJS v22.14.0
 - npm v11.1.0
-
-## Some homemade libraries used
-
-- **agro-precios** = https://github.com/carloss4dv/agro-precios
-- **nasa-power-for-agriculture-spain** = https://github.com/carloss4dv/nasa-power-for-agriculture-spain
-- **aemet_api_wrapper_unofficial** = https://github.com/carloss4dv/aemet_api_wrapper_unofficial
-- **sigpac-client** = https://github.com/dan96ct/sigpac-client
 
 ## Testing
 
@@ -21,7 +20,7 @@ Los tests utilizan MongoDB Memory Server para crear una base de datos en memoria
 Para ejecutar los tests:
 
 ```bash
-npm test
+npm run test
 ```
 
 Para ejecutar los tests con cobertura:
@@ -34,5 +33,6 @@ npm run test:coverage
 
 Los tests en entornos de CI/CD (GitHub Actions) pueden requerir la instalación de `libssl1.1` para que MongoDB Memory Server funcione correctamente. Esto ya está configurado en los archivos de workflow.
 
-## Data structure
-![myimage](AgroNET.png)
+## Estructura de datos
+
+![myimage](images/AgroNET.png)
