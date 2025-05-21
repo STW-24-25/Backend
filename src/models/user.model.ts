@@ -259,10 +259,6 @@ userSchema.pre('countDocuments', excludeSoftDeleted);
 userSchema.pre('findOneAndUpdate', excludeSoftDeleted);
 userSchema.pre('updateMany', excludeSoftDeleted);
 
-userSchema.methods.isSoftDeleted = function (): boolean {
-  return this.isDeleted === true;
-};
-
 const UserModel = mongoose.model<IUser>('User', userSchema);
 
 export default UserModel;

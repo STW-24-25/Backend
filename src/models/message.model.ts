@@ -68,6 +68,11 @@ messageSchema.pre<IMessage>(['save', 'updateOne'], function (next) {
   next();
 });
 
+messageSchema.pre('findOneAndUpdate', function (next) {
+  this.set({ updatedAt: new Date() });
+  next();
+});
+
 // Índices para optimizar consultas
 messageSchema.index({ forum: 1 });
 messageSchema.index({ parentMessage: 1 });

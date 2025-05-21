@@ -11,6 +11,7 @@ import MessageModel from '../models/message.model';
 import { JWTPayload, verifyJWT } from '../middleware/auth';
 import messageService from '../services/message.service';
 import userService from '../services/user.service';
+import ForumModel from '../models/forum.model';
 
 const ADMIN_UPDATES_ROOM = 'admin_all_messages_feed';
 
@@ -27,12 +28,18 @@ function setupForumSockets(io: Server) {
         await validate(joinForumSchema, { forum, token });
         verifyJWT(token);
 
+        const res = await ForumModel.findById(forum);
+        if (!res) {
+          throw new Error('Forum not found');
+        }
+
         // Room has id of the forum
         socket.join(forum);
+        socket.emit('joinedForum');
         logger.info(`User ${socket.id} joined forum ${forum}`);
       } catch (err) {
         logger.error(`Invalid forumId ${err} from ${socket.id}`);
-        socket.emit('error', 'Invalid forumId');
+        socket.emit('error', 'Invalid forum id');
       }
     });
 
@@ -117,7 +124,7 @@ function setupForumSockets(io: Server) {
             socket.emit('error', 'Unauthorized to edit this message');
             return;
           }
-
+          logger.debug('validatedData: ', validatedData);
           const updatedMsg = await MessageModel.findByIdAndUpdate(
             validatedData.messageId,
             { content: validatedData.content },

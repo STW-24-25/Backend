@@ -14,13 +14,15 @@ import path from 'path';
 const app = express();
 
 const swaggerSpec = swaggerJSDoc(swaggerOptions);
+
 app.use('/swagger_css', express.static(path.join(__dirname, '../swagger_css')));
 app.use(
   '/api/docs',
   swaggerUi.serve,
   swaggerUi.setup(swaggerSpec, { customCssUrl: '/swagger_css/theme.css' }),
 );
-app.get('/api/docs.json', (_req, res): void => {
+
+app.get('/api/docs/json', (_req, res): void => {
   res.setHeader('Content-Type', 'application/json');
   res.send(swaggerSpec);
 });
