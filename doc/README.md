@@ -29,7 +29,7 @@ Las principales fuentes de datos utilizadas son:
 
 ## Arquitectura
 
-Los detalles de arquitectura y despliegue se pueden encontrar en los ficheros de documentación específicos de **[arquitectura](https://github.com/STW-24-25/Backend/blob/main/doc/ARQ_doc.md)**,**[infraestructura](https://github.com/STW-24-25/Backend/blob/main/doc/INFRA_doc.md)** y **[servicios externos](https://github.com/STW-24-25/Backend/blob/main/doc/SNS_doc.md)** en este mismo directorio. Estos ficheros incluyen tanto la arquitectura del sistema como los pasos a seguir para replicarla.
+Los detalles de arquitectura y despliegue se pueden encontrar en los ficheros de documentación específicos de **[arquitectura](https://github.com/STW-24-25/Backend/blob/main/doc/ARQ_doc.md)**, **[infraestructura](https://github.com/STW-24-25/Backend/blob/main/doc/INFRA_doc.md)** y **[servicios externos](https://github.com/STW-24-25/Backend/blob/main/doc/SNS_doc.md)** en este mismo directorio. Estos ficheros incluyen tanto la arquitectura del sistema como los pasos a seguir para replicarla.
 
 ## URLs de Acceso
 
