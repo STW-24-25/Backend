@@ -1,3 +1,7 @@
+import dotenv from 'dotenv';
+
+dotenv.config();
+
 import priceService from '../services/price.service';
 import logger from '../utils/logger';
 import connectDB from '../utils/db';

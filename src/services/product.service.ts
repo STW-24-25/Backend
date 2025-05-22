@@ -98,7 +98,10 @@ class ProductService {
         one_year: this.getPriceDiff(product.prices, 12),
         all: ((lastPrice - firstPrice) / firstPrice) * 100,
         ytd:
-          ((currentYearPrices[currentYearPrices.length - 1].price - firstPrice) / firstPrice) * 100,
+          currentYearPrices.length > 0
+            ? ((currentYearPrices[currentYearPrices.length - 1].price - firstPrice) / firstPrice) *
+              100
+            : 0,
       },
     };
   }
