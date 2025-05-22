@@ -29,7 +29,7 @@ Las principales fuentes de datos utilizadas son:
 
 ## Arquitectura
 
-Los detalles de arquitectura y despliegue se pueden encontrar en los ficheros de documentación específicos de **[infraestructura](https://github.com/STW-24-25/Backend/blob/main/doc/INFRA_doc.md)** y **[servicios externos](https://github.com/STW-24-25/Backend/blob/main/doc/SNS_doc.md)** en este mismo directorio. Estos ficheros incluyen tanto la arquitectura del sistema como los pasos a seguir para replicarla.
+Los detalles de arquitectura y despliegue se pueden encontrar en los ficheros de documentación específicos de **[arquitectura](https://github.com/STW-24-25/Backend/blob/main/doc/ARQ_doc.md) **,[infraestructura](https://github.com/STW-24-25/Backend/blob/main/doc/INFRA_doc.md)** y **[servicios externos](https://github.com/STW-24-25/Backend/blob/main/doc/SNS_doc.md)\*\* en este mismo directorio. Estos ficheros incluyen tanto la arquitectura del sistema como los pasos a seguir para replicarla.
 
 ## URLs de Acceso
 
@@ -200,7 +200,11 @@ Respecto a los extras posibles propuestos en los criterios de evaluación del pr
 
 ## Valoración Global del Proyecto
 
-TODO los 4
+- **Organización del trabajo:** La planificación y distribución de tareas dentro del equipo ha sido eficiente, con una asignación clara de responsabilidades. Las reuniones periódicas han facilitado una comunicación fluida y han permitido detectar y resolver problemas de forma temprana, favoreciendo así el avance constante del proyecto.
+
+- **Elección de Astro:** Consideramos que Astro ha sido una elección acertada para este proyecto. Aunque presenta ciertas limitaciones respecto a la integración con React, como la complejidad en algunos componentes dinámicos, también ha simplificado aspectos importantes como el rendimiento inicial y la estructura del proyecto. Si hubiéramos optado por React puro, probablemente nos habríamos enfrentado a mayores desafíos técnicos, como la configuración del router, el manejo de sesiones o la optimización inicial del rendimiento.
+
+- **Despliegue continuo del frontend:** Mientras que el backend ha contado con un proceso de despliegue continuo eficiente, el frontend no ha alcanzado el mismo nivel de automatización. Esto ha dificultado en algunos momentos la integración fluida de cambios y la validación continua de la interfaz. Establecer un flujo de CI/CD para el frontend hubiera mejorado significativamente la agilidad del desarrollo y la detección temprana de errores visuales o de usabilidad.
 
 ## Mejoras Propuestas
 
@@ -214,9 +218,11 @@ TODO los 4
 
 - **Accesibilidad mejorada**: Mejorar la accesibilidad de la aplicación siguiendo las pautas WCAG. Incluir navegación por teclado y contraste adecuado para asegurar que la plataforma sea usable por personas con discapacidad.
 
-- **Testing automatizado**: Ampliar la cobertura de tests E2E con cypress, asegurando la robustez en caso de cambios en el futuro.
+- **Aumentar el numero de test**: Ampliar la cobertura de pruebas E2E para incluir más escenarios y casos de uso, asegurando que todas las funcionalidades críticas estén debidamente probadas. Esto incluye la validación de flujos alternativos y errores comunes que los usuarios puedan encontrar. El número de test realizado actualmente es correct, pero consideramos que se pueden añadir más pruebas para cubrir todos los casos de uso.
 
-- **CI**: Configurar integración continua (CI) con GitHub Actionspara el frontend, ejecutando automáticamente los tests E2E de Cypress en cada push o pull request. Esto asegura que las funcionalidades críticas se validan antes de integrar cambios, mejorando la calidad y robustez del código.
+- **Medir la coberura de los tests**: Hemos intentado implementar la medición de la cobertura de los tests E2E, pero no hemos conseguido que funcione correctamente. La idea era utilizar la herramienta `cypress-io/code-coverage` para medir la cobertura de código de los tests E2E y generar informes que muestren qué partes del código están cubiertas por las pruebas. Esto ayudaría a identificar áreas que necesitan más atención y asegurará que el código crítico esté debidamente probado.
+
+- **CI**: Configurar integración continua (CI) con GitHub Actions para el frontend, ejecutando automáticamente los tests E2E de Cypress en cada push o pull request. Esto asegura que las funcionalidades críticas se validan antes de integrar cambios, mejorando la calidad y robustez del código. Esta funcionalidad ha sido intentada durante mucho tiempo, pero no hemos conseguido que funcione correctamente. Se puede revisar el trabajo realizado en las Pull Requests de GitHub ( #76, #98 & #102).
 
 - **Componentes reutilizables y diseño consistente**: Refactorizar componentes UI reutilizables, asegurando consistencia en toda la aplicación mediante un sistema de diseño unificado.
 
