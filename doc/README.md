@@ -148,7 +148,9 @@ Los tests E2E se localizan en el directorio **[cypress/e2e](https://github.com/S
 
 - **Foros**: Se valida la creación, edición y eliminación de mensajes por parte de los usuarios
 
-- **Administrador**: Se valida la creación, edición y eliminación de foros, la gestión de los últimos mensajes y las estadísticas del sistema.
+- **Usuarios**: Se valida la creación de cuentas de usuario y la edición de información del perfil.
+
+- **Administrador**: Se valida la navegación de las pantallas del dashboard del administrador, la creación, edición y eliminación de foros, la gestión de los últimos mensajes y las estadísticas del sistema.
 
 Este enfoque garantiza que las funcionalidades críticas del frontend funcionan correctamente desde la perspectiva del usuario final, mejorando la robustez y fiabilidad de la aplicación.
 
