@@ -1,22 +1,30 @@
-# AgroNET
+<p align="center">
+  <img src="../images/favicon.svg" height="150">
+</p>
+
+<h1 align="center">AgroNET</h1>
+
+## Estructura de la documentación
+
+Este documento está organizado en secciones que detallan los diferentes aspectos del proyecto AgroNET, desde la introducción y metodología hasta la descripción de los módulos, pruebas y mejoras implementadas. A lo largo del documento, se hacen referencias a otros ficheros de documentación específica (ubicados en este mismo repositorio o en repositorios de la organización) que profundizan en temas concretos como la arquitectura, configuración de servicios o detalles del front-end.
 
 ## Introducción
 
 Este documento recoge los detalles técnicos del proyecto desde el acceso al sistema hasta los módulos utilizados durante el desarrollo, así como una valoración final del trabajo realizado.
 
-## Estructura de la documentación
-
-referencias otros readme (repos, org)
-
 ## Metodología
+
+El trabajo se ha organizado dividiendo al equipo en dos grupos principales: dos personas dedicadas al desarrollo del front-end y dos personas al back-end. Dentro del equipo de back-end, se ha realizado una subdivisión de tareas, donde un miembro se ha centrado en aspectos de infraestructura y la integración de servicios externos (bare-metal), mientras que el otro se ha encargado del diseño de la arquitectura del software y la lógica de negocio.
+
+La gestión de tareas se ha llevado a cabo utilizando la herramienta Kanban de GitHub Projects, lo que ha permitido una visualización clara del progreso y una asignación eficiente de responsabilidades. Además, se han mantenido reuniones periódicas con todo el equipo para sincronizar avances, resolver dudas y planificar las siguientes etapas del proyecto.
 
 ## Arquitectura
 
-Los detalles de arquitectura y despliegue se pueden encontrar en los ficheros _readmes_arq_ en este mismo directorio. Estos ficheros incluyen tanto la arquitectura del sistema como los pasos a seguir para replicarla.
+Los detalles de arquitectura y despliegue se pueden encontrar en los ficheros de documentación específicos de **[infraestructura](https://github.com/STW-24-25/Backend/blob/main/doc/INFRA_doc.md)** y **[servicios externos](https://github.com/STW-24-25/Backend/blob/main/doc/SNS_doc.md)** en este mismo directorio. Estos ficheros incluyen tanto la arquitectura del sistema como los pasos a seguir para replicarla.
 
 ## URLs de Acceso
 
-El sistema está accesible en la dirección _url_frontend_, con la documentación de la API REST en _url_frontend/api/docs_
+El sistema está accesible en la dirección **[https://www.agronet.are-dev.es](https://www.agronet.are-dev.es)**, con la documentación de la API REST en **[https://www.agronet.are-dev.es/swagger](https://www.agronet.are-dev.es/swagger)**
 
 ## Credenciales de Acceso
 
@@ -122,24 +130,47 @@ El frontend se ha construido utilizando **[Astro](https://astro.build)** como fr
 
 ### Back-end
 
-Todos los controladores, servicios, configuraciones y demás componentes del servidor se han validado con tests unitarios. Un informe con la covertura de estos tests está disponible en **[este fichero](../coverage/lcov-report/index.html)**, alcanzando una covertura del 98%.
+Todos los controladores, servicios, configuraciones y demás componentes críticos del servidor se han validado con tests unitarios. El informe de covertura está disponible en formato html, se puede encontrar en **[coverage/lcov-report](../coverage/lcov-report/index.html)** si se genera localmente, o accesible desde GitHub Actions.
 
 Como ya se ha comentado en la parte de metodología, se han desarrollado scripts de configuración para pre-commit hooks y despliegue continuo mediante GitHub Actions en la infraestructura.
 
 ### Front-end
 
-En cuanto al frontend, se han realizado pruebas End-to-End (E2E) utilizando **[Cypress](https://www.cypress.io/)**. Cypress es una herramienta moderna para pruebas automatizadas que permite simular la interacción real del usuario con la aplicación en un entorno controlado.
+En cuanto al frontend, se han realizado pruebas End-to-End (E2E) utilizando **[Cypress](https://www.cypress.io/)**. Cypress es una herramienta moderna para pruebas automatizadas que permite simular la interacción real del usuario con la aplicación en un entorno controlado. Además, estos tests sirven como tests de integración al hacer uso del API expuesto por el back-end.
 
-Los tests E2E se localizan en la carpeta **[cypress/e2e](https://github.com/STW-24-25/Frontend/tree/main/cypress/e2e)**, separando los escenarios por funcionalidades principales (autenticación, foros, etc.).
+Los tests E2E se localizan en el directorio **[cypress/e2e](https://github.com/STW-24-25/Frontend/tree/main/cypress/e2e)**, separando los escenarios por funcionalidades principales (autenticación, foros, etc.).
 
 **Escenarios cubiertos**:
 
 - **Autenticación**: Verificación de los flujos de login y logout, comprobando la gestión de sesiones, mensajes de error y prueba de acceso a rutas protegidas.
+
 - **Mercado**: Simulación de la búsqueda de productos, visualización de información detallada de cada producto, consulta de precios y uso del comparador de productos.
+
 - **Foros**: Se valida la creación, edición y eliminación de mensajes por parte de los usuarios
+
 - **Administrador**: Se valida la creación, edición y eliminación de foros, la gestión de los últimos mensajes y las estadísticas del sistema.
 
 Este enfoque garantiza que las funcionalidades críticas del frontend funcionan correctamente desde la perspectiva del usuario final, mejorando la robustez y fiabilidad de la aplicación.
+
+## Mejoras implementadas
+
+Respecto a los extras posibles propuestos en los criterios de evaluación del proyecto, se han implementado los siguientes:
+
+- **Captcha**: El formulario de registro en el Front-end cuenta con validación de **[reCAPTCHA v3](https://developers.google.com/recaptcha/docs/v3?hl=es-419)**. Las principales razones para utilizar esta implementación en concreto son la facilidad de uso, modernidad y usabilidad para el usuario.
+
+- **Login con sistemas externos**: Se ha implementado login con **[Google](https://developers.google.com/identity/protocols/oauth2?hl=es-419)** y **[GitHub](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)** mediante OAuth 2. El protocolo de comunicación implementado se puede encontrar, así como otros detalles del Front-end, en el **[README](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)** del repositorio Frontend.
+
+- **Sistema de notificaciones**: Se han desarrollado alertas por SMS y correo electrónico mediante el servicio SNS de AWS. Los detalles de configuración se pueden encontrar en el **[fichero de documentación de SNS](https://github.com/STW-24-25/Backend/blob/main/doc/SNS_doc.md)**.
+
+- **Validación E2E**: Como se ha comentado en la sección anterior, se han desarrollado tests para el fron-end mediante **[Cypress](https://www.cypress.io/)**.
+
+- **Despliegue del sistema sobre infraestructura en cloud**: El sistema ha sido desplegado en AWS mediante grupos de autoescalado, balanceadores de carga y otros elementos de la infraestructura. Los detalles de la arquitectura así como su configuración se pueden encontrar en el **[fichero de documentación de infraestructura](https://github.com/STW-24-25/Backend/blob/main/doc/INFRA_doc.md)**.
+
+- **Covertura de código superior al 75% en back-end**: Como se ha comentado previamente, se han desarrollado un total de 378 tests en el backend, que alcanzan una covertura del 98% en las secciones más relevantes del servidor (modelos, controladores, servicios, configuraciones, etc). El informe de covertura está disponible en formato html, se puede encontrar en **[coverage/lcov-report](../coverage/lcov-report/index.html)** si se genera localmente, o accesible desde GitHub Actions.
+
+- **Analizadores estáticos de código**: Tanto en el front-end como en el back-end se han integrado mediante GitHub Actions. Se utiliza **Prettier** como formateador y **ESLint** como linter. Estas herramientas se ejecutan automáticamente mediante **hooks pre-commit** (configurados con Husky) y como parte de los flujos de trabajo de **GitHub Actions**. Adicionalmente, **Dependabot** está configurado para la gestión automática de actualizaciones de dependencias.
+
+- **Herramientas de CI/CD**: Como se ha comentado en diversos puntos anteriormente, se han configurado flujos de trabajo mediante GitHub Actions que, en el caso del backend, automatizan la ejecución de tests, análisis de código en la ramas `develop` y `main`. Además la rama `main` cuenta con un flujo de trabajo para despliegue automático a la infraestructura de AWS. Para el frontend, se intentó integrar Cypress para la automatización de tests E2E en el flujo de CI/CD, aunque esta integración no se completó con éxito.
 
 ## Valoración Global del Proyecto
 
@@ -147,4 +178,28 @@ TODO los 4
 
 ## Mejoras Propuestas
 
-TODO los 4
+### Front-end
+
+### Back-end
+
+### Arquitectura cloud
+
+- **Optimización de la infraestructura Multi-AZ**: La arquitectura actual implementa un modelo de alta disponibilidad con tres zonas de disponibilidad, lo cual constituye una base sólida. No obstante, podemos implementar mejoras significativas en la configuración de recuperación ante desastres. Proponemos la implementación de una estrategia de DR (Disaster Recovery) con un RTO (Recovery Time Objective) y RPO (Recovery Point Objective) claramente definidos. Estableceremos mecanismos de failover automatizados entre regiones mediante Route 53 con políticas de enrutamiento de conmutación por error, lo que permitirá mantener la continuidad operativa incluso ante la caída completa de una región.
+
+- **Refinamiento de la estrategia de seguridad**: Observamos que los grupos de seguridad actuales permiten acceso SSH desde cualquier dirección IP (0.0.0.0/0), lo cual representa una vulnerabilidad significativa. Implementaremos un modelo de acceso basado en bastiones a través de VPN con autenticación multi-factor, restringiendo el acceso SSH únicamente a rangos de IP corporativos específicos. Adicionalmente, incorporaremos AWS Config y Security Hub para monitorización continua de cumplimiento y detección de configuraciones incorrectas en tiempo real.
+
+- **Modernización de la arquitectura de aplicaciones**: La solución actual utiliza instancias EC2 tradicionales. Proponemos una evolución hacia una arquitectura de microservicios basada en contenedores mediante Amazon ECS o EKS, lo que facilitará la implementación de principios DevOps avanzados. Esta transición permitirá despliegues más granulares, escalado independiente de componentes y una utilización más eficiente de recursos computacionales. Complementaremos esta evolución con una estrategia de CI/CD robusta utilizando AWS CodePipeline para automatizar completamente el ciclo de vida de desarrollo.
+
+- **Optimización de costes y recursos**: Identificamos oportunidades significativas para optimizar la eficiencia económica de la infraestructura. Implementaremos Savings Plans e instancias reservadas para los componentes con carga predecible, junto con instancias spot para cargas de trabajo tolerantes a fallos. Adicionalmente, estableceremos políticas de escalado predictivo basadas en patrones históricos de uso mediante AWS Auto Scaling, complementadas con AWS Compute Optimizer para recibir recomendaciones continuas sobre dimensionamiento óptimo de recursos.
+
+- **Mejora en la gestión de datos y persistencia**: Aunque se utiliza MongoDB Atlas como servicio externo, podemos optimizar significativamente la arquitectura de datos. Implementaremos una capa de caché con Amazon ElastiCache para reducir la latencia en operaciones de lectura frecuentes. Adicionalmente, configuraremos mecanismos de replicación cross-region para los datos críticos, asegurando la disponibilidad incluso en escenarios de interrupción regional. Complementaremos estas mejoras con un diseño de particionamiento de datos optimizado para los patrones de acceso específicos de AgroNet.
+
+- **Fortalecimiento del monitoreo y observabilidad**: Aunque la infraestructura actual incluye configuración básica de CloudWatch, implementaremos una estrategia integral de observabilidad utilizando AWS X-Ray para análisis distribuido de trazas, complementado con Amazon Managed Grafana para visualización avanzada de métricas. Configuraremos alarmas predictivas basadas en detección de anomalías y estableceremos dashboards operativos que proporcionen visibilidad completa sobre el estado del sistema. Esta mejora permitirá identificar proactivamente cuellos de botella y resolver problemas antes de que impacten a los usuarios.
+
+- **Mejoras en escalabilidad y elasticidad**: Si bien la arquitectura actual implementa Auto Scaling Groups (ASG) con políticas básicas de escalado, refinaremos este aspecto con políticas de escalado predictivo, permitiendo que la infraestructura se prepare automáticamente para picos de demanda anticipados. Implementaremos también escalado basado en métricas personalizadas relevantes para el dominio de AgroNet, superando las limitaciones del escalado basado únicamente en uso de CPU. Esta aproximación permitirá una respuesta más precisa a las variaciones reales de carga de trabajo.
+
+- **Optimización de networking y latencia**: La configuración de red actual puede optimizarse implementando AWS Global Accelerator para reducir la latencia de acceso desde ubicaciones geográficamente dispersas. Adicionalmente, implementaremos una estrategia de CDN mediante Amazon CloudFront para contenido estático, reduciendo la carga en los servidores de aplicación y mejorando los tiempos de respuesta para los usuarios finales. Estas mejoras tendrán un impacto significativo en la experiencia de usuario, especialmente en regiones con conectividad limitada.
+
+- **Implementación de DevSecOps avanzado**: Integraremos prácticas avanzadas de DevSecOps implementando escaneo de vulnerabilidades automatizado mediante Amazon Inspector y revisión de configuraciones con AWS Config. Adicionalmente, estableceremos un pipeline de CI/CD que incluya análisis estático de código, pruebas de penetración automatizadas y validación de cumplimiento normativo antes de cada despliegue. Esta aproximación garantizará que la seguridad sea un componente integral del proceso de desarrollo, no una consideración posterior.
+
+- **Evolución hacia un modelo Infrastructure-as-Code avanzado**: Aunque la infraestructura actual se define mediante CloudFormation, evolucionaremos hacia un modelo más avanzado utilizando herramientas como AWS CDK (Cloud Development Kit), que permitirá definir la infraestructura usando lenguajes de programación tipados. Esta actualización facilitará la implementación de patrones de infraestructura complejos, mejorará la reutilización de componentes y simplificará el testing de la infraestructura mediante pruebas unitarias, incrementando la calidad y confiabilidad de los despliegues.
