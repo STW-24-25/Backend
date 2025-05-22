@@ -128,11 +128,18 @@ Como ya se ha comentado en la parte de metodología, se han desarrollado scripts
 
 ### Front-end
 
-@pablo
+En cuanto al frontend, se han realizado pruebas End-to-End (E2E) utilizando **[Cypress](https://www.cypress.io/)**. Cypress es una herramienta moderna para pruebas automatizadas que permite simular la interacción real del usuario con la aplicación en un entorno controlado.
 
-## Mejoras Implementadas
+Los tests E2E se localizan en la carpeta **[cypress/e2e](https://github.com/STW-24-25/Frontend/tree/main/cypress/e2e)**, separando los escenarios por funcionalidades principales (autenticación, foros, etc.).
 
-¿?¿?
+**Escenarios cubiertos**:
+
+- **Autenticación**: Verificación de los flujos de login y logout, comprobando la gestión de sesiones, mensajes de error y prueba de acceso a rutas protegidas.
+- **Mercado**: Simulación de la búsqueda de productos, visualización de información detallada de cada producto, consulta de precios y uso del comparador de productos.
+- **Foros**: Se valida la creación, edición y eliminación de mensajes por parte de los usuarios
+- **Administrador**: Se valida la creación, edición y eliminación de foros, la gestión de los últimos mensajes y las estadísticas del sistema.
+
+Este enfoque garantiza que las funcionalidades críticas del frontend funcionan correctamente desde la perspectiva del usuario final, mejorando la robustez y fiabilidad de la aplicación.
 
 ## Valoración Global del Proyecto
 
