@@ -217,13 +217,20 @@ Resources:
               },
               "mem": {
                 "measurement": [
-                  "mem_used_percent"
+                  "mem_used_percent",
+                  "mem_available",
+                  "mem_available_percent",
+                  "mem_total",
+                  "mem_used",
+                  "mem_free"
                 ],
                 "metrics_collection_interval": 60
               },
               "swap": {
                 "measurement": [
-                  "swap_used_percent"
+                  "swap_used_percent",
+                  "swap_used",
+                  "swap_free"
                 ],
                 "metrics_collection_interval": 60
               }
@@ -324,9 +331,12 @@ Resources:
             sudo -u ec2-user git clone https://oauth2:$GITHUB_TOKEN@github.com/STW-24-25/Backend.git
             cd Backend
             sudo -u ec2-user npm install
+            sudo -u ec2-user npm install --os=linux --cpu=x64 sharp
+            sudo -u ec2-user npm rebuild sharp --platform=linux --arch=x64
             
             # Instalar la dependencia faltante @turf/jsts
             sudo -u ec2-user npm install @turf/jsts --save
+ 
 
             # Configurar variables de entorno
             cat > .env << EOL

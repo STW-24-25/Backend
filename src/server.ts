@@ -13,6 +13,10 @@ const HTTPS_PORT = process.env.HTTPS_PORT || 443;
 const SSL_KEY_PATH = process.env.SSL_KEY_PATH;
 const SSL_CERT_PATH = process.env.SSL_CERT_PATH;
 
+// Configuraciones de timeout en segundos
+const KEEP_ALIVE_TIMEOUT = 65000; // 65 segundos
+const HEADERS_TIMEOUT = 66000; // 66 segundos (debe ser mayor que KEEP_ALIVE_TIMEOUT)
+
 connectDB().then(() => {
   let server: http.Server | https.Server = http.createServer(app);
 
@@ -28,6 +32,13 @@ connectDB().then(() => {
       server.listen(HTTPS_PORT, () => {
         logger.info(`HTTPS server running on port ${HTTPS_PORT}`);
       });
+
+      // Configurar timeouts
+      server.keepAliveTimeout = KEEP_ALIVE_TIMEOUT;
+      server.headersTimeout = HEADERS_TIMEOUT;
+      logger.info(
+        `Server timeout configured: keepAliveTimeout=${KEEP_ALIVE_TIMEOUT}ms, headersTimeout=${HEADERS_TIMEOUT}ms`,
+      );
     } catch (error: any) {
       logger.error(`Error in HTTPS configuration: ${error.message}`);
     }
@@ -35,6 +46,14 @@ connectDB().then(() => {
     server.listen(parseInt(PORT.toString()), '0.0.0.0', () => {
       logger.info(`HTTP server runing on port ${PORT}`);
     });
+
+    // Configurar timeouts
+    server.keepAliveTimeout = KEEP_ALIVE_TIMEOUT;
+    server.headersTimeout = HEADERS_TIMEOUT;
+    logger.info(
+      `Server timeout configured: keepAliveTimeout=${KEEP_ALIVE_TIMEOUT}ms, headersTimeout=${HEADERS_TIMEOUT}ms`,
+    );
+
     logger.warn(
       'No se ha configurado HTTPS. Definir SSL_KEY_PATH y SSL_CERT_PATH en las variables de entorno.',
     );
