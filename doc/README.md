@@ -224,6 +224,31 @@ TODO los 4
 
 ### Back-end
 
+- **Optimización de Consultas y Base de Datos**:
+
+  - Revisar y optimizar las consultas a MongoDB, especialmente en los agregados y búsquedas complejas, para mejorar el rendimiento.
+  - Analizar y añadir índices adicionales en la base de datos según los patrones de consulta más frecuentes para acelerar las lecturas.
+  - Evaluar el uso de proyecciones en las consultas para devolver solo los campos necesarios, reduciendo la carga de datos transferida.
+
+- **Mejoras en la Gestión de Errores y Logging**:
+
+  - Implementar un sistema de manejo de errores más robusto y centralizado, con códigos de error estandarizados para facilitar la depuración y el monitoreo.
+  - Enriquecer los logs con más contexto (por ejemplo, IDs de correlación) y considerar la integración con plataformas de gestión de logs centralizadas para un análisis más eficiente.
+
+- **Refuerzo de la Seguridad**:
+
+  - Implementar rate limiting en los endpoints de la API para prevenir abusos y ataques de denegación de servicio.
+  - Revisar y fortalecer la validación y sanitización de todas las entradas del usuario para prevenir vulnerabilidades como XSS o NoSQL injection, complementando el uso actual de Zod.
+  - Implementar cabeceras de seguridad HTTP (CSP, HSTS, X-Frame-Options, etc.) para mejorar la protección contra ataques comunes.
+
+- **Mejoras en el Procesamiento Asíncrono**:
+
+  - Para tareas de larga duración o que no requieren una respuesta inmediata (por ejemplo, generación de informes complejos o sincronizaciones masivas de datos), considerar el uso de colas de mensajes (como RabbitMQ o AWS SQS) en lugar de depender únicamente de `node-cron` para una mayor resiliencia y escalabilidad.
+
+- **Ampliación de Pruebas**:
+  - Incrementar la cobertura de las pruebas de integración para validar las interacciones entre diferentes módulos y servicios del backend.
+  - Introducir pruebas de carga y estrés para identificar cuellos de botella y asegurar que la API puede manejar picos de demanda.
+
 ### Arquitectura cloud
 
 - **Optimización de la infraestructura Multi-AZ**: La arquitectura actual implementa un modelo de alta disponibilidad con tres zonas de disponibilidad, lo cual constituye una base sólida. No obstante, podemos implementar mejoras significativas en la configuración de recuperación ante desastres. Proponemos la implementación de una estrategia de DR (Disaster Recovery) con un RTO (Recovery Time Objective) y RPO (Recovery Point Objective) claramente definidos. Estableceremos mecanismos de failover automatizados entre regiones mediante Route 53 con políticas de enrutamiento de conmutación por error, lo que permitirá mantener la continuidad operativa incluso ante la caída completa de una región.
@@ -245,3 +270,5 @@ TODO los 4
 - **Implementación de DevSecOps avanzado**: Integraremos prácticas avanzadas de DevSecOps implementando escaneo de vulnerabilidades automatizado mediante Amazon Inspector y revisión de configuraciones con AWS Config. Adicionalmente, estableceremos un pipeline de CI/CD que incluya análisis estático de código, pruebas de penetración automatizadas y validación de cumplimiento normativo antes de cada despliegue. Esta aproximación garantizará que la seguridad sea un componente integral del proceso de desarrollo, no una consideración posterior.
 
 - **Evolución hacia un modelo Infrastructure-as-Code avanzado**: Aunque la infraestructura actual se define mediante CloudFormation, evolucionaremos hacia un modelo más avanzado utilizando herramientas como AWS CDK (Cloud Development Kit), que permitirá definir la infraestructura usando lenguajes de programación tipados. Esta actualización facilitará la implementación de patrones de infraestructura complejos, mejorará la reutilización de componentes y simplificará el testing de la infraestructura mediante pruebas unitarias, incrementando la calidad y confiabilidad de los despliegues.
+
+- **Utilizar Amazon SES para Notificaciones por Email**: Implementar Amazon SES (Simple Email Service) para el envío de notificaciones por correo electrónico en lugar de Amazon SNS. Esto habilitará el uso de contenido HTML en los correos, mejorando la personalización, la presentación y la experiencia del usuario.

@@ -1,6 +1,8 @@
+import { Types } from 'mongoose';
 import MessageModel, { IMessage } from '../models/message.model';
 import logger from '../utils/logger';
 import userService from './user.service';
+import { AutonomousComunity, UserRole } from '../models/user.model';
 
 class MessageService {
   async getMessagesByForumId(
@@ -69,8 +71,25 @@ class MessageService {
 
       // Process all user profile images in parallel
       await Promise.all(
-        flatMessages.map(async message => {
-          await userService.assignProfilePictureUrl(message.author);
+        flatMessages.map(async (message: IMessage) => {
+          if (message.author && typeof message.author === 'object' && '_id' in message.author) {
+            await userService.assignProfilePictureUrl(message.author);
+          } else {
+            const anonymousAuthor = {
+              _id: new Types.ObjectId(),
+              username: 'Usuario Eliminado',
+              email: 'anonymous@system.com',
+              role: UserRole.SMALL_FARMER,
+              autonomousCommunity: AutonomousComunity.ARAGON,
+              isAdmin: false,
+              createdAt: new Date(0),
+              isBlocked: false,
+              profilePicture: undefined,
+            };
+            await userService.assignProfilePictureUrl(anonymousAuthor);
+            message.author = anonymousAuthor as any;
+            message.content = '[Deleted]';
+          }
         }),
       );
 
@@ -104,8 +123,25 @@ class MessageService {
         .exec();
 
       await Promise.all(
-        messages.map(async message => {
-          await userService.assignProfilePictureUrl(message.author);
+        messages.map(async (message: IMessage) => {
+          if (message.author && typeof message.author === 'object' && '_id' in message.author) {
+            await userService.assignProfilePictureUrl(message.author);
+          } else {
+            const anonymousAuthorData = {
+              _id: new Types.ObjectId(),
+              username: 'Usuario Eliminado',
+              email: 'anonymous@system.com',
+              role: UserRole.SMALL_FARMER,
+              autonomousCommunity: AutonomousComunity.ARAGON,
+              isAdmin: false,
+              createdAt: new Date(0),
+              isBlocked: false,
+              profilePicture: undefined,
+            };
+            await userService.assignProfilePictureUrl(anonymousAuthorData);
+            message.author = anonymousAuthorData as any;
+            message.content = '[Deleted]';
+          }
         }),
       );
 
