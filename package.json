@@ -64,7 +64,7 @@
     "node-cron": "^3.0.3",
     "proj4": "^2.15.0",
     "proj4js": "^10.0.0",
-    "sharp": "^0.34.1",
+    "sharp": "^0.34.2",
     "socket.io": "^4.8.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
