@@ -146,7 +146,7 @@ El frontend se ha construido utilizando **[Astro](https://astro.build)** como fr
 
 - **@tailwindcss/typography**: Plugin para mejorar la presentación de textos y contenido enriquecido.
 
-- **react-apexcharts**: Librería de gráficos utilizada para mostrar visualizaciones de datos como evolución de precios o rendimiento de cultivos.
+* **[ApexChart](https://apexcharts.com)**: Para la visualización de estadísticas en nuestra aplicación, hemos utilizado **[ApexCharts](https://apexcharts.com)**, una biblioteca moderna y de código abierto que permite crear gráficos interactivos y atractivos para aplicaciones web. Específicamente, implementamos la integración con React mediante el paquete **[react-apexcharts](https://www.npmjs.com/package/react-apexcharts)**, que actúa como un contenedor para ApexCharts.js, facilitando su uso en componentes de React.Esta combinación nos permite incorporar diversos tipos de gráficos, como líneas, áreas, barras, y más, de manera sencilla y eficiente en nuestra interfaz de usuario.
 
 - **[Cypress](https://www.cypress.io)**: Framework de testing end-to-end usado para probar la aplicación en tiempo real y asegurar su correcto funcionamiento.
 
