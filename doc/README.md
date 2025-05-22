@@ -18,6 +18,15 @@ El trabajo se ha organizado dividiendo al equipo en dos grupos principales: dos 
 
 La gestión de tareas se ha llevado a cabo utilizando la herramienta Kanban de GitHub Projects, lo que ha permitido una visualización clara del progreso y una asignación eficiente de responsabilidades. Además, se han mantenido reuniones periódicas con todo el equipo para sincronizar avances, resolver dudas y planificar las siguientes etapas del proyecto.
 
+## Fuentes de datos
+
+Las principales fuentes de datos utilizadas son:
+
+- **[AEMET Open Data](https://opendata.aemet.es/centrodedescargas/inicio)**
+- **[Servicios SIGPAC](https://sigpac-hubcloud.es/)**
+- **[MAPA: Precios Medios Nacionales](https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/economia/precios-medios-nacionales/)**
+- **[Servicios WMS del Catastro de España](https://www.catastro.hacienda.gob.es/esp/wms.asp)**
+
 ## Arquitectura
 
 Los detalles de arquitectura y despliegue se pueden encontrar en los ficheros de documentación específicos de **[infraestructura](https://github.com/STW-24-25/Backend/blob/main/doc/INFRA_doc.md)** y **[servicios externos](https://github.com/STW-24-25/Backend/blob/main/doc/SNS_doc.md)** en este mismo directorio. Estos ficheros incluyen tanto la arquitectura del sistema como los pasos a seguir para replicarla.
@@ -126,11 +135,26 @@ El frontend se ha construido utilizando **[Astro](https://astro.build)** como fr
 
 - **[Socket.IO Client](https://github.com/socketio/socket.io)**: Cliente WebSocket utilizado para implementar comunicación en tiempo real (por ejemplo, notificaciones o actualizaciones climáticas en vivo).
 
+- **[Dotenv](https://github.com/motdotla/dotenv)**: Herramienta para gestionar variables de entorno de forma segura.
+
+- **[Auth-Astro](https://github.com/nowaythatworked/auth-astro?tab=readme-ov-file#auth-astro)**: En nuestro proyecto Astro, implementamos la autenticación utilizando el paquete auth-astro, una integración comunitaria que facilita la incorporación de **[Auth.js](https://authjs.dev/)** en aplicaciones Astro. Este paquete actúa como un adaptador que envuelve el núcleo de Auth.js, permitiendo una configuración sencilla y la gestión de proveedores de autenticación como Google y GitHub.
+
+- **[GeoJSON](https://www.npmjs.com/package/geojson)** y **@types/geojson**: Formato estándar para codificar estructuras geográficas que permite manipular y visualizar datos de parcelas.
+- **[Heroicons](https://heroicons.com)**: Colección de iconos SVG personalizables usados en la interfaz.
+
+- **@headlessui/react**: Componentes accesibles y sin estilos predefinidos que ayudan a construir menús, modales y otros elementos interactivos.
+
+- **@tailwindcss/typography**: Plugin para mejorar la presentación de textos y contenido enriquecido.
+
+- **react-apexcharts**: Librería de gráficos utilizada para mostrar visualizaciones de datos como evolución de precios o rendimiento de cultivos.
+
+- **[Cypress](https://www.cypress.io)**: Framework de testing end-to-end usado para probar la aplicación en tiempo real y asegurar su correcto funcionamiento.
+
 ## Validación y Pruebas
 
 ### Back-end
 
-Todos los controladores, servicios, configuraciones y demás componentes críticos del servidor se han validado con tests unitarios. El informe de covertura está disponible en formato html, se puede encontrar en **[coverage/lcov-report](../coverage/lcov-report/index.html)** si se genera localmente, o accesible desde GitHub Actions.
+Todos los controladores, servicios, configuraciones y demás componentes críticos del servidor se han validado con tests unitarios. El informe de cobertura está disponible en formato html, se puede encontrar en **[coverage/lcov-report](../coverage/lcov-report/index.html)** si se genera localmente, o accesible desde GitHub Actions.
 
 Como ya se ha comentado en la parte de metodología, se han desarrollado scripts de configuración para pre-commit hooks y despliegue continuo mediante GitHub Actions en la infraestructura.
 
@@ -168,7 +192,7 @@ Respecto a los extras posibles propuestos en los criterios de evaluación del pr
 
 - **Despliegue del sistema sobre infraestructura en cloud**: El sistema ha sido desplegado en AWS mediante grupos de autoescalado, balanceadores de carga y otros elementos de la infraestructura. Los detalles de la arquitectura así como su configuración se pueden encontrar en el **[fichero de documentación de infraestructura](https://github.com/STW-24-25/Backend/blob/main/doc/INFRA_doc.md)**.
 
-- **Covertura de código superior al 75% en back-end**: Como se ha comentado previamente, se han desarrollado un total de 378 tests en el backend, que alcanzan una covertura del 98% en las secciones más relevantes del servidor (modelos, controladores, servicios, configuraciones, etc). El informe de covertura está disponible en formato html, se puede encontrar en **[coverage/lcov-report](../coverage/lcov-report/index.html)** si se genera localmente, o accesible desde GitHub Actions.
+- **Cobertura de código superior al 75% en back-end**: Como se ha comentado previamente, se han desarrollado un total de 378 tests en el backend, que alcanzan una cobertura del 98% en las secciones más relevantes del servidor (modelos, controladores, servicios, configuraciones, etc). El informe de cobertura está disponible en formato html, se puede encontrar en **[coverage/lcov-report](../coverage/lcov-report/index.html)** si se genera localmente, o accesible desde GitHub Actions.
 
 - **Analizadores estáticos de código**: Tanto en el front-end como en el back-end se han integrado mediante GitHub Actions. Se utiliza **Prettier** como formateador y **ESLint** como linter. Estas herramientas se ejecutan automáticamente mediante **hooks pre-commit** (configurados con Husky) y como parte de los flujos de trabajo de **GitHub Actions**. Adicionalmente, **Dependabot** está configurado para la gestión automática de actualizaciones de dependencias.
 

@@ -6,7 +6,15 @@
   AgroNET Backend
 </h1>
 
-La documentación swagger se encuentra en la ruta `/api/docs` de la API.
+## Documentación
+
+### Proyecto
+
+La documentación general del proyecto se encuentra en **[/doc/README](<[https](https://github.com/STW-24-25/Backend/blob/main/doc/README.md)>)**
+
+### API
+
+La documentación swagger se encuentra en la ruta `/api/docs` de la API, con su versión JSON en `/api/docs/json`.
 
 ## Versiones de las principales dependencias
 
@@ -35,4 +43,4 @@ Los tests en entornos de CI/CD (GitHub Actions) pueden requerir la instalación 
 
 ## Estructura de datos
 
-![myimage](images/AgroNET.png)
+![myimage](images/dbdiagram.png)
