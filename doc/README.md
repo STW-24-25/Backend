@@ -120,15 +120,15 @@ El frontend se ha construido utilizando **[Astro](https://astro.build)** como fr
 
 ## Validación y Pruebas
 
-@pablo
-
-### Backend
+### Back-end
 
 Todos los controladores, servicios, configuraciones y demás componentes del servidor se han validado con tests unitarios. Un informe con la covertura de estos tests está disponible en **[este fichero](../coverage/lcov-report/index.html)**, alcanzando una covertura del 98%.
 
 Como ya se ha comentado en la parte de metodología, se han desarrollado scripts de configuración para pre-commit hooks y despliegue continuo mediante GitHub Actions en la infraestructura.
 
-### Frontend
+### Front-end
+
+@pablo
 
 ## Mejoras Implementadas
 
