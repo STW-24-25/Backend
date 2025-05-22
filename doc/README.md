@@ -39,13 +39,13 @@ El sistema está accesible en la dirección **[https://www.agronet.are-dev.es](h
 
 ### Usuario
 
-- Email: _email_de_usuario_
-- Contraseña: _contraseña_de_usuario_
+- Email: 816787@unizar.es
+- Contraseña: Welcome123
 
 ### Administrador
 
-- Email: _email_de_admin_
-- Contraseña: _contraseña_de_admin_
+- Email: 850068@unizar.es
+- Contraseña: Welcome123
 
 ## Módulos del Back-end
 
@@ -227,6 +227,7 @@ Respecto a los extras posibles propuestos en los criterios de evaluación del pr
 - **Componentes reutilizables y diseño consistente**: Refactorizar componentes UI reutilizables, asegurando consistencia en toda la aplicación mediante un sistema de diseño unificado.
 
 - **Integración de analítica**: Añadir herramientas de analítica (por ejemplo, Google Analytics) para monitorizar el uso de la aplicación y obtener métricas que permitan tomar decisiones informadas sobre futuras mejoras.
+- **Mejoras en SEO (Search Engine Optimization)**: Implementar buenas prácticas de SEO para mejorar la visibilidad de la aplicación en motores de búsqueda. Esto incluye el uso adecuado de etiquetas HTML semánticas (<main>, <article>, <header>, etc.), la generación de metadatos dinámicos (títulos, descripciones, Open Graph), la creación de un sitemap XML, y la optimización de rutas amigables (URLs limpias y descriptivas). Además, aprovechar las capacidades de Astro para el renderizado estático puede contribuir significativamente al rendimiento y posicionamiento en buscadores. Este es un aspecto que nunca hemos trabajado en los proyectos prácticos de la universidad ni se nos ha enseñado en profundidad, pero que nos habría gustado explorar e implementar por su gran relevancia en aplicaciones reales.
 
 ### Back-end
 
