@@ -1,3 +1,9 @@
+<p align="center">
+  <img src="../images/favicon.svg" height="150">
+</p>
+
+<h1 align="center">AgroNET</h1>
+
 # Configuración de AWS Lambda para el Sistema de Notificaciones
 
 Este documento detalla los pasos necesarios para configurar correctamente la función Lambda de notificaciones utilizando Amazon SNS.
