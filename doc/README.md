@@ -33,7 +33,7 @@ Los detalles de arquitectura y despliegue se pueden encontrar en los ficheros de
 
 ## URLs de Acceso
 
-El sistema está accesible en la dirección **[https://www.agronet.are-dev.es](https://www.agronet.are-dev.es)**, con la documentación de la API REST en **[https://www.agronet.are-dev.es/swagger](https://www.agronet.are-dev.es/swagger)**
+El sistema está accesible en la dirección **[https://agronet.are-dev.es](https://agronet.are-dev.es)**, con la documentación de la API REST en **[https://agronet.are-dev.es/swagger](https://agronet.are-dev.es/swagger)**
 
 ## Credenciales de Acceso
 
