@@ -1,3 +1,7 @@
+import dotenv from 'dotenv';
+
+dotenv.config();
+
 import path from 'path';
 import mongoose from 'mongoose';
 import ProductModel from '../models/product.model';
@@ -34,8 +38,8 @@ const productImageMapping: { [key: string]: string } = {
   'Aceite de oliva virgen, 0,8-2º': 'aceite_oliva',
   'Aceite de orujo de oliva crudo': 'aceite_orujo',
   'Aceite de orujo de oliva refinado': 'aceite_orujo',
-  'Aceie de oliva orujo crudo': 'aceite_orujo',
-  'Aceie de oliva orujo refinado': 'aceite_orujo',
+  'Aceite de oliva orujo crudo': 'aceite_orujo',
+  'Aceite de oliva orujo refinado': 'aceite_orujo',
   'Aceite de girasol refinado': 'aceite_girasol',
   'Aceite de girasol refinado alto oleico': 'aceite_girasol',
   'Aceite de girasol refinado convencional': 'aceite_girasol',
@@ -78,13 +82,13 @@ const productImageMapping: { [key: string]: string } = {
   'Manzana Fuji': 'manzana_fuji',
   'Manzana Gala': 'manzana_gala',
   'Manzana Golden': 'manzana_golden',
-  'Manzana Granny Smith': 'manzana_granny_smit',
+  'Manzana Granny Smith': 'manzana_granny_smith',
 
   // Tomates
   'Tomate cereza': 'tomate_cereza',
   'Tomate liso': 'tomate_liso',
   'Tomate racimo': 'tomate_racimo',
-  'Tomate redondo liso': 'tomate_liso_redondojpg',
+  'Tomate redondo liso': 'tomate_liso_redondo',
 
   // Pipa de Girasol
   'Pipa de girasol 9-2-44': 'pipa_girasol',
@@ -191,6 +195,24 @@ const productImageMapping: { [key: string]: string } = {
   'Torta de girasol': 'torta_girasol',
   'Torta de soja': 'torta_soja',
   'Vino tinto sin DOP/IGP , 12 p. color': 'vino',
+  Melocotón: 'melocoton',
+  'Uva de mesa': 'uva',
+  'Melón Piel de Sapo': 'melon',
+  'Cereza, conjunto de variedades': 'cereza',
+  Sandía: 'sandia',
+  Albaricoque: 'albaricoque',
+  'Espárrago Verde': 'esparrago_verde',
+  'Aceituna de mesa Gordal': 'aceituna_mesa_gordal',
+  'Aceituna de mesa Hojiblanca': 'aceituna_mesa_hojiblanca',
+  'Aceituna de mesa Manzanilla': 'aceituna_mesa_manzanilla',
+  'Aceituna de mesa Media de variedades': 'aceituna_mesa_media',
+  Satsuma: 'satsuma',
+  Nectarina: 'nectarina',
+  Caqui: 'caqui',
+  'Nectarina carne amarilla': 'nectarina',
+  'Nectarina carne blanca': 'nectarina_blanca',
+  Espárrago: 'esparrago_blanco',
+  'Aceituna de mesa Cacereña': 'aceituna_mesa_cacereña',
 };
 
 async function uploadProductImages() {

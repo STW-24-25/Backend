@@ -89,7 +89,7 @@ export interface IUser extends Document {
   isBlocked: boolean;
   blockReason?: string;
   parcels: mongoose.Schema.Types.ObjectId[];
-  loginHistory: [{ timestamp: Date }];
+  loginHistory: { timestamp: Date }[];
   unblockAppeal?: {
     content: string;
     createdAt: Date;
@@ -181,8 +181,8 @@ export interface IUser extends Document {
  *          nullable: true
  */
 const userSchema: Schema = new Schema({
-  username: { type: String, required: true, unique: true },
-  email: { type: String, required: true, unique: true },
+  username: { type: String, required: true },
+  email: { type: String, required: true },
   passwordHash: { type: String, required: false },
   profilePicture: { type: String, required: false },
   role: { type: String, enum: UserRole, default: UserRole.SMALL_FARMER, required: true },
@@ -206,13 +206,13 @@ const userSchema: Schema = new Schema({
     ],
     required: true,
   },
-
   loginHistory: {
     type: [
       {
         timestamp: { type: Date, default: Date.now, required: true },
       },
     ],
+    default: [],
     required: true,
   },
   unblockAppeal: {
@@ -229,6 +229,22 @@ const userSchema: Schema = new Schema({
   deletedAt: { type: Date, required: false },
 });
 
+userSchema.index(
+  { username: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { isDeleted: false },
+  },
+);
+
+userSchema.index(
+  { email: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { isDeleted: false },
+  },
+);
+
 // Middleware to exclude soft-deleted documents from queries by default
 const excludeSoftDeleted = function (this: any, next: (err?: Error) => void) {
   if (this.getFilter().isDeleted === undefined) {
@@ -242,10 +258,6 @@ userSchema.pre('findOne', excludeSoftDeleted);
 userSchema.pre('countDocuments', excludeSoftDeleted);
 userSchema.pre('findOneAndUpdate', excludeSoftDeleted);
 userSchema.pre('updateMany', excludeSoftDeleted);
-
-userSchema.methods.isSoftDeleted = function (): boolean {
-  return this.isDeleted === true;
-};
 
 const UserModel = mongoose.model<IUser>('User', userSchema);
 

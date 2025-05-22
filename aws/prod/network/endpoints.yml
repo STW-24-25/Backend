@@ -1,109 +1,86 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Configuración de Endpoints VPC para AgroNet - 2025'
+Description: 'Configuración de Endpoints de VPC para AgroNet - 2025 (VPC unificada)'
 
 Parameters:
   EnvironmentName:
     Description: Nombre del entorno
     Type: String
     Default: prod
-  
   S3BucketName:
-    Description: Nombre del bucket S3 para acceso desde las VPC
+    Description: Nombre del bucket S3 para almacenar imágenes
     Type: String
-    Default: 'agronet-images'
 
 Resources:
-  # Grupo de seguridad para los endpoints
-  EndpointSecurityGroup:
+  # Security Group para VPC Endpoints
+  VPCEndpointSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Security group para los VPC Endpoints
+      GroupDescription: Security Group para VPC Endpoints
       VpcId: !ImportValue 
-        'Fn::Sub': "${EnvironmentName}-Frontend-VPC-ID"
+        Fn::Sub: "${EnvironmentName}-Main-VPC-ID"
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 443
           ToPort: 443
           CidrIp: !ImportValue 
-            'Fn::Sub': "${EnvironmentName}-Frontend-VPC-CIDR"
-          Description: Acceso HTTPS desde Frontend VPC
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: !ImportValue 
-            'Fn::Sub': "${EnvironmentName}-Backend-VPC-CIDR"
-          Description: Acceso HTTPS desde Backend VPC
+            Fn::Sub: "${EnvironmentName}-Main-VPC-CIDR"
       Tags:
         - Key: Name
-          Value: !Sub '${EnvironmentName}-Endpoint-SG'
-  
-  # Endpoint para S3 - Frontend VPC
-  S3EndpointFrontend:
-    Type: AWS::EC2::VPCEndpoint
-    Properties:
-      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
-      VpcId: !ImportValue 
-        'Fn::Sub': "${EnvironmentName}-Frontend-VPC-ID"
-      VpcEndpointType: Gateway
-      RouteTableIds:
-        - !ImportValue 
-          'Fn::Sub': "${EnvironmentName}-Frontend-Public-RouteTable-ID"
-        - !ImportValue 
-          'Fn::Sub': "${EnvironmentName}-Frontend-Private-RouteTable1-ID"
-        - !ImportValue 
-          'Fn::Sub': "${EnvironmentName}-Frontend-Private-RouteTable2-ID"
-        - !ImportValue 
-          'Fn::Sub': "${EnvironmentName}-Frontend-Private-RouteTable3-ID"
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal: '*'
-            Action:
-              - 's3:*'
-            Resource: '*'
-      Tags:
-        - Key: Name
-          Value: !Sub '${EnvironmentName}-S3-Endpoint-Frontend'
+          Value: !Sub ${EnvironmentName}-VPCEndpoint-SG
 
-  # Endpoint para S3 - Backend VPC
-  S3EndpointBackend:
+  # VPC Endpoint para S3
+  S3Endpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
-      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
       VpcId: !ImportValue 
-        'Fn::Sub': "${EnvironmentName}-Backend-VPC-ID"
+        Fn::Sub: "${EnvironmentName}-Main-VPC-ID"
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.s3"
       VpcEndpointType: Gateway
-      RouteTableIds:
-        - !ImportValue 
-          'Fn::Sub': "${EnvironmentName}-Backend-Public-RouteTable-ID"
-        - !ImportValue 
-          'Fn::Sub': "${EnvironmentName}-Backend-Private-RouteTable1-ID"
-        - !ImportValue 
-          'Fn::Sub': "${EnvironmentName}-Backend-Private-RouteTable2-ID"
-        - !ImportValue 
-          'Fn::Sub': "${EnvironmentName}-Backend-Private-RouteTable3-ID"
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal: '*'
-            Action:
-              - 's3:*'
+            Action: '*'
             Resource: '*'
-      Tags:
-        - Key: Name
-          Value: !Sub '${EnvironmentName}-S3-Endpoint-Backend'
+      RouteTableIds:
+        - !ImportValue 
+          Fn::Sub: "${EnvironmentName}-Public-RouteTable-ID"
+        - !ImportValue 
+          Fn::Sub: "${EnvironmentName}-Backend-Private-RouteTable1-ID"
+        - !ImportValue 
+          Fn::Sub: "${EnvironmentName}-Backend-Private-RouteTable2-ID"
+        - !ImportValue 
+          Fn::Sub: "${EnvironmentName}-Backend-Private-RouteTable3-ID"
+
+  # VPC Endpoint para EC2
+  EC2Endpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !ImportValue 
+        Fn::Sub: "${EnvironmentName}-Main-VPC-ID"
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.ec2"
+      VpcEndpointType: Interface
+      PrivateDnsEnabled: true
+      SubnetIds:
+        - !ImportValue 
+          Fn::Sub: "${EnvironmentName}-Backend-Private-Subnet-1-ID"
+        - !ImportValue 
+          Fn::Sub: "${EnvironmentName}-Backend-Private-Subnet-2-ID"
+        - !ImportValue 
+          Fn::Sub: "${EnvironmentName}-Backend-Private-Subnet-3-ID"
+      SecurityGroupIds:
+        - !Ref VPCEndpointSecurityGroup
 
 Outputs:
-  S3EndpointFrontendId:
-    Description: ID del Endpoint de S3 para Frontend VPC
-    Value: !Ref S3EndpointFrontend
+  S3EndpointId:
+    Description: ID del Endpoint de S3
+    Value: !Ref S3Endpoint
     Export:
-      Name: !Sub '${EnvironmentName}-S3-Endpoint-Frontend-ID'
-
-  S3EndpointBackendId:
-    Description: ID del Endpoint de S3 para Backend VPC
-    Value: !Ref S3EndpointBackend
+      Name: !Sub "${EnvironmentName}-S3-Endpoint-ID"
+  
+  EC2EndpointId:
+    Description: ID del Endpoint de EC2
+    Value: !Ref EC2Endpoint
     Export:
-      Name: !Sub '${EnvironmentName}-S3-Endpoint-Backend-ID' 
+      Name: !Sub "${EnvironmentName}-EC2-Endpoint-ID" 

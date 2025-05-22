@@ -129,10 +129,6 @@ Resources:
                   - elasticloadbalancing:DescribeTargetGroups
                   - elasticloadbalancing:DescribeTargetHealth
                   - elasticloadbalancing:DescribeLoadBalancerAttributes
-                  - route53:ListHostedZones
-                  - route53:GetChange
-                  - route53:ChangeResourceRecordSets
-                  - route53:ListResourceRecordSets
                 Resource: '*'
 
   FrontendInstanceProfile:
@@ -161,6 +157,24 @@ Resources:
             !Sub |
               #!/bin/bash -xe
               
+              # Esperar a que la red esté completamente configurada
+              sleep 30
+              
+              # Configurar DNS explícitamente para mejorar la resolución
+              echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+              echo "nameserver 1.1.1.1" >> /etc/resolv.conf
+              
+              # Verificar conectividad antes de continuar
+              echo "Verificando conectividad a Internet..."
+              ping -c 3 google.com || {
+                  echo "Sin conectividad a Internet. Esperando 60 segundos más..."
+                  sleep 60
+              }
+              
+              # Limpiar caché de DNF y actualizar
+              dnf clean all
+              dnf makecache --refresh
+              
               # Preparar script de configuración
               cat > /tmp/setup.sh << 'EOFSCRIPT'
               #!/bin/bash -xe
@@ -175,8 +189,7 @@ Resources:
               
               # Instalar dependencias
               dnf update -y
-              dnf install -y nodejs npm certbot aws-cli jq git gcc-c++ make python3-devel python3-pip cronie
-              pip3 install --ignore-installed certbot-dns-route53
+              dnf install -y nodejs npm aws-cli jq git gcc-c++ make
               
               # Configurar AWS
               mkdir -p /root/.aws
@@ -198,38 +211,26 @@ Resources:
               
               sudo -u ec2-user git clone https://$GITHUB_TOKEN:x-oauth-basic@github.com/STW-24-25/Frontend.git
               
-              # Obtener NLB DNS
+              # Determinar qué API usar según la zona de disponibilidad
               INSTANCE_AZ=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)
               AZ_ID=$(echo $INSTANCE_AZ | sed 's/.*\(.\)$/\1/')
               
               if [ "$AZ_ID" == "1" ] || [ "$AZ_ID" == "a" ]; then
-                NLB_DNS=$(aws cloudformation describe-stacks --stack-name "${EnvironmentName}-network-stack" --region $AWS_REGION --query "Stacks[0].Outputs[?ExportName=='${EnvironmentName}-NLB1-DNS'].OutputValue" --output text)
+                API_DOMAIN="api1.agronet.are-dev.es"
               elif [ "$AZ_ID" == "2" ] || [ "$AZ_ID" == "b" ]; then
-                NLB_DNS=$(aws cloudformation describe-stacks --stack-name "${EnvironmentName}-network-stack" --region $AWS_REGION --query "Stacks[0].Outputs[?ExportName=='${EnvironmentName}-NLB2-DNS'].OutputValue" --output text)
+                API_DOMAIN="api2.agronet.are-dev.es"
               else
-                NLB_DNS=$(aws cloudformation describe-stacks --stack-name "${EnvironmentName}-network-stack" --region $AWS_REGION --query "Stacks[0].Outputs[?ExportName=='${EnvironmentName}-NLB3-DNS'].OutputValue" --output text)
-              fi
-              
-              # Comprobar si se obtuvo el DNS correctamente, si no, intentar con los parámetros SSM como fallback
-              if [ -z "$NLB_DNS" ]; then
-                echo "No se pudo obtener el DNS del NLB mediante CloudFormation exports, intentando con SSM..."
-                if [ "$AZ_ID" == "1" ] || [ "$AZ_ID" == "a" ]; then
-                  NLB_DNS=$(aws ssm get-parameter --name /${EnvironmentName}/network/nlb1-dns --region $AWS_REGION --query "Parameter.Value" --output text)
-                elif [ "$AZ_ID" == "2" ] || [ "$AZ_ID" == "b" ]; then
-                  NLB_DNS=$(aws ssm get-parameter --name /${EnvironmentName}/network/nlb2-dns --region $AWS_REGION --query "Parameter.Value" --output text)
-                else
-                  NLB_DNS=$(aws ssm get-parameter --name /${EnvironmentName}/network/nlb3-dns --region $AWS_REGION --query "Parameter.Value" --output text)
-                fi
+                API_DOMAIN="api3.agronet.are-dev.es"
               fi
               
               # Configurar .env
               cat > /home/ec2-user/Frontend/.env << EOL
-              API_URL=http://$NLB_DNS:3000/api/
-              PUBLIC_API_URL=http://$NLB_DNS:3000/api/
+              API_URL=https://$API_DOMAIN/api/
+              PUBLIC_API_URL=https://$API_DOMAIN/api/
               PORT=4321
               HOST=0.0.0.0
-              SITE_URL=https://www.agronet.are-dev.es
-              PUBLIC_SITE_URL=https://www.agronet.are-dev.es
+              SITE_URL=https://agronet.are-dev.es
+              PUBLIC_SITE_URL=https://agronet.are-dev.es
               ALLOW_DIRECT_IP_ACCESS=true
               INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
               INSTANCE_IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
@@ -248,52 +249,11 @@ Resources:
               DEV_MODE=true
               DEV_SKIP_OAUTH=true
               DEV_AUTO_LOGIN_EMAIL=admin@agronet.are-dev.es
+              NODE_TLS_REJECT_UNAUTHORIZED=1
               EOL
               
               chown ec2-user:ec2-user /home/ec2-user/Frontend/.env
               chmod 600 /home/ec2-user/Frontend/.env
-              
-              # Obtener certificados con Certbot
-              echo "Intentando obtener certificados con Certbot..."
-              USE_HTTPS=false
-              
-              certbot certonly --dns-route53 \
-                --non-interactive \
-                --agree-tos \
-                -m admin@agronet.are-dev.es \
-                -d are-dev.es \
-                -d www.agronet.are-dev.es \
-                --server https://acme-v02.api.letsencrypt.org/directory || echo "No se pudieron obtener los certificados SSL"
-                
-              # Configurar certificados si existen
-              if [ -d "/etc/letsencrypt/live/are-dev.es" ]; then
-                USE_HTTPS=true
-                mkdir -p /home/ec2-user/Frontend/certs
-                cp /etc/letsencrypt/live/are-dev.es/fullchain.pem /home/ec2-user/Frontend/certs/
-                cp /etc/letsencrypt/live/are-dev.es/privkey.pem /home/ec2-user/Frontend/certs/
-                chown -R ec2-user:ec2-user /home/ec2-user/Frontend/certs
-                chmod 700 /home/ec2-user/Frontend/certs
-                chmod 600 /home/ec2-user/Frontend/certs/*.pem
-                sudo systemctl enable crond
-                sudo systemctl start crond
-                
-                # Script para renovación
-                cat > /usr/local/bin/renew-certs.sh << EOL2
-              #!/bin/bash
-              cp /etc/letsencrypt/live/www.agronet.are-dev.es/fullchain.pem /home/ec2-user/Frontend/certs/
-              cp /etc/letsencrypt/live/www.agronet.are-dev.es/privkey.pem /home/ec2-user/Frontend/certs/
-              chown -R ec2-user:ec2-user /home/ec2-user/Frontend/certs
-              chmod 700 /home/ec2-user/Frontend/certs
-              chmod 600 /home/ec2-user/Frontend/certs/*.pem
-              systemctl restart astro-frontend
-              EOL2
-                chmod +x /usr/local/bin/renew-certs.sh
-                
-                # Configurar cron
-                mkdir -p /etc/cron.d
-                echo "0 0,12 * * * root certbot renew --quiet --deploy-hook /usr/local/bin/renew-certs.sh" > /etc/cron.d/certbot-renew
-                chmod 644 /etc/cron.d/certbot-renew
-              fi
               
               # Instalar dependencias y compilar
               cd /home/ec2-user/Frontend
@@ -325,32 +285,7 @@ Resources:
               WantedBy=multi-user.target
               EOL
               else
-                if [ "$USE_HTTPS" = "true" ]; then
-                  cat > /etc/systemd/system/astro-frontend.service << EOL
-              [Unit]
-              Description=AgroNet Astro Frontend (HTTPS)
-              After=network.target
-              
-              [Service]
-              Type=simple
-              User=ec2-user
-              WorkingDirectory=/home/ec2-user/Frontend
-              Environment="HOST=0.0.0.0"
-              Environment="PORT=4321"
-              Environment="SITE_URL=https://www.agronet.are-dev.es"
-              Environment="PUBLIC_SITE_URL=https://www.agronet.are-dev.es"
-              Environment="NODE_OPTIONS=--dns-result-order=ipv4first --no-warnings"
-              ExecStart=/usr/bin/node ./dist/server/entry.mjs
-              Restart=always
-              RestartSec=10
-              MemoryLimit=512M
-              CPUQuota=80%
-              
-              [Install]
-              WantedBy=multi-user.target
-              EOL
-                else
-                  cat > /etc/systemd/system/astro-frontend.service << EOL
+                cat > /etc/systemd/system/astro-frontend.service << EOL
               [Unit]
               Description=AgroNet Astro Frontend (HTTP)
               After=network.target
@@ -373,7 +308,6 @@ Resources:
               [Install]
               WantedBy=multi-user.target
               EOL
-                fi
               fi
               
               # Iniciar servicio
@@ -402,18 +336,6 @@ Resources:
               
               echo "===== Verificando puertos en uso ====="
               ss -tulpn | grep 4321
-              echo ""
-              
-              echo "===== Verificando certificados SSL ====="
-              if [ -d "/etc/letsencrypt/live/www.agronet.are-dev.es" ]; then
-                echo "Certificados encontrados en /etc/letsencrypt/live/www.agronet.are-dev.es"
-                ls -la /etc/letsencrypt/live/www.agronet.are-dev.es
-                echo ""
-                echo "Fecha de vencimiento:"
-                openssl x509 -in /etc/letsencrypt/live/www.agronet.are-dev.es/cert.pem -noout -dates
-              else
-                echo "No se encontraron certificados SSL"
-              fi
               echo ""
               
               echo "===== Variables de entorno ====="
@@ -453,7 +375,7 @@ Resources:
               - Key: Environment
                 Value: !Ref EnvironmentName
 
-  # Auto Scaling Groups
+  # Auto Scaling Groups para Frontend en diferentes zonas
   FrontendASG1:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
@@ -466,7 +388,7 @@ Resources:
       DesiredCapacity: !Ref DesiredCapacity
       VPCZoneIdentifier:
         - !ImportValue 
-          Fn::Sub: "${EnvironmentName}-Frontend-Public-Subnet-1-ID"
+          Fn::Sub: "${EnvironmentName}-Public-Subnet-1-ID"
       TargetGroupARNs:
         - !ImportValue 
           Fn::Sub: "${EnvironmentName}-Frontend-TG-ARN"
@@ -489,7 +411,7 @@ Resources:
       DesiredCapacity: !Ref DesiredCapacity
       VPCZoneIdentifier:
         - !ImportValue 
-          Fn::Sub: "${EnvironmentName}-Frontend-Public-Subnet-2-ID"
+          Fn::Sub: "${EnvironmentName}-Public-Subnet-2-ID"
       TargetGroupARNs:
         - !ImportValue 
           Fn::Sub: "${EnvironmentName}-Frontend-TG-ARN"
@@ -512,7 +434,7 @@ Resources:
       DesiredCapacity: !Ref DesiredCapacity
       VPCZoneIdentifier:
         - !ImportValue 
-          Fn::Sub: "${EnvironmentName}-Frontend-Public-Subnet-3-ID"
+          Fn::Sub: "${EnvironmentName}-Public-Subnet-3-ID"
       TargetGroupARNs:
         - !ImportValue 
           Fn::Sub: "${EnvironmentName}-Frontend-TG-ARN"
@@ -523,192 +445,63 @@ Resources:
           Value: !Sub ${EnvironmentName}-Frontend-ASG-3
           PropagateAtLaunch: true
 
-  # Alarmas y políticas de Auto Scaling - Scale Out
-  HighCPUAlarm1:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName: !Sub "${EnvironmentName}-Frontend-ASG1-HighCPU"
-      AlarmDescription: "Alarma por alto uso de CPU en Frontend ASG1"
-      MetricName: CPUUtilization
-      Namespace: AWS/EC2
-      Statistic: Average
-      Period: 300
-      EvaluationPeriods: 2
-      Threshold: !Ref ScaleOutThreshold
-      ComparisonOperator: GreaterThanThreshold
-      Dimensions:
-        - Name: AutoScalingGroupName
-          Value: !Ref FrontendASG1
-      AlarmActions:
-        - !Ref FrontendScaleOutPolicy1
-
-  HighCPUAlarm2:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName: !Sub "${EnvironmentName}-Frontend-ASG2-HighCPU"
-      AlarmDescription: "Alarma por alto uso de CPU en Frontend ASG2"
-      MetricName: CPUUtilization
-      Namespace: AWS/EC2
-      Statistic: Average
-      Period: 300
-      EvaluationPeriods: 2
-      Threshold: !Ref ScaleOutThreshold
-      ComparisonOperator: GreaterThanThreshold
-      Dimensions:
-        - Name: AutoScalingGroupName
-          Value: !Ref FrontendASG2
-      AlarmActions:
-        - !Ref FrontendScaleOutPolicy2
-
-  HighCPUAlarm3:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName: !Sub "${EnvironmentName}-Frontend-ASG3-HighCPU"
-      AlarmDescription: "Alarma por alto uso de CPU en Frontend ASG3"
-      MetricName: CPUUtilization
-      Namespace: AWS/EC2
-      Statistic: Average
-      Period: 300
-      EvaluationPeriods: 2
-      Threshold: !Ref ScaleOutThreshold
-      ComparisonOperator: GreaterThanThreshold
-      Dimensions:
-        - Name: AutoScalingGroupName
-          Value: !Ref FrontendASG3
-      AlarmActions:
-        - !Ref FrontendScaleOutPolicy3
-
-  # Alarmas - Scale In
-  LowCPUAlarm1:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName: !Sub "${EnvironmentName}-Frontend-ASG1-LowCPU"
-      AlarmDescription: "Alarma por bajo uso de CPU en Frontend ASG1"
-      MetricName: CPUUtilization
-      Namespace: AWS/EC2
-      Statistic: Average
-      Period: 300
-      EvaluationPeriods: 2
-      Threshold: !Ref ScaleInThreshold
-      ComparisonOperator: LessThanThreshold
-      Dimensions:
-        - Name: AutoScalingGroupName
-          Value: !Ref FrontendASG1
-      AlarmActions:
-        - !Ref FrontendScaleInPolicy1
-
-  LowCPUAlarm2:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName: !Sub "${EnvironmentName}-Frontend-ASG2-LowCPU"
-      AlarmDescription: "Alarma por bajo uso de CPU en Frontend ASG2"
-      MetricName: CPUUtilization
-      Namespace: AWS/EC2
-      Statistic: Average
-      Period: 300
-      EvaluationPeriods: 2
-      Threshold: !Ref ScaleInThreshold
-      ComparisonOperator: LessThanThreshold
-      Dimensions:
-        - Name: AutoScalingGroupName
-          Value: !Ref FrontendASG2
-      AlarmActions:
-        - !Ref FrontendScaleInPolicy2
-
-  LowCPUAlarm3:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName: !Sub "${EnvironmentName}-Frontend-ASG3-LowCPU"
-      AlarmDescription: "Alarma por bajo uso de CPU en Frontend ASG3"
-      MetricName: CPUUtilization
-      Namespace: AWS/EC2
-      Statistic: Average
-      Period: 300
-      EvaluationPeriods: 2
-      Threshold: !Ref ScaleInThreshold
-      ComparisonOperator: LessThanThreshold
-      Dimensions:
-        - Name: AutoScalingGroupName
-          Value: !Ref FrontendASG3
-      AlarmActions:
-        - !Ref FrontendScaleInPolicy3
-
-  # Políticas de escalado
+  # Políticas de escalado para el primer grupo
   FrontendScaleOutPolicy1:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:
       AutoScalingGroupName: !Ref FrontendASG1
-      PolicyType: SimpleScaling
-      AdjustmentType: ChangeInCapacity
-      ScalingAdjustment: 1
-      Cooldown: !Ref ScaleOutCooldown
+      PolicyType: TargetTrackingScaling
+      PolicyName: !Sub "${EnvironmentName}-Frontend-ScaleOut-Policy-1"
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: !Ref ScaleOutThreshold
 
+  # Políticas de escalado para el segundo grupo
   FrontendScaleOutPolicy2:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:
       AutoScalingGroupName: !Ref FrontendASG2
-      PolicyType: SimpleScaling
-      AdjustmentType: ChangeInCapacity
-      ScalingAdjustment: 1
-      Cooldown: !Ref ScaleOutCooldown
+      PolicyType: TargetTrackingScaling
+      PolicyName: !Sub "${EnvironmentName}-Frontend-ScaleOut-Policy-2"
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: !Ref ScaleOutThreshold
 
+  # Políticas de escalado para el tercer grupo
   FrontendScaleOutPolicy3:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:
       AutoScalingGroupName: !Ref FrontendASG3
-      PolicyType: SimpleScaling
-      AdjustmentType: ChangeInCapacity
-      ScalingAdjustment: 1
-      Cooldown: !Ref ScaleOutCooldown
-
-  FrontendScaleInPolicy1:
-    Type: AWS::AutoScaling::ScalingPolicy
-    Properties:
-      AutoScalingGroupName: !Ref FrontendASG1
-      PolicyType: SimpleScaling
-      AdjustmentType: ChangeInCapacity
-      ScalingAdjustment: -1
-      Cooldown: !Ref ScaleInCooldown
-
-  FrontendScaleInPolicy2:
-    Type: AWS::AutoScaling::ScalingPolicy
-    Properties:
-      AutoScalingGroupName: !Ref FrontendASG2
-      PolicyType: SimpleScaling
-      AdjustmentType: ChangeInCapacity
-      ScalingAdjustment: -1
-      Cooldown: !Ref ScaleInCooldown
-
-  FrontendScaleInPolicy3:
-    Type: AWS::AutoScaling::ScalingPolicy
-    Properties:
-      AutoScalingGroupName: !Ref FrontendASG3
-      PolicyType: SimpleScaling
-      AdjustmentType: ChangeInCapacity
-      ScalingAdjustment: -1
-      Cooldown: !Ref ScaleInCooldown
+      PolicyType: TargetTrackingScaling
+      PolicyName: !Sub "${EnvironmentName}-Frontend-ScaleOut-Policy-3"
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: !Ref ScaleOutThreshold
 
 Outputs:
-  FrontendLaunchTemplateId:
-    Description: ID de la Launch Template del Frontend
-    Value: !Ref FrontendLaunchTemplate
-    Export:
-      Name: !Sub "${EnvironmentName}-Frontend-LaunchTemplate-ID"
-
   FrontendASG1Name:
-    Description: Nombre del ASG 1 de Frontend
+    Description: Nombre del Auto Scaling Group 1 de Frontend
     Value: !Ref FrontendASG1
     Export:
       Name: !Sub "${EnvironmentName}-Frontend-ASG1-Name"
 
   FrontendASG2Name:
-    Description: Nombre del ASG 2 de Frontend
+    Description: Nombre del Auto Scaling Group 2 de Frontend
     Value: !Ref FrontendASG2
     Export:
       Name: !Sub "${EnvironmentName}-Frontend-ASG2-Name"
 
   FrontendASG3Name:
-    Description: Nombre del ASG 3 de Frontend
+    Description: Nombre del Auto Scaling Group 3 de Frontend
     Value: !Ref FrontendASG3
     Export:
-      Name: !Sub "${EnvironmentName}-Frontend-ASG3-Name" 
+      Name: !Sub "${EnvironmentName}-Frontend-ASG3-Name"
+
+  FrontendLaunchTemplateId:
+    Description: ID de la Launch Template de Frontend
+    Value: !Ref FrontendLaunchTemplate
+    Export:
+      Name: !Sub "${EnvironmentName}-Frontend-LaunchTemplate-ID" 

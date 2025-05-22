@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
-dotenv.config(); // Carga las variables de entorno del archivo .env
+
+dotenv.config();
 
 import priceService from '../services/price.service';
 import logger from '../utils/logger';

@@ -6,6 +6,7 @@ import logger from './utils/logger';
 import fs from 'fs';
 import setupForumSockets from './sockets/forumSocket';
 import connectDB from './utils/db';
+import alertService from './services/alert.service';
 
 const PORT = process.env.PORT || 80;
 const HTTPS_PORT = process.env.HTTPS_PORT || 443;
@@ -47,4 +48,15 @@ connectDB().then(() => {
   });
 
   setupForumSockets(io);
+
+  // Populate the alerts cache on server startup
+  alertService
+    .refreshAlertsCache()
+    .then(() => {
+      logger.info('Initial weather alerts cache populated successfully');
+    })
+    .catch(error => {
+      logger.warn('Failed to populate initial weather alerts cache:', error);
+      logger.info('Will retry on first request or scheduled job');
+    });
 });

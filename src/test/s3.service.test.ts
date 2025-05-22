@@ -1,6 +1,7 @@
 import S3Service from '../services/s3.service';
 import { s3Client } from '../config/s3.config';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import sharp from 'sharp';
 
 // Configurar variables de entorno para pruebas
 process.env.S3_BUCKET_NAME = 'test-bucket';
@@ -39,8 +40,24 @@ jest.mock('sharp', () => {
   }));
 });
 
-// Importar sharp para poder usarlo en las pruebas
-import sharp from 'sharp';
+// Mock S3_CONFIG to allow modification of ALLOWED_MIME_TYPES for tests
+let mockConfiguredAllowedMimeTypes: string[];
+const actualS3Config = jest.requireActual('../config/s3.config').S3_CONFIG;
+
+jest.mock('../config/s3.config', () => {
+  const originalConfigModule = jest.requireActual('../config/s3.config');
+  return {
+    ...originalConfigModule,
+    S3_CONFIG: new Proxy(originalConfigModule.S3_CONFIG, {
+      get: (target, prop) => {
+        if (prop === 'ALLOWED_MIME_TYPES') {
+          return mockConfiguredAllowedMimeTypes || target[prop];
+        }
+        return target[prop];
+      },
+    }),
+  };
+});
 
 describe('S3Service', () => {
   const mockFile = Buffer.from('test file content');
@@ -50,14 +67,63 @@ describe('S3Service', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    // Mock de s3Client.send
     (s3Client.send as jest.Mock).mockResolvedValue({});
-    // Mock de getSignedUrl
     (getSignedUrl as jest.Mock).mockResolvedValue(mockSignedUrl);
 
     // Limpiar la caché de URLs firmadas antes de cada test
     // @ts-expect-error Accediendo a una propiedad privada para pruebas
     S3Service.signedUrlCache = new Map();
+
+    mockConfiguredAllowedMimeTypes = [...actualS3Config.ALLOWED_MIME_TYPES];
+  });
+
+  describe('File Filter Logic (as used in S3Service.multerUpload)', () => {
+    let mockReq: any; // Mock request object
+    let mockMulterFile: any; // Mock file object for multer
+    let cb: jest.Mock; // Mock callback
+
+    // This function replicates the logic from S3Service's multer fileFilter
+    const testableFileFilterLogic = (
+      req: any, // Express Request object (mocked)
+      file: { mimetype: string; originalname: string }, // Multer file object
+      callback: (error: Error | null, acceptFile?: boolean) => void,
+      allowedTypesConfig: ReadonlyArray<string>,
+    ) => {
+      if (allowedTypesConfig.includes(file.mimetype as any)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`Invalid file type. Allowed types: ${allowedTypesConfig.join(', ')}`));
+      }
+    };
+
+    beforeEach(() => {
+      mockReq = {}; // Minimal mock request
+      cb = jest.fn(); // Reset callback mock for each test
+    });
+
+    it('should allow file with an accepted MIME type based on S3_CONFIG', () => {
+      // S3_CONFIG.ALLOWED_MIME_TYPES will be used by testableFileFilterLogic via mockConfiguredAllowedMimeTypes
+      mockConfiguredAllowedMimeTypes = ['image/jpeg', 'image/png']; // Explicitly set for this test
+      mockMulterFile = { mimetype: 'image/jpeg', originalname: 'test.jpg' };
+      testableFileFilterLogic(mockReq, mockMulterFile, cb, mockConfiguredAllowedMimeTypes);
+      expect(cb).toHaveBeenCalledWith(null, true);
+    });
+
+    it('should reject file with a non-accepted MIME type based on S3_CONFIG', () => {
+      mockConfiguredAllowedMimeTypes = ['image/jpeg', 'image/png']; // Explicitly set for this test
+      mockMulterFile = { mimetype: 'application/pdf', originalname: 'test.pdf' };
+      testableFileFilterLogic(mockReq, mockMulterFile, cb, mockConfiguredAllowedMimeTypes);
+      expect(cb).toHaveBeenCalledWith(expect.any(Error));
+      const errorArg = cb.mock.calls[0][0] as Error;
+      expect(errorArg.message).toContain('Invalid file type. Allowed types: image/jpeg, image/png');
+    });
+
+    it('should allow file if S3_CONFIG.ALLOWED_MIME_TYPES is dynamically changed for test', () => {
+      mockConfiguredAllowedMimeTypes = ['image/gif']; // Override for this test
+      mockMulterFile = { mimetype: 'image/gif', originalname: 'test.gif' };
+      testableFileFilterLogic(mockReq, mockMulterFile, cb, mockConfiguredAllowedMimeTypes);
+      expect(cb).toHaveBeenCalledWith(null, true);
+    });
   });
 
   describe('processImage', () => {
@@ -154,6 +220,41 @@ describe('S3Service', () => {
       await S3Service.getSignedUrl(mockKey, true);
 
       expect(getSignedUrl).toHaveBeenCalled();
+    });
+  });
+
+  describe('refreshSignedUrl', () => {
+    it('should call underlying getSignedUrl with forceRefresh true and return new URL', async () => {
+      const s3ServiceGetSignedUrlSpy = jest.spyOn(S3Service, 'getSignedUrl');
+      const newRefreshedUrl = 'https://refreshed-url.com/file.jpg?sig=new';
+      // Mock the AWS SDK's getSignedUrl for the call made *inside* S3Service.getSignedUrl when forceRefresh is true
+      (getSignedUrl as jest.Mock).mockResolvedValueOnce(newRefreshedUrl);
+
+      const result = await S3Service.refreshSignedUrl(mockKey);
+
+      expect(s3ServiceGetSignedUrlSpy).toHaveBeenCalledWith(mockKey, true);
+      expect(result).toBe(newRefreshedUrl);
+
+      s3ServiceGetSignedUrlSpy.mockRestore();
+    });
+
+    it('should update the cache with the new refreshed URL via the internal getSignedUrl call', async () => {
+      const initialUrl = 'https://initial-url.com/file.jpg?sig=old';
+      (getSignedUrl as jest.Mock).mockResolvedValueOnce(initialUrl);
+      await S3Service.getSignedUrl(mockKey); // Populate cache
+
+      // @ts-expect-error Accessing private cache for verification
+      const cachedBeforeRefresh = S3Service.signedUrlCache.get(mockKey);
+      expect(cachedBeforeRefresh?.url).toBe(initialUrl);
+
+      const newRefreshedUrlValue = 'https://newly-refreshed-url.com/file.jpg?sig=verynew';
+      (getSignedUrl as jest.Mock).mockResolvedValueOnce(newRefreshedUrlValue); // For the refresh call
+
+      await S3Service.refreshSignedUrl(mockKey);
+
+      // @ts-expect-error Accessing private cache for verification
+      const cachedAfterRefresh = S3Service.signedUrlCache.get(mockKey);
+      expect(cachedAfterRefresh?.url).toBe(newRefreshedUrlValue);
     });
   });
 

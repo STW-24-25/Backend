@@ -8,13 +8,13 @@ Parameters:
     Default: prod
 
 Resources:
-  # Security Groups para Frontend VPC
+  # Security Group para el ALB (Application Load Balancer)
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Security group para el Application Load Balancer
       VpcId: !ImportValue 
-        Fn::Sub: "${EnvironmentName}-Frontend-VPC-ID"
+        Fn::Sub: "${EnvironmentName}-Main-VPC-ID"
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 80
@@ -30,33 +30,19 @@ Resources:
         - Key: Name
           Value: !Sub '${EnvironmentName}-ALB-SG'
 
+  # Security Group para las instancias Frontend
   FrontendInstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Security group para las instancias Frontend
       VpcId: !ImportValue 
-        Fn::Sub: "${EnvironmentName}-Frontend-VPC-ID"
+        Fn::Sub: "${EnvironmentName}-Main-VPC-ID"
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 4321
           ToPort: 4321
           SourceSecurityGroupId: !Ref ALBSecurityGroup
           Description: Acceso HTTP desde ALB
-        - IpProtocol: tcp
-          FromPort: 4321
-          ToPort: 4321
-          CidrIp: 0.0.0.0/0
-          Description: Acceso HTTP directo para depuración
-        - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp: 0.0.0.0/0
-          Description: Acceso HTTP para validación de certificados
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: 0.0.0.0/0
-          Description: Acceso HTTPS para validación de certificados
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
@@ -66,26 +52,41 @@ Resources:
         - Key: Name
           Value: !Sub '${EnvironmentName}-Frontend-Instance-SG'
 
-  # Security Groups para Backend VPC
+  # Security Group para los NLBs (Network Load Balancers)
+  NLBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group para los Network Load Balancers
+      VpcId: !ImportValue 
+        Fn::Sub: "${EnvironmentName}-Main-VPC-ID"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          SourceSecurityGroupId: !Ref FrontendInstanceSecurityGroup
+          Description: Acceso HTTPS desde Frontend
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          SourceSecurityGroupId: !Ref FrontendInstanceSecurityGroup
+          Description: Acceso HTTP desde Frontend
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-NLB-SG'
+
+  # Security Group para las instancias Backend
   BackendInstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Security group para las instancias Backend
       VpcId: !ImportValue 
-        Fn::Sub: "${EnvironmentName}-Backend-VPC-ID"
+        Fn::Sub: "${EnvironmentName}-Main-VPC-ID"
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 3000
           ToPort: 3000
-          CidrIp: !ImportValue 
-            Fn::Sub: "${EnvironmentName}-Frontend-VPC-CIDR"
-          Description: Acceso desde Frontend VPC
-        - IpProtocol: tcp
-          FromPort: 3000
-          ToPort: 3000
-          CidrIp: !ImportValue 
-            Fn::Sub: "${EnvironmentName}-Backend-VPC-CIDR"
-          Description: Acceso interno a la VPC Backend
+          SourceSecurityGroupId: !Ref NLBSecurityGroup
+          Description: Acceso desde NLBs
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
@@ -107,6 +108,12 @@ Outputs:
     Value: !Ref FrontendInstanceSecurityGroup
     Export:
       Name: !Sub '${EnvironmentName}-Frontend-Instance-SecurityGroup'
+
+  NLBSecurityGroupId:
+    Description: ID del Security Group de los NLBs
+    Value: !Ref NLBSecurityGroup
+    Export:
+      Name: !Sub '${EnvironmentName}-NLB-SecurityGroup'
 
   BackendInstanceSecurityGroupId:
     Description: ID del Security Group de instancias Backend

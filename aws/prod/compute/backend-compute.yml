@@ -29,7 +29,7 @@ Parameters:
   MongoDBConnectionString:
     Description: Connection string para MongoDB Atlas
     Type: String
-    Default: "mongodb+srv://a848481:6pqHYvSiZdw39EKN@agronetcluster.sk9pr.mongodb.net/?retryWrites=true&w=majority&appName=AgroNETCluster"
+    Default: "mongodb+srv://server:CNEj8ZBi99e3zJst@agronetcluster.sk9pr.mongodb.net/?retryWrites=true&w=majority&appName=AgroNETCluster"
     NoEcho: true
 
   GitHubToken:
@@ -249,10 +249,29 @@ Resources:
         UserData:
           Fn::Base64: !Sub |
             #!/bin/bash -xe
+            
+            # Esperar a que la red esté completamente configurada
+            sleep 30
+            
+            # Configurar DNS explícitamente para mejorar la resolución
+            echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+            echo "nameserver 1.1.1.1" >> /etc/resolv.conf
+            
+            # Verificar conectividad antes de continuar
+            echo "Verificando conectividad a Internet..."
+            ping -c 3 google.com || {
+                echo "Sin conectividad a Internet. Esperando 60 segundos más..."
+                sleep 60
+            }
+            
             # Configuración para Amazon Linux 2023
             # Esperar a tener conexión con los repositorios antes de continuar
             attempts=0
             max_attempts=5
+            
+            # Limpiar caché de DNF y actualizar
+            dnf clean all
+            dnf makecache --refresh
             
             until dnf list installed &> /dev/null || [ $attempts -eq $max_attempts ]
             do
@@ -315,8 +334,12 @@ Resources:
             NODE_ENV=production
             MONGO_URI=${MongoDBConnectionString}
             JWT_SECRET=${JWTSecret}
-            AEMET_API_KEY=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZ3JvbmV0QGVqZW1wbG8uY29tIiwianRpIjoiMTM0MjNhYzktNTIzYi00YzFkLThkMjYtOWVhZWIzYTljZTIzIiwiaXNzIjoiQUVNRVQiLCJpYXQiOjE3MTM3OTk5NzksInVzZXJJZCI6IjEzNDIzYWM5LTUyM2ItNGMxZC04ZDI2LTllYWViM2E5Y2UyMyIsInJvbGUiOiIifQ.Dau0-Z6Qk_G7cSQR9UHKHvMc_uxrI_awz-xvYFtL_50
+            AEMET_API_KEY=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI4NDg0ODFAdW5pemFyLmVzIiwianRpIjoiNDZlNGNhOGYtYzVhNy00NmJhLWEzOWMtNDg2ZTljZTNmYWQ2IiwiaXNzIjoiQUVNRVQiLCJpYXQiOjE3NDc5MzEzNDQsInVzZXJJZCI6IjQ2ZTRjYThmLWM1YTctNDZiYS1hMzljLTQ4NmU5Y2UzZmFkNiIsInJvbGUiOiIifQ.v9Ykdkpos5nT7DH8llwFKDbvhj6LXORWdaxiELdAE38
             AWS_ACCESS_KEY_ID=${AWSAccessKeyId}
+            GITHUB_CLIENT_ID=Ov23li06FyN9SNC9OaZX
+            GITHUB_CLIENT_SECRET=48471cf2359e68ab6e2f33d404b7412298f5ec72
+            GOOGLE_CLIENT_ID=451497636244-bsd2hdr98f0te5su1hoiloneh18kkep0.apps.googleusercontent.com
+            GOOGLE_CLIENT_SECRET=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
             AWS_SECRET_ACCESS_KEY=${AWSSecretAccessKey}
             AWS_REGION=${AWSRegion}
             S3_BUCKET_NAME=${S3BucketName}

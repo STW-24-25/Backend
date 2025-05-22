@@ -1,3 +1,7 @@
+import dotenv from 'dotenv';
+
+dotenv.config();
+
 import mongoose from 'mongoose';
 import ProductModel from '../models/product.model';
 import logger from '../utils/logger';

@@ -45,7 +45,7 @@ export interface IParcel extends Document {
   crop: CropType;
   provinceCode: number;
   provinceName: string;
-  municipalityCode: string;
+  municipalityCode: number;
   municipalityName: string;
   surface: number;
   parcelUse: string;
@@ -173,7 +173,7 @@ export interface IParcel extends Document {
  *          type: string
  *          description: Name of the province
  *        municipalityCode:
- *          type: string
+ *          type: number
  *          description: Municipality code
  *        municipalityName:
  *          type: string
@@ -276,7 +276,7 @@ const parcelSchema: Schema = new Schema(
       required: true,
     },
     municipalityCode: {
-      type: String,
+      type: Number,
       required: true,
     },
     municipalityName: {

@@ -9,6 +9,9 @@ Parameters:
   SSLCertificateArn:
     Description: ARN del certificado SSL en ACM
     Type: String
+  SSLCertificateArn2:
+    Description: ARN del certificado de los NLB en ACM
+    Type: String
 
 Resources:
   # Application Load Balancer principal (entrada)
@@ -23,11 +26,11 @@ Resources:
           Fn::Sub: "${EnvironmentName}-ALB-SecurityGroup"
       Subnets:
         - !ImportValue 
-          Fn::Sub: "${EnvironmentName}-Frontend-Public-Subnet-1-ID"
+          Fn::Sub: "${EnvironmentName}-Public-Subnet-1-ID"
         - !ImportValue 
-          Fn::Sub: "${EnvironmentName}-Frontend-Public-Subnet-2-ID"
+          Fn::Sub: "${EnvironmentName}-Public-Subnet-2-ID"
         - !ImportValue 
-          Fn::Sub: "${EnvironmentName}-Frontend-Public-Subnet-3-ID"
+          Fn::Sub: "${EnvironmentName}-Public-Subnet-3-ID"
       Tags:
         - Key: Name
           Value: !Sub '${EnvironmentName}-AgroNet-ALB'
@@ -41,7 +44,7 @@ Resources:
       Scheme: internal
       SecurityGroups:
         - !ImportValue 
-          Fn::Sub: "${EnvironmentName}-Backend-Instance-SecurityGroup"
+          Fn::Sub: "${EnvironmentName}-NLB-SecurityGroup"
       Subnets:
         - !ImportValue 
           Fn::Sub: "${EnvironmentName}-Backend-Private-Subnet-1-ID"
@@ -58,7 +61,7 @@ Resources:
       Scheme: internal
       SecurityGroups:
         - !ImportValue 
-          Fn::Sub: "${EnvironmentName}-Backend-Instance-SecurityGroup"
+          Fn::Sub: "${EnvironmentName}-NLB-SecurityGroup"
       Subnets:
         - !ImportValue 
           Fn::Sub: "${EnvironmentName}-Backend-Private-Subnet-2-ID"
@@ -75,7 +78,7 @@ Resources:
       Scheme: internal
       SecurityGroups:
         - !ImportValue 
-          Fn::Sub: "${EnvironmentName}-Backend-Instance-SecurityGroup"
+          Fn::Sub: "${EnvironmentName}-NLB-SecurityGroup"
       Subnets:
         - !ImportValue 
           Fn::Sub: "${EnvironmentName}-Backend-Private-Subnet-3-ID"
@@ -92,7 +95,7 @@ Resources:
       Protocol: HTTP
       TargetType: instance
       VpcId: !ImportValue 
-        Fn::Sub: "${EnvironmentName}-Frontend-VPC-ID"
+        Fn::Sub: "${EnvironmentName}-Main-VPC-ID"
       HealthCheckPath: /login
       HealthCheckIntervalSeconds: 160
       HealthCheckTimeoutSeconds: 5
@@ -118,7 +121,7 @@ Resources:
       Protocol: TCP
       TargetType: instance
       VpcId: !ImportValue 
-        Fn::Sub: "${EnvironmentName}-Backend-VPC-ID"
+        Fn::Sub: "${EnvironmentName}-Main-VPC-ID"
       HealthCheckProtocol: TCP
       HealthCheckPort: "3000"
       HealthCheckIntervalSeconds: 30
@@ -137,7 +140,7 @@ Resources:
       Protocol: TCP
       TargetType: instance
       VpcId: !ImportValue 
-        Fn::Sub: "${EnvironmentName}-Backend-VPC-ID"
+        Fn::Sub: "${EnvironmentName}-Main-VPC-ID"
       HealthCheckProtocol: TCP
       HealthCheckPort: "3000"
       HealthCheckIntervalSeconds: 30
@@ -156,7 +159,7 @@ Resources:
       Protocol: TCP
       TargetType: instance
       VpcId: !ImportValue 
-        Fn::Sub: "${EnvironmentName}-Backend-VPC-ID"
+        Fn::Sub: "${EnvironmentName}-Main-VPC-ID"
       HealthCheckProtocol: TCP
       HealthCheckPort: "3000"
       HealthCheckIntervalSeconds: 30
@@ -201,7 +204,7 @@ Resources:
         - CertificateArn: !Ref SSLCertificateArn
       SslPolicy: ELBSecurityPolicy-TLS-1-2-2017-01
 
-  # Listeners para los NLBs
+  # Listeners para los NLBs (usando TLS)
   NLB1Listener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
@@ -209,8 +212,11 @@ Resources:
         - Type: forward
           TargetGroupArn: !Ref BackendTargetGroup1
       LoadBalancerArn: !Ref NetworkLoadBalancer1
-      Port: 3000
-      Protocol: TCP
+      Port: 443
+      Protocol: TLS
+      Certificates:
+        - CertificateArn: !Ref SSLCertificateArn2
+      SslPolicy: ELBSecurityPolicy-TLS-1-2-2017-01
 
   NLB2Listener:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -219,8 +225,11 @@ Resources:
         - Type: forward
           TargetGroupArn: !Ref BackendTargetGroup2
       LoadBalancerArn: !Ref NetworkLoadBalancer2
-      Port: 3000
-      Protocol: TCP
+      Port: 443
+      Protocol: TLS
+      Certificates:
+        - CertificateArn: !Ref SSLCertificateArn2
+      SslPolicy: ELBSecurityPolicy-TLS-1-2-2017-01
 
   NLB3Listener:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -229,8 +238,11 @@ Resources:
         - Type: forward
           TargetGroupArn: !Ref BackendTargetGroup3
       LoadBalancerArn: !Ref NetworkLoadBalancer3
-      Port: 3000
-      Protocol: TCP
+      Port: 443
+      Protocol: TLS
+      Certificates:
+        - CertificateArn: !Ref SSLCertificateArn2
+      SslPolicy: ELBSecurityPolicy-TLS-1-2-2017-01
 
   # Almacenar los nombres DNS de los NLB como parámetros SSM para que las instancias puedan acceder a ellos
   NLB1DNSParameter:
@@ -265,9 +277,6 @@ Resources:
       Type: String
       Value: !Ref SSLCertificateArn
       Description: ARN del certificado SSL en ACM
-
-  # NOTA: El registro de alias en Route 53 debe configurarse manualmente desde la consola de AWS
-  # siguiendo las instrucciones en la sección "Configuración manual del dominio personalizado en Route 53" del README
 
 Outputs:
   ALBDNSName:

@@ -198,10 +198,6 @@ Outputs:
     Description: Nombre del ASG 3 de Backend
     Value: !GetAtt ComputeBackendStack.Outputs.BackendASG3Name
 
-  S3EndpointFrontendId:
-    Description: ID del Endpoint de S3 para Frontend VPC
-    Value: !GetAtt EndpointsStack.Outputs.S3EndpointFrontendId
-
-  S3EndpointBackendId:
-    Description: ID del Endpoint de S3 para Backend VPC
-    Value: !GetAtt EndpointsStack.Outputs.S3EndpointBackendId 
+  S3EndpointId:
+    Description: ID del Endpoint de S3
+    Value: !GetAtt EndpointsStack.Outputs.S3EndpointId 

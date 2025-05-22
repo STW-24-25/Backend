@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Plantilla principal de AgroNet - 2025 (Versión Actualizada con Endpoints, ASG multi-AZ y scale in/out policies)'
+Description: 'Plantilla principal de AgroNet - 2025 (Versión Actualizada con VPC unificada, HTTPS en NLBs y ASG multi-AZ)'
 
 Parameters:
   EnvironmentName:
@@ -67,7 +67,7 @@ Parameters:
     Default: "arn:aws:acm:eu-north-1:814257527391:certificate/example"
 
 Resources:
-  # Stack de red - VPCs, subredes, NAT, etc.
+  # Stack de red - VPC unificada, subredes, NAT, etc.
   NetworkStack:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -94,7 +94,7 @@ Resources:
         EnvironmentName: !Ref EnvironmentName
     DependsOn: NetworkStack
 
-  # Stack de balanceadores de carga - ALB, NLBs
+  # Stack de balanceadores de carga - ALB, NLBs con HTTPS
   LoadBalancerStack:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -188,10 +188,6 @@ Outputs:
     Description: Nombre del ASG 3 de Backend
     Value: !GetAtt ComputeBackendStack.Outputs.BackendASG3Name
 
-  S3EndpointFrontendId:
-    Description: ID del Endpoint de S3 para Frontend VPC
-    Value: !GetAtt EndpointsStack.Outputs.S3EndpointFrontendId
-
-  S3EndpointBackendId:
-    Description: ID del Endpoint de S3 para Backend VPC
-    Value: !GetAtt EndpointsStack.Outputs.S3EndpointBackendId 
+  S3EndpointId:
+    Description: ID del Endpoint de S3 para la VPC
+    Value: !GetAtt EndpointsStack.Outputs.S3EndpointId 

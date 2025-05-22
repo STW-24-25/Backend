@@ -1,8 +1,16 @@
-# Infraestructura AgroNet en AWS (2025)
+<p align="center">
+  <img src="../images/favicon.svg" height="150">
+</p>
 
-Este directorio contiene las plantillas de CloudFormation para desplegar la infraestructura completa de AgroNet en AWS.
+<h1 align="center">Infraestructura AgroNet en AWS (2025)</h1>
+
+El directorio **[aws/prod](https://github.com/STW-24-25/Backend/tree/main/aws/prod)** contiene las plantillas de CloudFormation para desplegar la infraestructura completa de AgroNet en AWS.
 
 ## Arquitectura
+
+<p align="center">
+   <img src="../images/infra.jpeg">
+</p>
 
 La arquitectura implementada consiste en:
 
@@ -38,7 +46,6 @@ prod/
 3. Una conexión de MongoDB Atlas activa
 4. Un bucket S3 para almacenar las plantillas
 5. Un token de acceso personal (fine-grained) de GitHub para acceder a los repositorios
-6. Un token de acceso personal (fine-grained) de GitHub para acceder a los repositorios
 
 ## Seguridad y configuración de acceso a GitHub
 
@@ -75,17 +82,7 @@ Esta infraestructura utiliza AWS Secrets Manager para almacenar de forma segura 
    - `/prod/network`
    - `/prod/security`
 
-   - `/prod`
-   - `/prod/compute`
-   - `/prod/network`
-   - `/prod/security`
-
    b. Sube cada archivo YAML a la carpeta correspondiente:
-
-   - `main.yml` en la carpeta `/prod`
-   - Los archivos de compute en `/prod/compute`
-   - Los archivos de network en `/prod/network`
-   - Los archivos de security en `/prod/security`
 
    - `main.yml` en la carpeta `/prod`
    - Los archivos de compute en `/prod/compute`
@@ -117,20 +114,7 @@ Esta infraestructura utiliza AWS Secrets Manager para almacenar de forma segura 
      `https://agronet-cloudformation-templates-1000.s3.eu-north-1.amazonaws.com/prod/main.yml`
    - Haz clic en "Siguiente"
 
-   - Selecciona "URL de Amazon S3"
-   - Ingresa la URL del archivo main.yml en tu bucket:
-     `https://agronet-cloudformation-templates-1000.s3.eu-north-1.amazonaws.com/prod/main.yml`
-   - Haz clic en "Siguiente"
-
    d. En la pantalla "Especificar detalles del stack":
-
-   - Ingresa un nombre para el stack (por ejemplo: "agronet-infrastructure")
-   - Completa los parámetros:
-     - EnvironmentName: prod (o el entorno que desees)
-     - KeyName: El nombre de tu par de claves EC2
-     - MongoDBConnectionString: Tu cadena de conexión a MongoDB Atlas
-     - GitHubToken: Tu token de acceso personal de GitHub
-   - Haz clic en "Siguiente"
 
    - Ingresa un nombre para el stack (por ejemplo: "agronet-infrastructure")
    - Completa los parámetros:
@@ -145,14 +129,7 @@ Esta infraestructura utiliza AWS Secrets Manager para almacenar de forma segura 
    - Define roles IAM, políticas de pilas y opciones avanzadas si es necesario
    - Haz clic en "Siguiente"
 
-   - Define roles IAM, políticas de pilas y opciones avanzadas si es necesario
-   - Haz clic en "Siguiente"
-
    f. En "Revisar":
-
-   - Revisa todos los detalles y confirma
-   - Marca la casilla para reconocer que CloudFormation podría crear recursos IAM
-   - Haz clic en "Crear stack"
 
    - Revisa todos los detalles y confirma
    - Marca la casilla para reconocer que CloudFormation podría crear recursos IAM
@@ -171,12 +148,10 @@ Esta infraestructura utiliza AWS Secrets Manager para almacenar de forma segura 
    # Crear el bucket S3 (reemplaza XXXX con un identificador único)
    aws s3 mb s3://agronet-cloudformation-templates-XXXX --region eu-north-1
 
-
    # Habilitar el versionado
    aws s3api put-bucket-versioning \
      --bucket agronet-cloudformation-templates-XXXX \
      --versioning-configuration Status=Enabled
-
 
    # Crear la estructura de carpetas y subir archivos
    aws s3 cp . s3://agronet-cloudformation-templates-XXXX/prod/ \
@@ -523,5 +498,3 @@ Para eliminar la infraestructura desplegada módulo por módulo, sigue estos pas
 - Las instancias Backend están en subredes privadas con acceso a Internet a través de NAT Gateways
 - Los ASG escalan automáticamente basados en el uso de CPU (70%)
 - El despliegue modular permite mayor control sobre cada componente, pero requiere administrar manualmente las dependencias entre stacks
-
-sudo cat ec2-user/Backend/logs/2025-05-22/06-38-48/error.log

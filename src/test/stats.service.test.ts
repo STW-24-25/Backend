@@ -4,6 +4,14 @@ import StatsService from '../services/stats.service';
 import UserModel, { AutonomousComunity, UserRole } from '../models/user.model';
 import ForumModel from '../models/forum.model';
 import MessageModel from '../models/message.model';
+import logger from '../utils/logger';
+
+jest.mock('../utils/logger', () => ({
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+  debug: jest.fn(),
+}));
 
 describe('StatsService', () => {
   let mongoServer: MongoMemoryServer;
@@ -12,6 +20,10 @@ describe('StatsService', () => {
     mongoServer = await MongoMemoryServer.create();
     const uri = mongoServer.getUri();
     await mongoose.connect(uri);
+  });
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
   });
 
   afterAll(async () => {
@@ -153,6 +165,47 @@ describe('StatsService', () => {
         loginsPerMonth: [],
         loginsPerHour: [],
       });
+    });
+
+    it('should log an error and return empty array for a failed aggregation', async () => {
+      const aggregationError = new Error('MongoDB aggregation failed');
+      const aggregateSpy = jest.spyOn(UserModel, 'aggregate');
+
+      // Make the 'usersPerMonth' aggregation (which uses UserModel by default) fail
+      // This requires knowing which pipeline is which, or making the mock more general
+      // For simplicity, let's assume the first call to UserModel.aggregate is usersPerMonth
+      // A more robust way would be to check the pipeline argument in mockImplementation
+      aggregateSpy.mockImplementationOnce((pipeline: any[]) => {
+        // A simple check to see if it's likely the usersPerMonthPipeline
+        // This is fragile; a better check would involve deep-comparing pipeline structures.
+        const isUsersPerMonthPipeline = pipeline.some(
+          stage => stage.$group && stage.$group.uniqueUsers,
+        );
+        if (isUsersPerMonthPipeline) {
+          return Promise.reject(aggregationError) as any;
+        }
+        // Fallback to actual implementation or a generic success for other pipelines if needed
+        return jest.requireActual('../models/user.model').default.aggregate(pipeline);
+      });
+
+      // Create some data so other aggregations can run
+      await MessageModel.create({
+        forum: new mongoose.Types.ObjectId(),
+        content: 'Test post',
+        author: new mongoose.Types.ObjectId(),
+        createdAt: new Date('2025-01-01T15:00:00Z'),
+      });
+
+      const stats = await StatsService.getAllStats();
+
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringContaining('Error runnign aggregate usersPerMonth:'),
+        aggregationError,
+      );
+      expect(stats.usersPerMonth).toEqual([]);
+      expect(stats.totalPosts).toBe(1); // Check that other stats are still processed
+
+      aggregateSpy.mockRestore();
     });
   });
 });

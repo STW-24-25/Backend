@@ -1,4 +1,5 @@
 import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
+import logger from '../utils/logger';
 
 /**
  * Handler para la función Lambda que envía notificaciones a través de SNS.
@@ -9,7 +10,7 @@ import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
  */
 export const handler = async (event: any) => {
   try {
-    console.log('Procesando evento de notificación:', JSON.stringify(event));
+    logger.info('Procesando evento de notificación:', JSON.stringify(event));
 
     // Configurar cliente de AWS SNS
     const snsClient = new SNSClient({
@@ -20,7 +21,7 @@ export const handler = async (event: any) => {
 
     // Verificar datos requeridos
     if (!userId || !notificationType || !data) {
-      console.error('Faltan datos requeridos para la notificación');
+      logger.error('Faltan datos requeridos para la notificación');
       return { statusCode: 400, body: 'Faltan datos requeridos' };
     }
 
@@ -49,7 +50,7 @@ export const handler = async (event: any) => {
       body: 'Notificación enviada correctamente',
     };
   } catch (error) {
-    console.error('Error procesando la notificación:', error);
+    logger.error('Error procesando la notificación:', error);
     return {
       statusCode: 500,
       body: 'Error al procesar la notificación',
@@ -87,10 +88,10 @@ async function publishToTopic(
     });
 
     const result = await snsClient.send(command);
-    console.log(`Mensaje publicado en tópico SNS: ${result.MessageId}`);
+    logger.info(`Mensaje publicado en tópico SNS: ${result.MessageId}`);
     return true;
   } catch (error) {
-    console.error('Error publicando mensaje en tópico SNS:', error);
+    logger.error('Error publicando mensaje en tópico SNS:', error);
     return false;
   }
 }
@@ -124,10 +125,10 @@ async function sendSMSNotification(
     });
 
     await snsClient.send(command);
-    console.log(`SMS enviado a ${phoneNumber}`);
+    logger.info(`SMS enviado a ${phoneNumber}`);
     return true;
   } catch (error) {
-    console.error('Error enviando SMS:', error);
+    logger.info('Error enviando SMS:', error);
     return false;
   }
 }

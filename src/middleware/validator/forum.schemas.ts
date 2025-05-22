@@ -218,6 +218,15 @@ export const postMessageSchema = z.object({
   token: z.string().min(1),
 });
 
+export const editMessageSchema = z.object({
+  messageId: z
+    .string()
+    .trim()
+    .refine(val => isValidObjectId(val)),
+  content: z.string().trim().min(1),
+  token: z.string().min(1),
+});
+
 export const deleteMessageSchema = z.object({
   messageId: z
     .string()
