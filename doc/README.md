@@ -180,6 +180,22 @@ TODO los 4
 
 ### Front-end
 
+- **Optimización de rendimiento**: Analizar y optimizar el rendimiento del frontend. Aplicar técnicas como lazy loading de componentes y optimización de imágenes para mejorar los tiempos de carga.
+
+- **Mejoras en la experiencia de usuario (UX)**: Refinar los flujos de interacción, añadir animaciones suaves y retroalimentación visual en acciones clave (por ejemplo, notificaciones de éxito/error, loaders durante peticiones asíncronas) para una experiencia más fluida.
+
+- **Internacionalización (i18n)**: Implementar soporte multilenguaje en la interfaz, permitiendo a los usuarios seleccionar su idioma preferido. Esto se puede lograr integrando librerías como `react-i18next` y gestionando archivos de traducción para los diferentes idiomas objetivo.
+
+- **Accesibilidad mejorada**: Mejorar la accesibilidad de la aplicación siguiendo las pautas WCAG. Incluir navegación por teclado y contraste adecuado para asegurar que la plataforma sea usable por personas con discapacidad.
+
+- **Testing automatizado**: Ampliar la cobertura de tests E2E con cypress, asegurando la robustez en caso de cambios en el futuro.
+
+- **CI**: Configurar integración continua (CI) con GitHub Actionspara el frontend, ejecutando automáticamente los tests E2E de Cypress en cada push o pull request. Esto asegura que las funcionalidades críticas se validan antes de integrar cambios, mejorando la calidad y robustez del código.
+
+- **Componentes reutilizables y diseño consistente**: Refactorizar componentes UI reutilizables, asegurando consistencia en toda la aplicación mediante un sistema de diseño unificado.
+
+- **Integración de analítica**: Añadir herramientas de analítica (por ejemplo, Google Analytics) para monitorizar el uso de la aplicación y obtener métricas que permitan tomar decisiones informadas sobre futuras mejoras.
+
 ### Back-end
 
 ### Arquitectura cloud
