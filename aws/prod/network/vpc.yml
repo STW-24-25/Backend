@@ -667,13 +667,50 @@ Outputs:
       Name: !Sub "${EnvironmentName}-Backend-Private-Subnet-3-ID"
 
   PublicRouteTableFrontendId:
-    Description: ID de la tabla de rutas pública de Frontend
+    Description: ID de la Route Table pública de Frontend
     Value: !Ref PublicRouteTableFrontend
     Export:
       Name: !Sub "${EnvironmentName}-Frontend-Public-RouteTable-ID"
 
   PublicRouteTableBackendId:
-    Description: ID de la tabla de rutas pública de Backend
+    Description: ID de la Route Table pública de Backend
     Value: !Ref PublicRouteTableBackend
     Export:
-      Name: !Sub "${EnvironmentName}-Backend-Public-RouteTable-ID" 
+      Name: !Sub "${EnvironmentName}-Backend-Public-RouteTable-ID"
+      
+  # Exportar las tablas de rutas privadas para los endpoints
+  PrivateRouteTableFrontend1Id:
+    Description: ID de la Route Table privada 1 de Frontend
+    Value: !Ref PrivateRouteTableFrontend1
+    Export:
+      Name: !Sub "${EnvironmentName}-Frontend-Private-RouteTable1-ID"
+      
+  PrivateRouteTableFrontend2Id:
+    Description: ID de la Route Table privada 2 de Frontend
+    Value: !Ref PrivateRouteTableFrontend2
+    Export:
+      Name: !Sub "${EnvironmentName}-Frontend-Private-RouteTable2-ID"
+      
+  PrivateRouteTableFrontend3Id:
+    Description: ID de la Route Table privada 3 de Frontend
+    Value: !Ref PrivateRouteTableFrontend3
+    Export:
+      Name: !Sub "${EnvironmentName}-Frontend-Private-RouteTable3-ID"
+      
+  PrivateRouteTableBackend1Id:
+    Description: ID de la Route Table privada 1 de Backend
+    Value: !Ref PrivateRouteTableBackend1
+    Export:
+      Name: !Sub "${EnvironmentName}-Backend-Private-RouteTable1-ID"
+      
+  PrivateRouteTableBackend2Id:
+    Description: ID de la Route Table privada 2 de Backend
+    Value: !Ref PrivateRouteTableBackend2
+    Export:
+      Name: !Sub "${EnvironmentName}-Backend-Private-RouteTable2-ID"
+      
+  PrivateRouteTableBackend3Id:
+    Description: ID de la Route Table privada 3 de Backend
+    Value: !Ref PrivateRouteTableBackend3
+    Export:
+      Name: !Sub "${EnvironmentName}-Backend-Private-RouteTable3-ID" 

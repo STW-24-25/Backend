@@ -29,7 +29,7 @@ Parameters:
   MongoDBConnectionString:
     Description: Connection string para MongoDB Atlas
     Type: String
-    Default: "mongodb+srv://server:CNEj8ZBi99e3zJst@agronetcluster.sk9pr.mongodb.net/?retryWrites=true&w=majority&appName=AgroNETCluster"
+    Default: "mongodb+srv://a848481:6pqHYvSiZdw39EKN@agronetcluster.sk9pr.mongodb.net/?retryWrites=true&w=majority&appName=AgroNETCluster"
     NoEcho: true
 
   GitHubToken:

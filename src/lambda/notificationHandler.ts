@@ -16,7 +16,7 @@ export const handler = async (event: any) => {
       region: process.env.AWS_REGION || 'us-east-1',
     });
 
-    const { userId, email, phoneNumber, notificationType, data } = event;
+    const { userId, email, phoneNumber, notificationType, data, notificationMethod } = event;
 
     // Verificar datos requeridos
     if (!userId || !notificationType || !data) {
@@ -26,13 +26,16 @@ export const handler = async (event: any) => {
 
     const notificationPromises = [];
 
+    // Por defecto, enviamos a través del tópico SNS si no se especifica método
+    const method = notificationMethod || 'TOPIC';
+
     // Publicar mensaje en el tópico SNS
-    if (process.env.SNS_TOPIC_ARN) {
+    if (method === 'TOPIC' && process.env.SNS_TOPIC_ARN) {
       notificationPromises.push(publishToTopic(snsClient, notificationType, data, userId));
     }
 
-    // Enviar SMS directamente si hay número de teléfono proporcionado
-    if (phoneNumber) {
+    // Enviar SMS directamente solo si se especifica el método DIRECT_SMS
+    if (method === 'DIRECT_SMS' && phoneNumber) {
       notificationPromises.push(
         sendSMSNotification(snsClient, phoneNumber, notificationType, data),
       );

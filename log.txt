@@ -1,0 +1,875 @@
+sh-5.2$ sudo cat  ec2-user/Backend/logs/2025-05-22/06-38-48/execution.log
+{"level":"info","message":"Configuración de S3:","timestamp":"2025-05-22 06:38:49"}
+{"level":"info","message":"Bucket Name: agronet-images","timestamp":"2025-05-22 06:38:49"}
+{"level":"info","message":"Region: eu-north-1","timestamp":"2025-05-22 06:38:49"}
+{"level":"info","message":"Configuración de SNS:","timestamp":"2025-05-22 06:38:49"}
+{"level":"info","message":"Region: eu-north-1","timestamp":"2025-05-22 06:38:49"}
+{"level":"info","message":"Topic ARN: arn:aws:sns:eu-north-1:814257527391:AgroNETAlertNotifications","timestamp":"2025-05-22 06:38:49"}
+{"level":"info","message":"Configuración de Lambda:","timestamp":"2025-05-22 06:38:50"}
+{"level":"info","message":"Region: eu-north-1","timestamp":"2025-05-22 06:38:50"}
+{"level":"info","message":"Notification Function: AgroAlertNotificationsHandler","timestamp":"2025-05-22 06:38:50"}
+{"level":"info","message":"AlertService initialized with AEMET client","timestamp":"2025-05-22 06:38:50"}
+{"level":"info","message":"Configuring scheduled jobs...","timestamp":"2025-05-22 06:38:51"}
+{"level":"info","message":"Jobs scheduled succesfully","timestamp":"2025-05-22 06:38:51"}
+{"level":"warn","message":"No se ha configurado HTTPS. Definir SSL_KEY_PATH y SSL_CERT_PATH en las variables de entorno.","timestamp":"2025-05-22 06:38:51"}
+{"level":"info","message":"Refreshing weather alerts cache from AEMET API","timestamp":"2025-05-22 06:38:51"}
+{"level":"info","message":"HTTP server runing on port 3000","timestamp":"2025-05-22 06:38:51"}
+{"level":"error","message":"Failed to refresh weather alerts cache: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)","timestamp":"2025-05-22 06:38:52"}
+{"level":"warn","message":"Failed to populate initial weather alerts cache: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)","timestamp":"2025-05-22 06:38:52"}
+{"level":"info","message":"Will retry on first request or scheduled job","timestamp":"2025-05-22 06:38:52"}
+{"level":"info","message":"Connected to MongoDB Atlas","timestamp":"2025-05-22 06:38:52"}
+{"level":"info","message":"Running scheduled cache cleanup job","timestamp":"2025-05-22 07:00:00"}
+{"level":"info","message":"Iniciando limpieza de caché de URLs firmadas de S3","timestamp":"2025-05-22 07:00:00"}
+{"level":"info","message":"Limpieza de caché de URLs firmadas completada. Tamaño actual: 0 elementos.","timestamp":"2025-05-22 07:00:00"}
+{"level":"info","message":"Scheduled cache cleanup job completed","timestamp":"2025-05-22 07:00:00"}
+{"level":"info","message":"Running scheduled weather alerts cache refresh job","timestamp":"2025-05-22 07:15:00"}
+{"level":"info","message":"Starting scheduled weather alerts cache refresh job","timestamp":"2025-05-22 07:15:00"}
+{"level":"info","message":"Refreshing weather alerts cache from AEMET API","timestamp":"2025-05-22 07:15:00"}
+{"level":"error","message":"Failed to refresh weather alerts cache: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async refreshWeatherAlertsJob (/home/ec2-user/Backend/dist/jobs/aemet.job.js:19:9)\n    at async exports.alertsCacheJob.node_cron_1.default.schedule.scheduled [as _execution] (/home/ec2-user/Backend/dist/jobs/jobs.config.js:44:9)","timestamp":"2025-05-22 07:15:08"}
+{"level":"error","message":"Error in weather alerts cache refresh job: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async refreshWeatherAlertsJob (/home/ec2-user/Backend/dist/jobs/aemet.job.js:19:9)\n    at async exports.alertsCacheJob.node_cron_1.default.schedule.scheduled [as _execution] (/home/ec2-user/Backend/dist/jobs/jobs.config.js:44:9)","timestamp":"2025-05-22 07:15:08"}
+{"level":"info","message":"Weather alerts cache refresh job completed","timestamp":"2025-05-22 07:15:08"}
+{"level":"info","message":"Running scheduled cache cleanup job","timestamp":"2025-05-22 08:00:00"}
+{"level":"info","message":"Iniciando limpieza de caché de URLs firmadas de S3","timestamp":"2025-05-22 08:00:00"}
+{"level":"info","message":"Limpieza de caché de URLs firmadas completada. Tamaño actual: 0 elementos.","timestamp":"2025-05-22 08:00:00"}
+{"level":"info","message":"Scheduled cache cleanup job completed","timestamp":"2025-05-22 08:00:00"}
+{"level":"info","message":"Running scheduled weather alerts cache refresh job","timestamp":"2025-05-22 08:15:00"}
+{"level":"info","message":"Starting scheduled weather alerts cache refresh job","timestamp":"2025-05-22 08:15:00"}
+{"level":"info","message":"Refreshing weather alerts cache from AEMET API","timestamp":"2025-05-22 08:15:00"}
+{"level":"error","message":"Failed to refresh weather alerts cache: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async refreshWeatherAlertsJob (/home/ec2-user/Backend/dist/jobs/aemet.job.js:19:9)\n    at async exports.alertsCacheJob.node_cron_1.default.schedule.scheduled [as _execution] (/home/ec2-user/Backend/dist/jobs/jobs.config.js:44:9)","timestamp":"2025-05-22 08:15:03"}
+{"level":"error","message":"Error in weather alerts cache refresh job: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async refreshWeatherAlertsJob (/home/ec2-user/Backend/dist/jobs/aemet.job.js:19:9)\n    at async exports.alertsCacheJob.node_cron_1.default.schedule.scheduled [as _execution] (/home/ec2-user/Backend/dist/jobs/jobs.config.js:44:9)","timestamp":"2025-05-22 08:15:03"}
+{"level":"info","message":"Weather alerts cache refresh job completed","timestamp":"2025-05-22 08:15:03"}
+{"level":"info","message":"Running scheduled cache cleanup job","timestamp":"2025-05-22 09:00:00"}
+{"level":"info","message":"Iniciando limpieza de caché de URLs firmadas de S3","timestamp":"2025-05-22 09:00:00"}
+{"level":"info","message":"Limpieza de caché de URLs firmadas completada. Tamaño actual: 0 elementos.","timestamp":"2025-05-22 09:00:00"}
+{"level":"info","message":"Scheduled cache cleanup job completed","timestamp":"2025-05-22 09:00:00"}
+{"level":"info","message":"Running scheduled weather alerts cache refresh job","timestamp":"2025-05-22 09:15:00"}
+{"level":"info","message":"Starting scheduled weather alerts cache refresh job","timestamp":"2025-05-22 09:15:00"}
+{"level":"info","message":"Refreshing weather alerts cache from AEMET API","timestamp":"2025-05-22 09:15:00"}
+{"level":"error","message":"Failed to refresh weather alerts cache: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async refreshWeatherAlertsJob (/home/ec2-user/Backend/dist/jobs/aemet.job.js:19:9)\n    at async exports.alertsCacheJob.node_cron_1.default.schedule.scheduled [as _execution] (/home/ec2-user/Backend/dist/jobs/jobs.config.js:44:9)","timestamp":"2025-05-22 09:15:00"}
+{"level":"error","message":"Error in weather alerts cache refresh job: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async refreshWeatherAlertsJob (/home/ec2-user/Backend/dist/jobs/aemet.job.js:19:9)\n    at async exports.alertsCacheJob.node_cron_1.default.schedule.scheduled [as _execution] (/home/ec2-user/Backend/dist/jobs/jobs.config.js:44:9)","timestamp":"2025-05-22 09:15:00"}
+{"level":"info","message":"Weather alerts cache refresh job completed","timestamp":"2025-05-22 09:15:00"}
+{"level":"info","message":"Running scheduled cache cleanup job","timestamp":"2025-05-22 10:00:00"}
+{"level":"info","message":"Iniciando limpieza de caché de URLs firmadas de S3","timestamp":"2025-05-22 10:00:00"}
+{"level":"info","message":"Limpieza de caché de URLs firmadas completada. Tamaño actual: 0 elementos.","timestamp":"2025-05-22 10:00:00"}
+{"level":"info","message":"Scheduled cache cleanup job completed","timestamp":"2025-05-22 10:00:00"}
+{"level":"info","message":"Running scheduled weather alerts cache refresh job","timestamp":"2025-05-22 10:15:00"}
+{"level":"info","message":"Starting scheduled weather alerts cache refresh job","timestamp":"2025-05-22 10:15:00"}
+{"level":"info","message":"Refreshing weather alerts cache from AEMET API","timestamp":"2025-05-22 10:15:00"}
+{"level":"error","message":"Failed to refresh weather alerts cache: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async refreshWeatherAlertsJob (/home/ec2-user/Backend/dist/jobs/aemet.job.js:19:9)\n    at async exports.alertsCacheJob.node_cron_1.default.schedule.scheduled [as _execution] (/home/ec2-user/Backend/dist/jobs/jobs.config.js:44:9)","timestamp":"2025-05-22 10:15:00"}
+{"level":"error","message":"Error in weather alerts cache refresh job: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async refreshWeatherAlertsJob (/home/ec2-user/Backend/dist/jobs/aemet.job.js:19:9)\n    at async exports.alertsCacheJob.node_cron_1.default.schedule.scheduled [as _execution] (/home/ec2-user/Backend/dist/jobs/jobs.config.js:44:9)","timestamp":"2025-05-22 10:15:00"}
+{"level":"info","message":"Weather alerts cache refresh job completed","timestamp":"2025-05-22 10:15:00"}
+{"level":"info","message":"Running scheduled cache cleanup job","timestamp":"2025-05-22 11:00:00"}
+{"level":"info","message":"Iniciando limpieza de caché de URLs firmadas de S3","timestamp":"2025-05-22 11:00:00"}
+{"level":"info","message":"Limpieza de caché de URLs firmadas completada. Tamaño actual: 0 elementos.","timestamp":"2025-05-22 11:00:00"}
+{"level":"info","message":"Scheduled cache cleanup job completed","timestamp":"2025-05-22 11:00:00"}
+{"level":"info","message":"Running scheduled weather alerts cache refresh job","timestamp":"2025-05-22 11:15:00"}
+{"level":"info","message":"Starting scheduled weather alerts cache refresh job","timestamp":"2025-05-22 11:15:00"}
+{"level":"info","message":"Refreshing weather alerts cache from AEMET API","timestamp":"2025-05-22 11:15:00"}
+{"level":"error","message":"Failed to refresh weather alerts cache: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async refreshWeatherAlertsJob (/home/ec2-user/Backend/dist/jobs/aemet.job.js:19:9)\n    at async exports.alertsCacheJob.node_cron_1.default.schedule.scheduled [as _execution] (/home/ec2-user/Backend/dist/jobs/jobs.config.js:44:9)","timestamp":"2025-05-22 11:15:00"}
+{"level":"error","message":"Error in weather alerts cache refresh job: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async refreshWeatherAlertsJob (/home/ec2-user/Backend/dist/jobs/aemet.job.js:19:9)\n    at async exports.alertsCacheJob.node_cron_1.default.schedule.scheduled [as _execution] (/home/ec2-user/Backend/dist/jobs/jobs.config.js:44:9)","timestamp":"2025-05-22 11:15:00"}
+{"level":"info","message":"Weather alerts cache refresh job completed","timestamp":"2025-05-22 11:15:00"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 11:51:59"}
+{"level":"warn","message":"No user found with googleId = 109629430432486032975","timestamp":"2025-05-22 11:51:59"}
+{"level":"info","message":"No user found with googleId 109629430432486032975. Checking by email 848481@unizar.es.","timestamp":"2025-05-22 11:51:59"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 11:51:59"}
+{"level":"info","message":"No user found with email: 848481@unizar.es","timestamp":"2025-05-22 11:51:59"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 11:51:59"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 11:51:59"}
+{"level":"warn","message":"No user found with googleId = 109629430432486032975","timestamp":"2025-05-22 11:51:59"}
+{"level":"info","message":"No user found with googleId 109629430432486032975. Checking by email 848481@unizar.es.","timestamp":"2025-05-22 11:51:59"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 11:51:59"}
+{"level":"info","message":"No user found with email: 848481@unizar.es","timestamp":"2025-05-22 11:51:59"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 11:51:59"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 11:52:11"}
+{"level":"warn","message":"No user found with googleId = 109629430432486032975","timestamp":"2025-05-22 11:52:11"}
+{"level":"info","message":"No user found with googleId 109629430432486032975. Checking by email 848481@unizar.es.","timestamp":"2025-05-22 11:52:11"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 11:52:11"}
+{"level":"info","message":"No user found with email: 848481@unizar.es","timestamp":"2025-05-22 11:52:11"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 11:52:11"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 11:52:38"}
+{"level":"warn","message":"No user found with googleId = 109629430432486032975","timestamp":"2025-05-22 11:52:38"}
+{"level":"info","message":"No user found with googleId 109629430432486032975. Checking by email 848481@unizar.es.","timestamp":"2025-05-22 11:52:38"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 11:52:38"}
+{"level":"info","message":"No user found with email: 848481@unizar.es","timestamp":"2025-05-22 11:52:38"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 11:52:38"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 11:52:48"}
+{"level":"warn","message":"No user found with googleId = 109629430432486032975","timestamp":"2025-05-22 11:52:48"}
+{"level":"info","message":"No user found with googleId 109629430432486032975. Checking by email 848481@unizar.es.","timestamp":"2025-05-22 11:52:48"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 11:52:48"}
+{"level":"info","message":"No user found with email: 848481@unizar.es","timestamp":"2025-05-22 11:52:48"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 11:52:48"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 11:52:48"}
+{"level":"warn","message":"No user found with googleId = 109629430432486032975","timestamp":"2025-05-22 11:52:49"}
+{"level":"info","message":"No user found with googleId 109629430432486032975. Checking by email 848481@unizar.es.","timestamp":"2025-05-22 11:52:49"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 11:52:49"}
+{"level":"info","message":"No user found with email: 848481@unizar.es","timestamp":"2025-05-22 11:52:49"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 11:52:49"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 11:52:56"}
+{"level":"warn","message":"No user found with googleId = 109629430432486032975","timestamp":"2025-05-22 11:52:56"}
+{"level":"info","message":"No user found with googleId 109629430432486032975. Checking by email 848481@unizar.es.","timestamp":"2025-05-22 11:52:56"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 11:52:56"}
+{"level":"info","message":"No user found with email: 848481@unizar.es","timestamp":"2025-05-22 11:52:56"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 11:52:56"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 11:52:56"}
+{"level":"warn","message":"No user found with googleId = 109629430432486032975","timestamp":"2025-05-22 11:52:56"}
+{"level":"info","message":"No user found with googleId 109629430432486032975. Checking by email 848481@unizar.es.","timestamp":"2025-05-22 11:52:56"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 11:52:56"}
+{"level":"info","message":"No user found with email: 848481@unizar.es","timestamp":"2025-05-22 11:52:56"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 11:52:56"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 11:53:08"}
+{"level":"warn","message":"No user found with googleId = 109629430432486032975","timestamp":"2025-05-22 11:53:08"}
+{"level":"info","message":"No user found with googleId 109629430432486032975. Checking by email 848481@unizar.es.","timestamp":"2025-05-22 11:53:08"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 11:53:08"}
+{"level":"info","message":"No user found with email: 848481@unizar.es","timestamp":"2025-05-22 11:53:08"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 11:53:08"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 11:53:08"}
+{"level":"warn","message":"No user found with googleId = 109629430432486032975","timestamp":"2025-05-22 11:53:08"}
+{"level":"info","message":"No user found with googleId 109629430432486032975. Checking by email 848481@unizar.es.","timestamp":"2025-05-22 11:53:08"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 11:53:08"}
+{"level":"info","message":"No user found with email: 848481@unizar.es","timestamp":"2025-05-22 11:53:08"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 11:53:08"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 11:53:20"}
+{"level":"warn","message":"No user found with googleId = 109629430432486032975","timestamp":"2025-05-22 11:53:20"}
+{"level":"info","message":"No user found with googleId 109629430432486032975. Checking by email 848481@unizar.es.","timestamp":"2025-05-22 11:53:20"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 11:53:20"}
+{"level":"info","message":"No user found with email: 848481@unizar.es","timestamp":"2025-05-22 11:53:21"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 11:53:21"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 11:53:21"}
+{"level":"warn","message":"No user found with googleId = 109629430432486032975","timestamp":"2025-05-22 11:53:21"}
+{"level":"info","message":"No user found with googleId 109629430432486032975. Checking by email 848481@unizar.es.","timestamp":"2025-05-22 11:53:21"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 11:53:21"}
+{"level":"info","message":"No user found with email: 848481@unizar.es","timestamp":"2025-05-22 11:53:21"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 11:53:21"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 11:55:31"}
+{"level":"error","message":"Error verifying google token","timestamp":"2025-05-22 11:55:31"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 11:55:31"}
+{"level":"error","message":"Error verifying google token","timestamp":"2025-05-22 11:55:31"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 11:55:36"}
+{"level":"error","message":"Error verifying google token","timestamp":"2025-05-22 11:55:36"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 11:56:53"}
+{"level":"warn","message":"No user found with googleId = 109629430432486032975","timestamp":"2025-05-22 11:56:53"}
+{"level":"info","message":"No user found with googleId 109629430432486032975. Checking by email 848481@unizar.es.","timestamp":"2025-05-22 11:56:53"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 11:56:53"}
+{"level":"info","message":"No user found with email: 848481@unizar.es","timestamp":"2025-05-22 11:56:53"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 11:56:53"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 11:56:53"}
+{"level":"warn","message":"No user found with googleId = 109629430432486032975","timestamp":"2025-05-22 11:56:53"}
+{"level":"info","message":"No user found with googleId 109629430432486032975. Checking by email 848481@unizar.es.","timestamp":"2025-05-22 11:56:53"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 11:56:53"}
+{"level":"info","message":"No user found with email: 848481@unizar.es","timestamp":"2025-05-22 11:56:53"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 11:56:53"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 11:57:06"}
+{"level":"error","message":"Error verifying google token","timestamp":"2025-05-22 11:57:06"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 11:58:28"}
+{"level":"error","message":"Error verifying google token","timestamp":"2025-05-22 11:58:28"}
+{"level":"info","message":"Running scheduled cache cleanup job","timestamp":"2025-05-22 12:00:00"}
+{"level":"info","message":"Iniciando limpieza de caché de URLs firmadas de S3","timestamp":"2025-05-22 12:00:00"}
+{"level":"info","message":"Limpieza de caché de URLs firmadas completada. Tamaño actual: 0 elementos.","timestamp":"2025-05-22 12:00:00"}
+{"level":"info","message":"Scheduled cache cleanup job completed","timestamp":"2025-05-22 12:00:00"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 12:04:43"}
+{"level":"error","message":"Error verifying google token","timestamp":"2025-05-22 12:04:44"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 12:05:37"}
+{"level":"warn","message":"No user found with googleId = 109629430432486032975","timestamp":"2025-05-22 12:05:37"}
+{"level":"info","message":"No user found with googleId 109629430432486032975. Checking by email 848481@unizar.es.","timestamp":"2025-05-22 12:05:37"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 12:05:37"}
+{"level":"info","message":"No user found with email: 848481@unizar.es","timestamp":"2025-05-22 12:05:37"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 12:05:37"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 12:05:37"}
+{"level":"warn","message":"No user found with googleId = 109629430432486032975","timestamp":"2025-05-22 12:05:38"}
+{"level":"info","message":"No user found with googleId 109629430432486032975. Checking by email 848481@unizar.es.","timestamp":"2025-05-22 12:05:38"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 12:05:38"}
+{"level":"info","message":"No user found with email: 848481@unizar.es","timestamp":"2025-05-22 12:05:38"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 12:05:38"}
+{"level":"info","message":"Running scheduled weather alerts cache refresh job","timestamp":"2025-05-22 12:15:00"}
+{"level":"info","message":"Starting scheduled weather alerts cache refresh job","timestamp":"2025-05-22 12:15:00"}
+{"level":"info","message":"Refreshing weather alerts cache from AEMET API","timestamp":"2025-05-22 12:15:00"}
+{"level":"error","message":"Failed to refresh weather alerts cache: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async refreshWeatherAlertsJob (/home/ec2-user/Backend/dist/jobs/aemet.job.js:19:9)\n    at async exports.alertsCacheJob.node_cron_1.default.schedule.scheduled [as _execution] (/home/ec2-user/Backend/dist/jobs/jobs.config.js:44:9)","timestamp":"2025-05-22 12:15:00"}
+{"level":"error","message":"Error in weather alerts cache refresh job: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async refreshWeatherAlertsJob (/home/ec2-user/Backend/dist/jobs/aemet.job.js:19:9)\n    at async exports.alertsCacheJob.node_cron_1.default.schedule.scheduled [as _execution] (/home/ec2-user/Backend/dist/jobs/jobs.config.js:44:9)","timestamp":"2025-05-22 12:15:00"}
+{"level":"info","message":"Weather alerts cache refresh job completed","timestamp":"2025-05-22 12:15:00"}
+{"level":"info","message":"Running scheduled cache cleanup job","timestamp":"2025-05-22 13:00:00"}
+{"level":"info","message":"Iniciando limpieza de caché de URLs firmadas de S3","timestamp":"2025-05-22 13:00:00"}
+{"level":"info","message":"Limpieza de caché de URLs firmadas completada. Tamaño actual: 0 elementos.","timestamp":"2025-05-22 13:00:00"}
+{"level":"info","message":"Scheduled cache cleanup job completed","timestamp":"2025-05-22 13:00:00"}
+{"level":"info","message":"Running scheduled weather alerts cache refresh job","timestamp":"2025-05-22 13:15:00"}
+{"level":"info","message":"Starting scheduled weather alerts cache refresh job","timestamp":"2025-05-22 13:15:00"}
+{"level":"info","message":"Refreshing weather alerts cache from AEMET API","timestamp":"2025-05-22 13:15:00"}
+{"level":"error","message":"Failed to refresh weather alerts cache: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async refreshWeatherAlertsJob (/home/ec2-user/Backend/dist/jobs/aemet.job.js:19:9)\n    at async exports.alertsCacheJob.node_cron_1.default.schedule.scheduled [as _execution] (/home/ec2-user/Backend/dist/jobs/jobs.config.js:44:9)","timestamp":"2025-05-22 13:15:00"}
+{"level":"error","message":"Error in weather alerts cache refresh job: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async refreshWeatherAlertsJob (/home/ec2-user/Backend/dist/jobs/aemet.job.js:19:9)\n    at async exports.alertsCacheJob.node_cron_1.default.schedule.scheduled [as _execution] (/home/ec2-user/Backend/dist/jobs/jobs.config.js:44:9)","timestamp":"2025-05-22 13:15:00"}
+{"level":"info","message":"Weather alerts cache refresh job completed","timestamp":"2025-05-22 13:15:00"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 13:26:53"}
+{"level":"error","message":"Error verifying google token","timestamp":"2025-05-22 13:26:53"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 13:27:06"}
+{"level":"error","message":"Error verifying google token","timestamp":"2025-05-22 13:27:06"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 13:29:10"}
+{"level":"error","message":"Error verifying google token","timestamp":"2025-05-22 13:29:10"}
+{"level":"info","message":"Running scheduled cache cleanup job","timestamp":"2025-05-22 14:00:00"}
+{"level":"info","message":"Iniciando limpieza de caché de URLs firmadas de S3","timestamp":"2025-05-22 14:00:00"}
+{"level":"info","message":"Limpieza de caché de URLs firmadas completada. Tamaño actual: 0 elementos.","timestamp":"2025-05-22 14:00:00"}
+{"level":"info","message":"Scheduled cache cleanup job completed","timestamp":"2025-05-22 14:00:00"}
+{"level":"info","message":"Running scheduled weather alerts cache refresh job","timestamp":"2025-05-22 14:15:00"}
+{"level":"info","message":"Starting scheduled weather alerts cache refresh job","timestamp":"2025-05-22 14:15:00"}
+{"level":"info","message":"Refreshing weather alerts cache from AEMET API","timestamp":"2025-05-22 14:15:00"}
+{"level":"error","message":"Failed to refresh weather alerts cache: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async refreshWeatherAlertsJob (/home/ec2-user/Backend/dist/jobs/aemet.job.js:19:9)\n    at async exports.alertsCacheJob.node_cron_1.default.schedule.scheduled [as _execution] (/home/ec2-user/Backend/dist/jobs/jobs.config.js:44:9)","timestamp":"2025-05-22 14:15:08"}
+{"level":"error","message":"Error in weather alerts cache refresh job: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async refreshWeatherAlertsJob (/home/ec2-user/Backend/dist/jobs/aemet.job.js:19:9)\n    at async exports.alertsCacheJob.node_cron_1.default.schedule.scheduled [as _execution] (/home/ec2-user/Backend/dist/jobs/jobs.config.js:44:9)","timestamp":"2025-05-22 14:15:08"}
+{"level":"info","message":"Weather alerts cache refresh job completed","timestamp":"2025-05-22 14:15:08"}
+{"level":"info","message":"Authenticating user with email/username: arejula11@gmail.com","timestamp":"2025-05-22 14:31:42"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: users/profile-pictures/680126a061170dc1caccce2c-1747735365099.jpg","timestamp":"2025-05-22 14:31:42"}
+{"level":"info","message":"User authenticated successfully: arejula11@gmail.com","timestamp":"2025-05-22 14:31:42"}
+{"level":"info","message":"User arejula11 logged in","timestamp":"2025-05-22 14:31:42"}
+{"level":"info","message":"Finding user by ID: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:31:42"}
+{"level":"info","message":"User found with Id: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:31:42"}
+{"level":"debug","message":"Usando URL firmada en caché para: users/profile-pictures/680126a061170dc1caccce2c-1747735365099.jpg","timestamp":"2025-05-22 14:31:42"}
+{"level":"info","message":"User retrieved: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:31:42"}
+{"level":"info","message":"Authenticating user with email/username: arejula11@gmail.com","timestamp":"2025-05-22 14:32:56"}
+{"level":"debug","message":"Usando URL firmada en caché para: users/profile-pictures/680126a061170dc1caccce2c-1747735365099.jpg","timestamp":"2025-05-22 14:32:56"}
+{"level":"info","message":"User authenticated successfully: arejula11@gmail.com","timestamp":"2025-05-22 14:32:56"}
+{"level":"info","message":"User arejula11 logged in","timestamp":"2025-05-22 14:32:56"}
+{"level":"info","message":"Finding user by ID: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:32:56"}
+{"level":"info","message":"User found with Id: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:32:56"}
+{"level":"debug","message":"Usando URL firmada en caché para: users/profile-pictures/680126a061170dc1caccce2c-1747735365099.jpg","timestamp":"2025-05-22 14:32:56"}
+{"level":"info","message":"User retrieved: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:32:56"}
+{"level":"info","message":"Authenticating user with email/username: arejula11@gmail.com","timestamp":"2025-05-22 14:33:12"}
+{"level":"debug","message":"Usando URL firmada en caché para: users/profile-pictures/680126a061170dc1caccce2c-1747735365099.jpg","timestamp":"2025-05-22 14:33:13"}
+{"level":"info","message":"User authenticated successfully: arejula11@gmail.com","timestamp":"2025-05-22 14:33:13"}
+{"level":"info","message":"User arejula11 logged in","timestamp":"2025-05-22 14:33:13"}
+{"level":"info","message":"Finding user by ID: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:33:13"}
+{"level":"info","message":"User found with Id: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:33:13"}
+{"level":"debug","message":"Usando URL firmada en caché para: users/profile-pictures/680126a061170dc1caccce2c-1747735365099.jpg","timestamp":"2025-05-22 14:33:13"}
+{"level":"info","message":"User retrieved: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:33:13"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 14:33:22"}
+{"level":"warn","message":"No user found with googleId = 117997642247040692925","timestamp":"2025-05-22 14:33:22"}
+{"level":"info","message":"No user found with googleId 117997642247040692925. Checking by email 850068@unizar.es.","timestamp":"2025-05-22 14:33:22"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 14:33:22"}
+{"level":"info","message":"No user found with email: 850068@unizar.es","timestamp":"2025-05-22 14:33:22"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 14:33:22"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 14:33:22"}
+{"level":"warn","message":"No user found with googleId = 117997642247040692925","timestamp":"2025-05-22 14:33:22"}
+{"level":"info","message":"No user found with googleId 117997642247040692925. Checking by email 850068@unizar.es.","timestamp":"2025-05-22 14:33:22"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 14:33:22"}
+{"level":"info","message":"No user found with email: 850068@unizar.es","timestamp":"2025-05-22 14:33:22"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 14:33:22"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 14:34:02"}
+{"level":"warn","message":"No user found with googleId = 117997642247040692925","timestamp":"2025-05-22 14:34:02"}
+{"level":"info","message":"No user found with googleId 117997642247040692925. Checking by email 850068@unizar.es.","timestamp":"2025-05-22 14:34:02"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 14:34:02"}
+{"level":"info","message":"No user found with email: 850068@unizar.es","timestamp":"2025-05-22 14:34:03"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 14:34:03"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 14:34:16"}
+{"level":"warn","message":"No user found with googleId = 117997642247040692925","timestamp":"2025-05-22 14:34:16"}
+{"level":"info","message":"No user found with googleId 117997642247040692925. Checking by email 850068@unizar.es.","timestamp":"2025-05-22 14:34:16"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 14:34:16"}
+{"level":"info","message":"No user found with email: 850068@unizar.es","timestamp":"2025-05-22 14:34:16"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 14:34:16"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 14:34:16"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 14:34:16"}
+{"level":"warn","message":"No user found with googleId = 117997642247040692925","timestamp":"2025-05-22 14:34:16"}
+{"level":"info","message":"No user found with googleId 117997642247040692925. Checking by email 850068@unizar.es.","timestamp":"2025-05-22 14:34:16"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 14:34:16"}
+{"level":"warn","message":"No user found with googleId = 117997642247040692925","timestamp":"2025-05-22 14:34:16"}
+{"level":"info","message":"No user found with googleId 117997642247040692925. Checking by email 850068@unizar.es.","timestamp":"2025-05-22 14:34:16"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 14:34:16"}
+{"level":"info","message":"No user found with email: 850068@unizar.es","timestamp":"2025-05-22 14:34:16"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 14:34:16"}
+{"level":"info","message":"No user found with email: 850068@unizar.es","timestamp":"2025-05-22 14:34:16"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 14:34:16"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 14:34:16"}
+{"level":"warn","message":"No user found with googleId = 117997642247040692925","timestamp":"2025-05-22 14:34:16"}
+{"level":"info","message":"No user found with googleId 117997642247040692925. Checking by email 850068@unizar.es.","timestamp":"2025-05-22 14:34:16"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 14:34:16"}
+{"level":"info","message":"No user found with email: 850068@unizar.es","timestamp":"2025-05-22 14:34:16"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 14:34:16"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 14:34:22"}
+{"level":"warn","message":"No user found with googleId = 117997642247040692925","timestamp":"2025-05-22 14:34:22"}
+{"level":"info","message":"No user found with googleId 117997642247040692925. Checking by email 850068@unizar.es.","timestamp":"2025-05-22 14:34:22"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 14:34:22"}
+{"level":"info","message":"No user found with email: 850068@unizar.es","timestamp":"2025-05-22 14:34:22"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 14:34:22"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 14:34:22"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 14:34:22"}
+{"level":"warn","message":"No user found with googleId = 117997642247040692925","timestamp":"2025-05-22 14:34:22"}
+{"level":"info","message":"No user found with googleId 117997642247040692925. Checking by email 850068@unizar.es.","timestamp":"2025-05-22 14:34:22"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 14:34:22"}
+{"level":"warn","message":"No user found with googleId = 117997642247040692925","timestamp":"2025-05-22 14:34:22"}
+{"level":"info","message":"No user found with googleId 117997642247040692925. Checking by email 850068@unizar.es.","timestamp":"2025-05-22 14:34:22"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 14:34:22"}
+{"level":"info","message":"No user found with email: 850068@unizar.es","timestamp":"2025-05-22 14:34:22"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 14:34:22"}
+{"level":"info","message":"No user found with email: 850068@unizar.es","timestamp":"2025-05-22 14:34:22"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 14:34:22"}
+{"level":"info","message":"Attempting google login","timestamp":"2025-05-22 14:34:22"}
+{"level":"warn","message":"No user found with googleId = 117997642247040692925","timestamp":"2025-05-22 14:34:23"}
+{"level":"info","message":"No user found with googleId 117997642247040692925. Checking by email 850068@unizar.es.","timestamp":"2025-05-22 14:34:23"}
+{"level":"info","message":"Finding user by email","timestamp":"2025-05-22 14:34:23"}
+{"level":"info","message":"No user found with email: 850068@unizar.es","timestamp":"2025-05-22 14:34:23"}
+{"level":"info","message":"No matching account found by provider ID or email, need more data","timestamp":"2025-05-22 14:34:23"}
+{"level":"info","message":"Authenticating user with email/username: arejula11@gmail.com","timestamp":"2025-05-22 14:34:39"}
+{"level":"debug","message":"Usando URL firmada en caché para: users/profile-pictures/680126a061170dc1caccce2c-1747735365099.jpg","timestamp":"2025-05-22 14:34:39"}
+{"level":"info","message":"User authenticated successfully: arejula11@gmail.com","timestamp":"2025-05-22 14:34:39"}
+{"level":"info","message":"User arejula11 logged in","timestamp":"2025-05-22 14:34:39"}
+{"level":"info","message":"Finding user by ID: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:34:39"}
+{"level":"info","message":"User found with Id: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:34:39"}
+{"level":"debug","message":"Usando URL firmada en caché para: users/profile-pictures/680126a061170dc1caccce2c-1747735365099.jpg","timestamp":"2025-05-22 14:34:39"}
+{"level":"info","message":"User retrieved: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:34:39"}
+{"level":"info","message":"Refreshing weather alerts cache from AEMET API","timestamp":"2025-05-22 14:34:42"}
+{"level":"error","message":"Failed to refresh weather alerts cache: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async AlertService.getWeatherAlerts (/home/ec2-user/Backend/dist/services/alert.service.js:31:20)\n    at async getWeatherAlerts (/home/ec2-user/Backend/dist/controllers/alert.controller.js:16:22)","timestamp":"2025-05-22 14:34:42"}
+{"level":"error","message":"Error retrieving weather alerts: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async AlertService.getWeatherAlerts (/home/ec2-user/Backend/dist/services/alert.service.js:31:20)\n    at async getWeatherAlerts (/home/ec2-user/Backend/dist/controllers/alert.controller.js:16:22)","timestamp":"2025-05-22 14:34:42"}
+{"level":"error","message":"Error retrieving weather alerts Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async AlertService.getWeatherAlerts (/home/ec2-user/Backend/dist/services/alert.service.js:31:20)\n    at async getWeatherAlerts (/home/ec2-user/Backend/dist/controllers/alert.controller.js:16:22)","timestamp":"2025-05-22 14:34:42"}
+{"level":"info","message":"Authenticating user with email/username: arejula11@gmail.com","timestamp":"2025-05-22 14:37:17"}
+{"level":"debug","message":"Usando URL firmada en caché para: users/profile-pictures/680126a061170dc1caccce2c-1747735365099.jpg","timestamp":"2025-05-22 14:37:17"}
+{"level":"info","message":"User authenticated successfully: arejula11@gmail.com","timestamp":"2025-05-22 14:37:17"}
+{"level":"info","message":"User arejula11 logged in","timestamp":"2025-05-22 14:37:17"}
+{"level":"info","message":"Finding user by ID: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:37:17"}
+{"level":"info","message":"User found with Id: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:37:17"}
+{"level":"debug","message":"Usando URL firmada en caché para: users/profile-pictures/680126a061170dc1caccce2c-1747735365099.jpg","timestamp":"2025-05-22 14:37:17"}
+{"level":"info","message":"User retrieved: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:37:17"}
+{"level":"info","message":"Authenticating user with email/username: arejula11@gmail.com","timestamp":"2025-05-22 14:46:00"}
+{"level":"debug","message":"Usando URL firmada en caché para: users/profile-pictures/680126a061170dc1caccce2c-1747735365099.jpg","timestamp":"2025-05-22 14:46:00"}
+{"level":"info","message":"User authenticated successfully: arejula11@gmail.com","timestamp":"2025-05-22 14:46:00"}
+{"level":"info","message":"User arejula11 logged in","timestamp":"2025-05-22 14:46:00"}
+{"level":"info","message":"Finding user by ID: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:46:00"}
+{"level":"info","message":"User found with Id: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:46:00"}
+{"level":"debug","message":"Usando URL firmada en caché para: users/profile-pictures/680126a061170dc1caccce2c-1747735365099.jpg","timestamp":"2025-05-22 14:46:00"}
+{"level":"info","message":"User retrieved: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:46:00"}
+{"level":"info","message":"Admin access granted for user ID: 680126a061170dc1caccce2c (arejula11)","timestamp":"2025-05-22 14:46:02"}
+{"level":"info","message":"Retrieved all stats","timestamp":"2025-05-22 14:46:02"}
+{"level":"info","message":"Refreshing weather alerts cache from AEMET API","timestamp":"2025-05-22 14:46:39"}
+{"level":"error","message":"Failed to refresh weather alerts cache: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async AlertService.getWeatherAlerts (/home/ec2-user/Backend/dist/services/alert.service.js:31:20)\n    at async getWeatherAlerts (/home/ec2-user/Backend/dist/controllers/alert.controller.js:16:22)","timestamp":"2025-05-22 14:46:40"}
+{"level":"error","message":"Error retrieving weather alerts: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async AlertService.getWeatherAlerts (/home/ec2-user/Backend/dist/services/alert.service.js:31:20)\n    at async getWeatherAlerts (/home/ec2-user/Backend/dist/controllers/alert.controller.js:16:22)","timestamp":"2025-05-22 14:46:40"}
+{"level":"error","message":"Error retrieving weather alerts Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async AlertService.getWeatherAlerts (/home/ec2-user/Backend/dist/services/alert.service.js:31:20)\n    at async getWeatherAlerts (/home/ec2-user/Backend/dist/controllers/alert.controller.js:16:22)","timestamp":"2025-05-22 14:46:40"}
+{"level":"info","message":"Parcels retrieved for user 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:46:47"}
+{"level":"info","message":"Finding user by ID: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:46:47"}
+{"level":"info","message":"User found with Id: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:46:47"}
+{"level":"debug","message":"Usando URL firmada en caché para: users/profile-pictures/680126a061170dc1caccce2c-1747735365099.jpg","timestamp":"2025-05-22 14:46:47"}
+{"level":"info","message":"User retrieved: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:46:47"}
+{"level":"info","message":"Buscando parcela para usuario 680126a061170dc1caccce2c en coordenadas [-2.456014446294796, 42.37148436449644]","timestamp":"2025-05-22 14:46:51"}
+{"level":"info","message":"Finding user by ID: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:46:51"}
+{"level":"info","message":"User found with Id: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:46:51"}
+{"level":"debug","message":"Usando URL firmada en caché para: users/profile-pictures/680126a061170dc1caccce2c-1747735365099.jpg","timestamp":"2025-05-22 14:46:51"}
+{"level":"info","message":"Parcel registered","timestamp":"2025-05-22 14:46:51"}
+{"error":"Error en la API de AEMET","level":"error","message":"Error retrieving data from AEMET","stack":"Error: Error en la API de AEMET\n    at Aemet.getWeatherByCoordinates (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:736:19)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async ParcelService.getWeatherData (/home/ec2-user/Backend/dist/services/parcel.service.js:255:37)\n    at async ParcelService.getParcelByCoordinates (/home/ec2-user/Backend/dist/services/parcel.service.js:113:33)\n    at async getParcel (/home/ec2-user/Backend/dist/controllers/parcel.controller.js:28:28)","timestamp":"2025-05-22 14:46:51"}
+{"level":"info","message":"Parcel retrieved for user 680126a061170dc1caccce2c at coordinates (-2.456014446294796, 42.37148436449644)","timestamp":"2025-05-22 14:46:51"}
+{"level":"info","message":"Buscando parcela para usuario 680126a061170dc1caccce2c en coordenadas [-2.3369514093221073, 42.48305655837582]","timestamp":"2025-05-22 14:46:53"}
+{"level":"info","message":"Finding user by ID: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:46:53"}
+{"level":"info","message":"User found with Id: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:46:53"}
+{"level":"debug","message":"Usando URL firmada en caché para: users/profile-pictures/680126a061170dc1caccce2c-1747735365099.jpg","timestamp":"2025-05-22 14:46:53"}
+{"level":"info","message":"Parcel registered","timestamp":"2025-05-22 14:46:53"}
+{"error":"Error en la API de AEMET","level":"error","message":"Error retrieving data from AEMET","stack":"Error: Error en la API de AEMET\n    at Aemet.getWeatherByCoordinates (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:736:19)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async ParcelService.getWeatherData (/home/ec2-user/Backend/dist/services/parcel.service.js:255:37)\n    at async ParcelService.getParcelByCoordinates (/home/ec2-user/Backend/dist/services/parcel.service.js:113:33)\n    at async getParcel (/home/ec2-user/Backend/dist/controllers/parcel.controller.js:28:28)","timestamp":"2025-05-22 14:46:53"}
+{"level":"info","message":"Parcel retrieved for user 680126a061170dc1caccce2c at coordinates (-2.3369514093221073, 42.48305655837582)","timestamp":"2025-05-22 14:46:53"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5b033d001a9419e852f-1747900106632.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5b233d001a9419e8530-1747900107094.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5b433d001a9419e8531-1747900107275.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5b633d001a9419e8532-1747900107479.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5b833d001a9419e8533-1747900107668.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5ba33d001a9419e8534-1747900107850.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5bc33d001a9419e8535-1747900108035.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5be33d001a9419e8536-1747900108215.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5c033d001a9419e8537-1747900108414.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5c133d001a9419e8538-1747900108597.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5c333d001a9419e8539-1747900108782.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5c533d001a9419e853a-1747900108958.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5c733d001a9419e853b-1747900109146.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5c933d001a9419e853c-1747900109329.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5cb33d001a9419e853d-1747900109510.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5cd33d001a9419e853e-1747900109696.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5cf33d001a9419e853f-1747900109881.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5d133d001a9419e8540-1747900110061.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5d333d001a9419e8541-1747900110307.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5d433d001a9419e8542-1747900110488.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5d633d001a9419e8543-1747900110671.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5d733d001a9419e8544-1747900110853.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5d933d001a9419e8545-1747900111044.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5db33d001a9419e8546-1747900111225.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5dc33d001a9419e8547-1747900111403.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5dd33d001a9419e8548-1747900111580.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5dd33d001a9419e8549-1747900111769.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5de33d001a9419e854a-1747900111957.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5df33d001a9419e854b-1747900112144.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5e033d001a9419e854c-1747900112328.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5e133d001a9419e854d-1747900112540.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5e233d001a9419e854e-1747900112722.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5e333d001a9419e854f-1747900112903.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5e333d001a9419e8550-1747900113082.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5e433d001a9419e8551-1747900113288.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5e633d001a9419e8552-1747900113471.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5e833d001a9419e8553-1747900113666.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5e933d001a9419e8554-1747900113863.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5ea33d001a9419e8555-1747900114070.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5ec33d001a9419e8556-1747900114251.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5ee33d001a9419e8557-1747900114449.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5f033d001a9419e8558-1747900114654.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5f133d001a9419e8559-1747900114837.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5f333d001a9419e855a-1747900115016.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5f533d001a9419e855b-1747900115196.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5f733d001a9419e855c-1747900115388.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5f933d001a9419e855d-1747900115577.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5fa33d001a9419e855e-1747900115760.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5fa33d001a9419e855f-1747900115946.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5fc33d001a9419e8560-1747900116133.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5fd33d001a9419e8561-1747900116333.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5fe33d001a9419e8562-1747900116520.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec5fe33d001a9419e8563-1747900116708.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec60033d001a9419e8564-1747900116904.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec60233d001a9419e8565-1747900117089.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec60433d001a9419e8566-1747900117283.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec60633d001a9419e8567-1747900117502.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec60833d001a9419e8568-1747900117691.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec60a33d001a9419e8569-1747900117883.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec60c33d001a9419e856a-1747900118077.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec60e33d001a9419e856b-1747900118267.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec61033d001a9419e856c-1747900118445.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec61233d001a9419e856d-1747900118631.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec61433d001a9419e856e-1747900118812.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec61633d001a9419e856f-1747900119001.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec61833d001a9419e8570-1747900119188.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec61b33d001a9419e8571-1747900119390.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec61d33d001a9419e8572-1747900119582.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec61f33d001a9419e8573-1747900119776.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec62133d001a9419e8574-1747900119958.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec62e33d001a9419e8575-1747900120145.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec62f33d001a9419e8576-1747900120326.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec62f33d001a9419e8577-1747900120513.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec63033d001a9419e8578-1747900120697.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec63133d001a9419e8579-1747900120878.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec64133d001a9419e857a-1747900121081.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec64233d001a9419e857b-1747900121261.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec64333d001a9419e857c-1747900121444.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec64333d001a9419e857d-1747900121635.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec64f33d001a9419e857e-1747900121833.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec65233d001a9419e857f-1747900122038.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec65333d001a9419e8580-1747900122222.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec65333d001a9419e8581-1747900122400.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec65533d001a9419e8582-1747900122587.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec65c33d001a9419e8583-1747900122772.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec65e33d001a9419e8584-1747900122957.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec66533d001a9419e8585-1747900123178.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec66633d001a9419e8586-1747900123361.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec66833d001a9419e8587-1747900123584.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec66b33d001a9419e8588-1747900123764.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec67433d001a9419e8589-1747900123949.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec67933d001a9419e858a-1747900124149.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec67b33d001a9419e858b-1747900124352.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec6b333d001a9419e858c-1747900124540.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec6d033d001a9419e858d-1747900124727.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec6d233d001a9419e858e-1747900124906.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec6d433d001a9419e858f-1747900125094.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec6d633d001a9419e8590-1747900125274.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec6d833d001a9419e8591-1747900125508.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec6e633d001a9419e8592-1747900125691.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec6e833d001a9419e8593-1747900125875.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec6e933d001a9419e8594-1747900126335.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec6eb33d001a9419e8595-1747900126584.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec6ed33d001a9419e8596-1747900126838.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec6ef33d001a9419e8597-1747900127026.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec6f133d001a9419e8598-1747900127217.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec6fa33d001a9419e8599-1747900127465.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec6fb33d001a9419e859a-1747900127660.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec6fc33d001a9419e859b-1747900127849.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec6fc33d001a9419e859c-1747900128051.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec6ff33d001a9419e859d-1747900128251.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec70033d001a9419e859e-1747900128438.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec70333d001a9419e859f-1747900128629.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec70433d001a9419e85a0-1747900128823.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec70533d001a9419e85a1-1747900129034.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec70c33d001a9419e85a2-1747900129221.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec70d33d001a9419e85a3-1747900129408.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec70e33d001a9419e85a4-1747900129603.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec70f33d001a9419e85a5-1747900129795.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec71033d001a9419e85a6-1747900129991.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec71033d001a9419e85a7-1747900130176.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec71f33d001a9419e85a8-1747900130370.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec72133d001a9419e85a9-1747900130562.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec72333d001a9419e85aa-1747900130759.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec72733d001a9419e85ab-1747900130954.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec72b33d001a9419e85ac-1747900131147.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec72f33d001a9419e85ad-1747900131342.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec73b33d001a9419e85ae-1747900131551.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec75a33d001a9419e85af-1747900131754.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec75c33d001a9419e85b0-1747900131951.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec75e33d001a9419e85b1-1747900132150.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec76033d001a9419e85b2-1747900132350.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec76033d001a9419e85b3-1747900132558.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec76033d001a9419e85b4-1747900132758.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec80e33d001a9419e85b5-1747900132958.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec81433d001a9419e85b6-1747900133160.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec81633d001a9419e85b7-1747900133370.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec81c33d001a9419e85b8-1747900133559.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec81e33d001a9419e85b9-1747900133759.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec82033d001a9419e85ba-1747900133949.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec82133d001a9419e85bb-1747900134139.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec82333d001a9419e85bc-1747900134385.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec83733d001a9419e85bd-1747900134631.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec83933d001a9419e85be-1747900134823.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec84733d001a9419e85bf-1747900135021.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec88433d001a9419e85c0-1747900135266.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec97c33d001a9419e85c1-1747900135462.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec97e33d001a9419e85c2-1747900135649.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec97f33d001a9419e85c3-1747900135851.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec98133d001a9419e85c4-1747900136052.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec98333d001a9419e85c5-1747900136255.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec98533d001a9419e85c6-1747900136453.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec98733d001a9419e85c7-1747900136655.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec98933d001a9419e85c8-1747900136855.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec99333d001a9419e85c9-1747900137046.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec9d233d001a9419e85ca-1747900137248.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec9d333d001a9419e85cb-1747900137451.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Nueva URL firmada generada y almacenada en caché para: products/images/682ec9d333d001a9419e85cc-1747900137651.jpg","timestamp":"2025-05-22 14:46:57"}
+{"level":"info","message":"Retrieved products (page NaN, size NaN)","timestamp":"2025-05-22 14:46:57"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5b033d001a9419e852f-1747900106632.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5b233d001a9419e8530-1747900107094.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5b433d001a9419e8531-1747900107275.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5b633d001a9419e8532-1747900107479.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5b833d001a9419e8533-1747900107668.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5ba33d001a9419e8534-1747900107850.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5bc33d001a9419e8535-1747900108035.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5be33d001a9419e8536-1747900108215.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5c033d001a9419e8537-1747900108414.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5c133d001a9419e8538-1747900108597.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5c333d001a9419e8539-1747900108782.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5c533d001a9419e853a-1747900108958.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5c733d001a9419e853b-1747900109146.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5c933d001a9419e853c-1747900109329.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5cb33d001a9419e853d-1747900109510.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5cd33d001a9419e853e-1747900109696.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5cf33d001a9419e853f-1747900109881.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5d133d001a9419e8540-1747900110061.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5d333d001a9419e8541-1747900110307.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5d433d001a9419e8542-1747900110488.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5d633d001a9419e8543-1747900110671.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5d733d001a9419e8544-1747900110853.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5d933d001a9419e8545-1747900111044.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5db33d001a9419e8546-1747900111225.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5dc33d001a9419e8547-1747900111403.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5dd33d001a9419e8548-1747900111580.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5dd33d001a9419e8549-1747900111769.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5de33d001a9419e854a-1747900111957.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5df33d001a9419e854b-1747900112144.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5e033d001a9419e854c-1747900112328.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5e133d001a9419e854d-1747900112540.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5e233d001a9419e854e-1747900112722.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5e333d001a9419e854f-1747900112903.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5e333d001a9419e8550-1747900113082.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5e433d001a9419e8551-1747900113288.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5e633d001a9419e8552-1747900113471.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5e833d001a9419e8553-1747900113666.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5e933d001a9419e8554-1747900113863.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5ea33d001a9419e8555-1747900114070.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5ec33d001a9419e8556-1747900114251.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5ee33d001a9419e8557-1747900114449.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5f033d001a9419e8558-1747900114654.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5f133d001a9419e8559-1747900114837.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5f333d001a9419e855a-1747900115016.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5f533d001a9419e855b-1747900115196.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5f733d001a9419e855c-1747900115388.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5f933d001a9419e855d-1747900115577.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5fa33d001a9419e855e-1747900115760.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5fa33d001a9419e855f-1747900115946.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5fc33d001a9419e8560-1747900116133.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5fd33d001a9419e8561-1747900116333.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5fe33d001a9419e8562-1747900116520.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5fe33d001a9419e8563-1747900116708.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec60033d001a9419e8564-1747900116904.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec60233d001a9419e8565-1747900117089.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec60433d001a9419e8566-1747900117283.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec60633d001a9419e8567-1747900117502.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec60833d001a9419e8568-1747900117691.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec60a33d001a9419e8569-1747900117883.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec60c33d001a9419e856a-1747900118077.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec60e33d001a9419e856b-1747900118267.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec61033d001a9419e856c-1747900118445.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec61233d001a9419e856d-1747900118631.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec61433d001a9419e856e-1747900118812.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec61633d001a9419e856f-1747900119001.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec61833d001a9419e8570-1747900119188.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec61b33d001a9419e8571-1747900119390.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec61d33d001a9419e8572-1747900119582.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec61f33d001a9419e8573-1747900119776.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec62133d001a9419e8574-1747900119958.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec62e33d001a9419e8575-1747900120145.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec62f33d001a9419e8576-1747900120326.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec62f33d001a9419e8577-1747900120513.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec63033d001a9419e8578-1747900120697.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec63133d001a9419e8579-1747900120878.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec64133d001a9419e857a-1747900121081.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec64233d001a9419e857b-1747900121261.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec64333d001a9419e857c-1747900121444.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec64333d001a9419e857d-1747900121635.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec64f33d001a9419e857e-1747900121833.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec65233d001a9419e857f-1747900122038.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec65333d001a9419e8580-1747900122222.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec65333d001a9419e8581-1747900122400.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec65533d001a9419e8582-1747900122587.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec65c33d001a9419e8583-1747900122772.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec65e33d001a9419e8584-1747900122957.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec66533d001a9419e8585-1747900123178.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec66633d001a9419e8586-1747900123361.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec66833d001a9419e8587-1747900123584.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec66b33d001a9419e8588-1747900123764.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec67433d001a9419e8589-1747900123949.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec67933d001a9419e858a-1747900124149.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec67b33d001a9419e858b-1747900124352.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6b333d001a9419e858c-1747900124540.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6d033d001a9419e858d-1747900124727.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6d233d001a9419e858e-1747900124906.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6d433d001a9419e858f-1747900125094.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6d633d001a9419e8590-1747900125274.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6d833d001a9419e8591-1747900125508.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6e633d001a9419e8592-1747900125691.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6e833d001a9419e8593-1747900125875.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6e933d001a9419e8594-1747900126335.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6eb33d001a9419e8595-1747900126584.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6ed33d001a9419e8596-1747900126838.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6ef33d001a9419e8597-1747900127026.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6f133d001a9419e8598-1747900127217.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6fa33d001a9419e8599-1747900127465.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6fb33d001a9419e859a-1747900127660.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6fc33d001a9419e859b-1747900127849.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6fc33d001a9419e859c-1747900128051.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6ff33d001a9419e859d-1747900128251.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec70033d001a9419e859e-1747900128438.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec70333d001a9419e859f-1747900128629.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec70433d001a9419e85a0-1747900128823.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec70533d001a9419e85a1-1747900129034.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec70c33d001a9419e85a2-1747900129221.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec70d33d001a9419e85a3-1747900129408.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec70e33d001a9419e85a4-1747900129603.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec70f33d001a9419e85a5-1747900129795.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec71033d001a9419e85a6-1747900129991.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec71033d001a9419e85a7-1747900130176.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec71f33d001a9419e85a8-1747900130370.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec72133d001a9419e85a9-1747900130562.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec72333d001a9419e85aa-1747900130759.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec72733d001a9419e85ab-1747900130954.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec72b33d001a9419e85ac-1747900131147.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec72f33d001a9419e85ad-1747900131342.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec73b33d001a9419e85ae-1747900131551.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec75a33d001a9419e85af-1747900131754.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec75c33d001a9419e85b0-1747900131951.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec75e33d001a9419e85b1-1747900132150.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec76033d001a9419e85b2-1747900132350.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec76033d001a9419e85b3-1747900132558.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec76033d001a9419e85b4-1747900132758.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec80e33d001a9419e85b5-1747900132958.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec81433d001a9419e85b6-1747900133160.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec81633d001a9419e85b7-1747900133370.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec81c33d001a9419e85b8-1747900133559.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec81e33d001a9419e85b9-1747900133759.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec82033d001a9419e85ba-1747900133949.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec82133d001a9419e85bb-1747900134139.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec82333d001a9419e85bc-1747900134385.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec83733d001a9419e85bd-1747900134631.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec83933d001a9419e85be-1747900134823.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec84733d001a9419e85bf-1747900135021.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec88433d001a9419e85c0-1747900135266.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec97c33d001a9419e85c1-1747900135462.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec97e33d001a9419e85c2-1747900135649.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec97f33d001a9419e85c3-1747900135851.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec98133d001a9419e85c4-1747900136052.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec98333d001a9419e85c5-1747900136255.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec98533d001a9419e85c6-1747900136453.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec98733d001a9419e85c7-1747900136655.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec98933d001a9419e85c8-1747900136855.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec99333d001a9419e85c9-1747900137046.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec9d233d001a9419e85ca-1747900137248.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec9d333d001a9419e85cb-1747900137451.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec9d333d001a9419e85cc-1747900137651.jpg","timestamp":"2025-05-22 14:47:05"}
+{"level":"info","message":"Retrieved products (page NaN, size NaN)","timestamp":"2025-05-22 14:47:05"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5b033d001a9419e852f-1747900106632.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5b233d001a9419e8530-1747900107094.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5b433d001a9419e8531-1747900107275.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5b633d001a9419e8532-1747900107479.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5b833d001a9419e8533-1747900107668.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5ba33d001a9419e8534-1747900107850.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5bc33d001a9419e8535-1747900108035.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5be33d001a9419e8536-1747900108215.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5c033d001a9419e8537-1747900108414.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5c133d001a9419e8538-1747900108597.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5c333d001a9419e8539-1747900108782.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5c533d001a9419e853a-1747900108958.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5c733d001a9419e853b-1747900109146.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5c933d001a9419e853c-1747900109329.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5cb33d001a9419e853d-1747900109510.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5cd33d001a9419e853e-1747900109696.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5cf33d001a9419e853f-1747900109881.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5d133d001a9419e8540-1747900110061.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5d333d001a9419e8541-1747900110307.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5d433d001a9419e8542-1747900110488.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5d633d001a9419e8543-1747900110671.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5d733d001a9419e8544-1747900110853.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5d933d001a9419e8545-1747900111044.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5db33d001a9419e8546-1747900111225.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5dc33d001a9419e8547-1747900111403.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5dd33d001a9419e8548-1747900111580.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5dd33d001a9419e8549-1747900111769.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5de33d001a9419e854a-1747900111957.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5df33d001a9419e854b-1747900112144.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5e033d001a9419e854c-1747900112328.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5e133d001a9419e854d-1747900112540.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5e233d001a9419e854e-1747900112722.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5e333d001a9419e854f-1747900112903.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5e333d001a9419e8550-1747900113082.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5e433d001a9419e8551-1747900113288.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5e633d001a9419e8552-1747900113471.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5e833d001a9419e8553-1747900113666.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5e933d001a9419e8554-1747900113863.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5ea33d001a9419e8555-1747900114070.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5ec33d001a9419e8556-1747900114251.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5ee33d001a9419e8557-1747900114449.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5f033d001a9419e8558-1747900114654.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5f133d001a9419e8559-1747900114837.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5f333d001a9419e855a-1747900115016.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5f533d001a9419e855b-1747900115196.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5f733d001a9419e855c-1747900115388.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5f933d001a9419e855d-1747900115577.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5fa33d001a9419e855e-1747900115760.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5fa33d001a9419e855f-1747900115946.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5fc33d001a9419e8560-1747900116133.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5fd33d001a9419e8561-1747900116333.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5fe33d001a9419e8562-1747900116520.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec5fe33d001a9419e8563-1747900116708.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec60033d001a9419e8564-1747900116904.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec60233d001a9419e8565-1747900117089.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec60433d001a9419e8566-1747900117283.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec60633d001a9419e8567-1747900117502.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec60833d001a9419e8568-1747900117691.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec60a33d001a9419e8569-1747900117883.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec60c33d001a9419e856a-1747900118077.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec60e33d001a9419e856b-1747900118267.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec61033d001a9419e856c-1747900118445.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec61233d001a9419e856d-1747900118631.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec61433d001a9419e856e-1747900118812.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec61633d001a9419e856f-1747900119001.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec61833d001a9419e8570-1747900119188.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec61b33d001a9419e8571-1747900119390.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec61d33d001a9419e8572-1747900119582.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec61f33d001a9419e8573-1747900119776.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec62133d001a9419e8574-1747900119958.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec62e33d001a9419e8575-1747900120145.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec62f33d001a9419e8576-1747900120326.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec62f33d001a9419e8577-1747900120513.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec63033d001a9419e8578-1747900120697.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec63133d001a9419e8579-1747900120878.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec64133d001a9419e857a-1747900121081.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec64233d001a9419e857b-1747900121261.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec64333d001a9419e857c-1747900121444.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec64333d001a9419e857d-1747900121635.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec64f33d001a9419e857e-1747900121833.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec65233d001a9419e857f-1747900122038.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec65333d001a9419e8580-1747900122222.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec65333d001a9419e8581-1747900122400.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec65533d001a9419e8582-1747900122587.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec65c33d001a9419e8583-1747900122772.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec65e33d001a9419e8584-1747900122957.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec66533d001a9419e8585-1747900123178.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec66633d001a9419e8586-1747900123361.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec66833d001a9419e8587-1747900123584.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec66b33d001a9419e8588-1747900123764.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec67433d001a9419e8589-1747900123949.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec67933d001a9419e858a-1747900124149.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec67b33d001a9419e858b-1747900124352.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6b333d001a9419e858c-1747900124540.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6d033d001a9419e858d-1747900124727.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6d233d001a9419e858e-1747900124906.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6d433d001a9419e858f-1747900125094.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6d633d001a9419e8590-1747900125274.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6d833d001a9419e8591-1747900125508.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6e633d001a9419e8592-1747900125691.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6e833d001a9419e8593-1747900125875.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6e933d001a9419e8594-1747900126335.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6eb33d001a9419e8595-1747900126584.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6ed33d001a9419e8596-1747900126838.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6ef33d001a9419e8597-1747900127026.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6f133d001a9419e8598-1747900127217.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6fa33d001a9419e8599-1747900127465.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6fb33d001a9419e859a-1747900127660.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6fc33d001a9419e859b-1747900127849.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6fc33d001a9419e859c-1747900128051.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec6ff33d001a9419e859d-1747900128251.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec70033d001a9419e859e-1747900128438.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec70333d001a9419e859f-1747900128629.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec70433d001a9419e85a0-1747900128823.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec70533d001a9419e85a1-1747900129034.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec70c33d001a9419e85a2-1747900129221.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec70d33d001a9419e85a3-1747900129408.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec70e33d001a9419e85a4-1747900129603.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec70f33d001a9419e85a5-1747900129795.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec71033d001a9419e85a6-1747900129991.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec71033d001a9419e85a7-1747900130176.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec71f33d001a9419e85a8-1747900130370.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec72133d001a9419e85a9-1747900130562.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec72333d001a9419e85aa-1747900130759.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec72733d001a9419e85ab-1747900130954.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec72b33d001a9419e85ac-1747900131147.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec72f33d001a9419e85ad-1747900131342.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec73b33d001a9419e85ae-1747900131551.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec75a33d001a9419e85af-1747900131754.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec75c33d001a9419e85b0-1747900131951.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec75e33d001a9419e85b1-1747900132150.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec76033d001a9419e85b2-1747900132350.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec76033d001a9419e85b3-1747900132558.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec76033d001a9419e85b4-1747900132758.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec80e33d001a9419e85b5-1747900132958.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec81433d001a9419e85b6-1747900133160.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec81633d001a9419e85b7-1747900133370.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec81c33d001a9419e85b8-1747900133559.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec81e33d001a9419e85b9-1747900133759.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec82033d001a9419e85ba-1747900133949.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec82133d001a9419e85bb-1747900134139.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec82333d001a9419e85bc-1747900134385.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec83733d001a9419e85bd-1747900134631.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec83933d001a9419e85be-1747900134823.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec84733d001a9419e85bf-1747900135021.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec88433d001a9419e85c0-1747900135266.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec97c33d001a9419e85c1-1747900135462.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec97e33d001a9419e85c2-1747900135649.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec97f33d001a9419e85c3-1747900135851.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec98133d001a9419e85c4-1747900136052.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec98333d001a9419e85c5-1747900136255.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec98533d001a9419e85c6-1747900136453.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec98733d001a9419e85c7-1747900136655.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec98933d001a9419e85c8-1747900136855.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec99333d001a9419e85c9-1747900137046.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec9d233d001a9419e85ca-1747900137248.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec9d333d001a9419e85cb-1747900137451.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"debug","message":"Usando URL firmada en caché para: products/images/682ec9d333d001a9419e85cc-1747900137651.jpg","timestamp":"2025-05-22 14:47:09"}
+{"level":"info","message":"Retrieved products (page NaN, size NaN)","timestamp":"2025-05-22 14:47:09"}
+{"level":"info","message":"Buscando parcela para usuario 680126a061170dc1caccce2c en coordenadas [-2.3369514093221073, 42.48305655837582]","timestamp":"2025-05-22 14:47:10"}
+{"level":"info","message":"Finding user by ID: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:47:10"}
+{"level":"info","message":"User found with Id: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:47:10"}
+{"level":"debug","message":"Usando URL firmada en caché para: users/profile-pictures/680126a061170dc1caccce2c-1747735365099.jpg","timestamp":"2025-05-22 14:47:10"}
+{"level":"info","message":"Parcel registered","timestamp":"2025-05-22 14:47:10"}
+{"error":"Error en la API de AEMET","level":"error","message":"Error retrieving data from AEMET","stack":"Error: Error en la API de AEMET\n    at Aemet.getWeatherByCoordinates (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:736:19)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async ParcelService.getWeatherData (/home/ec2-user/Backend/dist/services/parcel.service.js:255:37)\n    at async ParcelService.getParcelByCoordinates (/home/ec2-user/Backend/dist/services/parcel.service.js:113:33)\n    at async getParcel (/home/ec2-user/Backend/dist/controllers/parcel.controller.js:28:28)","timestamp":"2025-05-22 14:47:10"}
+{"level":"info","message":"Parcel retrieved for user 680126a061170dc1caccce2c at coordinates (-2.3369514093221073, 42.48305655837582)","timestamp":"2025-05-22 14:47:10"}
+{"level":"info","message":"Refreshing weather alerts cache from AEMET API","timestamp":"2025-05-22 14:47:14"}
+{"level":"error","message":"Failed to refresh weather alerts cache: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async AlertService.getWeatherAlerts (/home/ec2-user/Backend/dist/services/alert.service.js:31:20)\n    at async getWeatherAlerts (/home/ec2-user/Backend/dist/controllers/alert.controller.js:16:22)","timestamp":"2025-05-22 14:47:15"}
+{"level":"error","message":"Error retrieving weather alerts: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async AlertService.getWeatherAlerts (/home/ec2-user/Backend/dist/services/alert.service.js:31:20)\n    at async getWeatherAlerts (/home/ec2-user/Backend/dist/controllers/alert.controller.js:16:22)","timestamp":"2025-05-22 14:47:15"}
+{"level":"error","message":"Error retrieving weather alerts Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async AlertService.getWeatherAlerts (/home/ec2-user/Backend/dist/services/alert.service.js:31:20)\n    at async getWeatherAlerts (/home/ec2-user/Backend/dist/controllers/alert.controller.js:16:22)","timestamp":"2025-05-22 14:47:15"}
+{"level":"info","message":"Parcels retrieved for user 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:47:29"}
+{"level":"info","message":"Finding user by ID: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:47:29"}
+{"level":"info","message":"User found with Id: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:47:29"}
+{"level":"debug","message":"Usando URL firmada en caché para: users/profile-pictures/680126a061170dc1caccce2c-1747735365099.jpg","timestamp":"2025-05-22 14:47:29"}
+{"level":"info","message":"User retrieved: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:47:29"}
+{"level":"info","message":"Refreshing weather alerts cache from AEMET API","timestamp":"2025-05-22 14:47:51"}
+{"level":"error","message":"Failed to refresh weather alerts cache: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async AlertService.getWeatherAlerts (/home/ec2-user/Backend/dist/services/alert.service.js:31:20)\n    at async getWeatherAlerts (/home/ec2-user/Backend/dist/controllers/alert.controller.js:16:22)","timestamp":"2025-05-22 14:47:51"}
+{"level":"error","message":"Error retrieving weather alerts: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async AlertService.getWeatherAlerts (/home/ec2-user/Backend/dist/services/alert.service.js:31:20)\n    at async getWeatherAlerts (/home/ec2-user/Backend/dist/controllers/alert.controller.js:16:22)","timestamp":"2025-05-22 14:47:51"}
+{"level":"error","message":"Error retrieving weather alerts Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async AlertService.getWeatherAlerts (/home/ec2-user/Backend/dist/services/alert.service.js:31:20)\n    at async getWeatherAlerts (/home/ec2-user/Backend/dist/controllers/alert.controller.js:16:22)","timestamp":"2025-05-22 14:47:51"}
+{"level":"info","message":"Parcels retrieved for user 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:47:57"}
+{"level":"info","message":"Finding user by ID: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:47:57"}
+{"level":"info","message":"User found with Id: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:47:57"}
+{"level":"debug","message":"Usando URL firmada en caché para: users/profile-pictures/680126a061170dc1caccce2c-1747735365099.jpg","timestamp":"2025-05-22 14:47:57"}
+{"level":"info","message":"User retrieved: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:47:57"}
+{"level":"info","message":"Buscando parcela para usuario 680126a061170dc1caccce2c en coordenadas [-2.3369514093221073, 42.48305655837582]","timestamp":"2025-05-22 14:47:58"}
+{"level":"info","message":"Finding user by ID: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:47:58"}
+{"level":"info","message":"User found with Id: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:47:58"}
+{"level":"debug","message":"Usando URL firmada en caché para: users/profile-pictures/680126a061170dc1caccce2c-1747735365099.jpg","timestamp":"2025-05-22 14:47:58"}
+{"level":"info","message":"Parcel registered","timestamp":"2025-05-22 14:47:58"}
+{"error":"Error en la API de AEMET","level":"error","message":"Error retrieving data from AEMET","stack":"Error: Error en la API de AEMET\n    at Aemet.getWeatherByCoordinates (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:736:19)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async ParcelService.getWeatherData (/home/ec2-user/Backend/dist/services/parcel.service.js:255:37)\n    at async ParcelService.getParcelByCoordinates (/home/ec2-user/Backend/dist/services/parcel.service.js:113:33)\n    at async getParcel (/home/ec2-user/Backend/dist/controllers/parcel.controller.js:28:28)","timestamp":"2025-05-22 14:47:59"}
+{"level":"info","message":"Parcel retrieved for user 680126a061170dc1caccce2c at coordinates (-2.3369514093221073, 42.48305655837582)","timestamp":"2025-05-22 14:47:59"}
+{"level":"info","message":"Refreshing weather alerts cache from AEMET API","timestamp":"2025-05-22 14:48:20"}
+{"level":"error","message":"Failed to refresh weather alerts cache: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async AlertService.getWeatherAlerts (/home/ec2-user/Backend/dist/services/alert.service.js:31:20)\n    at async getWeatherAlerts (/home/ec2-user/Backend/dist/controllers/alert.controller.js:16:22)","timestamp":"2025-05-22 14:48:20"}
+{"level":"error","message":"Error retrieving weather alerts: Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async AlertService.getWeatherAlerts (/home/ec2-user/Backend/dist/services/alert.service.js:31:20)\n    at async getWeatherAlerts (/home/ec2-user/Backend/dist/controllers/alert.controller.js:16:22)","timestamp":"2025-05-22 14:48:20"}
+{"level":"error","message":"Error retrieving weather alerts Error al obtener alertas meteorológicas: Error en la petición a la API: 401","stack":"Error: Error al obtener alertas meteorológicas: Error en la petición a la API: 401\n    at Aemet.getAlertsGeoJSON (/home/ec2-user/Backend/node_modules/aemet-api/dist/aemet.js:1241:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AlertService.refreshAlertsCache (/home/ec2-user/Backend/dist/services/alert.service.js:50:26)\n    at async AlertService.getWeatherAlerts (/home/ec2-user/Backend/dist/services/alert.service.js:31:20)\n    at async getWeatherAlerts (/home/ec2-user/Backend/dist/controllers/alert.controller.js:16:22)","timestamp":"2025-05-22 14:48:20"}
+{"level":"info","message":"Parcels retrieved for user 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:50:20"}
+{"level":"info","message":"Finding user by ID: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:50:20"}
+{"level":"info","message":"User found with Id: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:50:20"}
+{"level":"debug","message":"Usando URL firmada en caché para: users/profile-pictures/680126a061170dc1caccce2c-1747735365099.jpg","timestamp":"2025-05-22 14:50:20"}
+{"level":"info","message":"User retrieved: 680126a061170dc1caccce2c","timestamp":"2025-05-22 14:50:20"}

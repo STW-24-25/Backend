@@ -19,19 +19,19 @@ Resources:
     Properties:
       GroupDescription: Security group para los VPC Endpoints
       VpcId: !ImportValue 
-        Fn::Sub: "${EnvironmentName}-Frontend-VPC-ID"
+        'Fn::Sub': "${EnvironmentName}-Frontend-VPC-ID"
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 443
           ToPort: 443
           CidrIp: !ImportValue 
-            Fn::Sub: "${EnvironmentName}-Frontend-VPC-CIDR"
+            'Fn::Sub': "${EnvironmentName}-Frontend-VPC-CIDR"
           Description: Acceso HTTPS desde Frontend VPC
         - IpProtocol: tcp
           FromPort: 443
           ToPort: 443
           CidrIp: !ImportValue 
-            Fn::Sub: "${EnvironmentName}-Backend-VPC-CIDR"
+            'Fn::Sub': "${EnvironmentName}-Backend-VPC-CIDR"
           Description: Acceso HTTPS desde Backend VPC
       Tags:
         - Key: Name
@@ -43,25 +43,25 @@ Resources:
     Properties:
       ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
       VpcId: !ImportValue 
-        Fn::Sub: "${EnvironmentName}-Frontend-VPC-ID"
+        'Fn::Sub': "${EnvironmentName}-Frontend-VPC-ID"
       VpcEndpointType: Gateway
       RouteTableIds:
         - !ImportValue 
-          Fn::Sub: "${EnvironmentName}-Frontend-Public-RouteTable-ID"
+          'Fn::Sub': "${EnvironmentName}-Frontend-Public-RouteTable-ID"
         - !ImportValue 
-          Fn::Sub: "${EnvironmentName}-Frontend-Private-RouteTable-ID"
+          'Fn::Sub': "${EnvironmentName}-Frontend-Private-RouteTable1-ID"
+        - !ImportValue 
+          'Fn::Sub': "${EnvironmentName}-Frontend-Private-RouteTable2-ID"
+        - !ImportValue 
+          'Fn::Sub': "${EnvironmentName}-Frontend-Private-RouteTable3-ID"
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal: '*'
             Action:
-              - 's3:GetObject'
-              - 's3:ListBucket'
-              - 's3:PutObject'
-            Resource:
-              - !Sub 'arn:aws:s3:::${S3BucketName}*'
-              - !Sub 'arn:aws:s3:::${S3BucketName}*/*'
+              - 's3:*'
+            Resource: '*'
       Tags:
         - Key: Name
           Value: !Sub '${EnvironmentName}-S3-Endpoint-Frontend'
@@ -72,25 +72,25 @@ Resources:
     Properties:
       ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
       VpcId: !ImportValue 
-        Fn::Sub: "${EnvironmentName}-Backend-VPC-ID"
+        'Fn::Sub': "${EnvironmentName}-Backend-VPC-ID"
       VpcEndpointType: Gateway
       RouteTableIds:
         - !ImportValue 
-          Fn::Sub: "${EnvironmentName}-Backend-Public-RouteTable-ID"
+          'Fn::Sub': "${EnvironmentName}-Backend-Public-RouteTable-ID"
         - !ImportValue 
-          Fn::Sub: "${EnvironmentName}-Backend-Private-RouteTable-ID"
+          'Fn::Sub': "${EnvironmentName}-Backend-Private-RouteTable1-ID"
+        - !ImportValue 
+          'Fn::Sub': "${EnvironmentName}-Backend-Private-RouteTable2-ID"
+        - !ImportValue 
+          'Fn::Sub': "${EnvironmentName}-Backend-Private-RouteTable3-ID"
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal: '*'
             Action:
-              - 's3:GetObject'
-              - 's3:ListBucket'
-              - 's3:PutObject'
-            Resource:
-              - !Sub 'arn:aws:s3:::${S3BucketName}*'
-              - !Sub 'arn:aws:s3:::${S3BucketName}*/*'
+              - 's3:*'
+            Resource: '*'
       Tags:
         - Key: Name
           Value: !Sub '${EnvironmentName}-S3-Endpoint-Backend'

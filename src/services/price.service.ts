@@ -12,8 +12,15 @@ class PriceService {
    */
   async downloadAndParsePrices(year: number = new Date().getFullYear()) {
     try {
+      logger.info(`Iniciando descarga de precios para el año ${year}...`);
       const path = await descargarPrecios(year);
+      logger.info(`Descarga completada para el año ${year}, archivo guardado en: ${path}`);
+
+      logger.info(`Iniciando análisis del archivo para el año ${year}...`);
       const data = parsePrecios(path);
+      logger.info(
+        `Análisis completado para el año ${year}, se obtuvieron ${data.length} registros`,
+      );
 
       logger.info('=== ORIGINAL DATA FROM AGRO-PRECIOS ===');
       logger.info(JSON.stringify(data[0], null, 2)); // Show first record as example
@@ -21,7 +28,7 @@ class PriceService {
 
       return data;
     } catch (error) {
-      logger.error('Error downloading and parsing prices:', error);
+      logger.error(`Error downloading and parsing prices for year ${year}:`, error);
       throw error;
     }
   }
@@ -126,26 +133,18 @@ class PriceService {
     // Counters for summary
     let totalRecords = 0;
     let savedRecords = 0;
-    let priorDateRecords = 0;
     let errorRecords = 0;
 
     for (const price of prices) {
       totalRecords++;
 
-      // Validate date is from 2019 or later
-      const date = new Date(price.fecha || price.date);
-      if (date.getFullYear() < 2019) {
-        priorDateRecords++;
-        logger.warn(
-          `Date prior to 2019 ignored for product ${price.nombre || price.name}: ${price.fecha || price.date}`,
-        );
-        continue;
-      }
-
       try {
         await ProductModel.findOneAndUpdate(
           { name: price.nombre || price.name },
           {
+            $set: {
+              sector: price.sector || 'No especificado',
+            },
             $push: {
               prices: {
                 date: new Date(price.fecha || price.date),
@@ -166,7 +165,6 @@ class PriceService {
     const summary = {
       totalRecords,
       savedRecords,
-      priorDateRecords,
       errorRecords,
     };
 
@@ -203,7 +201,6 @@ class PriceService {
       logger.info('=== PRICE UPDATE SUMMARY ===');
       logger.info(`Total parsed records: ${summary.totalRecords}`);
       logger.info(`Successfully saved records: ${summary.savedRecords}`);
-      logger.info(`Records with date prior to 2019: ${summary.priorDateRecords}`);
       logger.info(`Records with save errors: ${summary.errorRecords}`);
       logger.info('==========================================');
 
@@ -252,8 +249,11 @@ class PriceService {
 
           try {
             await ProductModel.findOneAndUpdate(
-              { name: item.name, sector: item.sector },
+              { name: item.name },
               {
+                $set: {
+                  sector: item.sector || 'No especificado',
+                },
                 $push: {
                   prices: {
                     date: item.date,

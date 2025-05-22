@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config(); // Cargar variables de entorno desde .env
+
 import logger from '../utils/logger';
 import connectDB from '../utils/db';
 import ProductModel from '../models/product.model';

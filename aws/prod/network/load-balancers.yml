@@ -266,12 +266,21 @@ Resources:
       Value: !Ref SSLCertificateArn
       Description: ARN del certificado SSL en ACM
 
+  # NOTA: El registro de alias en Route 53 debe configurarse manualmente desde la consola de AWS
+  # siguiendo las instrucciones en la sección "Configuración manual del dominio personalizado en Route 53" del README
+
 Outputs:
   ALBDNSName:
-    Description: DNS del Application Load Balancer principal
+    Description: DNS name for the Application Load Balancer
     Value: !GetAtt ApplicationLoadBalancer.DNSName
+    Export: 
+      Name: !Sub "${EnvironmentName}-ALB-DNS-Name"
+  
+  ALBCanonicalHostedZoneID:
+    Description: Canonical Hosted Zone ID for the Application Load Balancer
+    Value: !GetAtt ApplicationLoadBalancer.CanonicalHostedZoneID
     Export:
-      Name: !Sub "${EnvironmentName}-ALB-DNS"
+      Name: !Sub "${EnvironmentName}-ALB-CanonicalHostedZoneID"
 
   ALBArn:
     Description: ARN del Application Load Balancer principal

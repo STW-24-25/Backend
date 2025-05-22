@@ -27,9 +27,9 @@ Parameters:
     Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64
     
   GitHubToken:
-    Description: GitHub fine-grained personal access token para acceder a repositorios
+    Description: GitHub personal access token para acceder a repositorios
     Type: String
-    Default: "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"
+    Default: "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"
     NoEcho: true
 
   AWSAccessKeyId:
@@ -129,6 +129,10 @@ Resources:
                   - elasticloadbalancing:DescribeTargetGroups
                   - elasticloadbalancing:DescribeTargetHealth
                   - elasticloadbalancing:DescribeLoadBalancerAttributes
+                  - route53:ListHostedZones
+                  - route53:GetChange
+                  - route53:ChangeResourceRecordSets
+                  - route53:ListResourceRecordSets
                 Resource: '*'
 
   FrontendInstanceProfile:
@@ -153,184 +157,294 @@ Resources:
         IamInstanceProfile:
           Name: !Ref FrontendInstanceProfile
         UserData:
-          Fn::Base64: !Sub |
-            #!/bin/bash -xe
-            # Configuración para Amazon Linux 2023
-            # Esperar a tener conexión con los repositorios antes de continuar
-            attempts=0
-            max_attempts=5
-            
-            until dnf list installed &> /dev/null || [ $attempts -eq $max_attempts ]
-            do
-              echo "Intento $((attempts+1))/$max_attempts para conectar con repositorios..."
-              sleep 10
-              attempts=$((attempts+1))
-            done
-            
-            if [ $attempts -eq $max_attempts ]; then
-              echo "No se pudo conectar con los repositorios. Continuando con la instalación sin actualizar."
-            else
+          Fn::Base64: 
+            !Sub |
+              #!/bin/bash -xe
+              
+              # Preparar script de configuración
+              cat > /tmp/setup.sh << 'EOFSCRIPT'
+              #!/bin/bash -xe
+              
+              # Obtener parámetros desde archivos
+              GITHUB_TOKEN=$(cat /tmp/github_token)
+              AWS_ACCESS_KEY=$(cat /tmp/aws_access_key)
+              AWS_SECRET_KEY=$(cat /tmp/aws_secret_key)
+              AWS_REGION=$(cat /tmp/aws_region)
+              S3_BUCKET=$(cat /tmp/s3_bucket)
+              ENVIRONMENT_NAME=$(cat /tmp/environment_name)
+              
+              # Instalar dependencias
               dnf update -y
-            fi
-            
-            # Instalar dependencias necesarias
-            dnf install -y git nodejs npm jq aws-cli
-
-            # Configuración de seguridad - Establecer permisos restrictivos para directorios/archivos sensibles
-            mkdir -p /etc/frontend-secure
-            chmod 700 /etc/frontend-secure
-            
-            # Obtener el token de GitHub desde Secrets Manager de forma segura
-            GITHUB_TOKEN=$(aws secretsmanager get-secret-value \
-              --secret-id ${EnvironmentName}-github-token \
-              --region ${AWS::Region} \
-              --query SecretString --output text)
-
-            # Almacenar token en ubicación segura temporalmente
-            echo "$GITHUB_TOKEN" > /etc/frontend-secure/github_token
-            chmod 600 /etc/frontend-secure/github_token
-            
-            # Crear usuario específico para la aplicación con privilegios limitados
-            useradd -m -s /bin/bash frontend-app
-            
-            # Configurar credenciales de Git de forma segura
-            echo "Configurando credenciales de Git..."
-            export HOME=/home/frontend-app
-            git config --global --add safe.directory /home/frontend-app/Frontend
-            git config --global credential.helper store
-            
-            # Usar el token de forma segura
-            echo "https://oauth2:$(cat /etc/frontend-secure/github_token)@github.com" > /home/frontend-app/.git-credentials
-            chown frontend-app:frontend-app /home/frontend-app/.git-credentials
-            chmod 600 /home/frontend-app/.git-credentials
-
-            # Clonar e instalar la aplicación
-            cd /home/frontend-app
-            echo "Clonando repositorio con token..."
-            sudo -u frontend-app git clone https://oauth2:$(cat /etc/frontend-secure/github_token)@github.com/STW-24-25/Frontend.git
-            cd Frontend
-            
-            # Identificar la zona de disponibilidad en la que está la instancia
-            INSTANCE_AZ=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)
-            AZ_ID=$(echo $INSTANCE_AZ | sed 's/.*\(.\)$/\1/')
-            
-            # Seleccionar el NLB apropiado según la AZ
-            if [ "$AZ_ID" == "1" ] || [ "$AZ_ID" == "a" ]; then
-              NLB_DNS=$(aws ssm get-parameter --name /${EnvironmentName}/network/nlb1-dns --region ${AWS::Region} --query "Parameter.Value" --output text)
-            elif [ "$AZ_ID" == "2" ] || [ "$AZ_ID" == "b" ]; then
-              NLB_DNS=$(aws ssm get-parameter --name /${EnvironmentName}/network/nlb2-dns --region ${AWS::Region} --query "Parameter.Value" --output text)
-            else
-              NLB_DNS=$(aws ssm get-parameter --name /${EnvironmentName}/network/nlb3-dns --region ${AWS::Region} --query "Parameter.Value" --output text)
-            fi
-            
-            # Almacenar credenciales AWS de forma segura
-            echo "${AWSAccessKeyId}" > /etc/frontend-secure/aws_access_key
-            echo "${AWSSecretAccessKey}" > /etc/frontend-secure/aws_secret_key
-            chmod 600 /etc/frontend-secure/aws_*
-            
-            # Crear archivo .env con credenciales referenciadas de forma segura
-            cat > /home/frontend-app/Frontend/.env << EOL
-            API_URL=http://$NLB_DNS:3000/api
-            PORT=4321
-            HOST=0.0.0.0
-            AWS_ACCESS_KEY_ID=$(cat /etc/frontend-secure/aws_access_key)
-            AWS_SECRET_ACCESS_KEY=$(cat /etc/frontend-secure/aws_secret_key)
-            AWS_REGION=${AWSRegion}
-            S3_BUCKET_NAME=${S3BucketName}
-            EOL
-            
-            # Asignar permisos adecuados al archivo .env
-            chown frontend-app:frontend-app /home/frontend-app/Frontend/.env
-            chmod 600 /home/frontend-app/Frontend/.env
-            
-            # Configurar AWS SDK para usar el endpoint VPC de S3 de forma transparente
-            mkdir -p /home/frontend-app/.aws
-            cat > /home/frontend-app/.aws/config << EOL
-            [default]
-            region = ${AWSRegion}
-            s3 = 
-                use_accelerate_endpoint = false
-                addressing_style = virtual
-                use_dualstack_endpoint = false
-            
-            [plugins]
-            endpoint = endpoint-data
-
-            [services]
-            s3 = 
-                endpoints = 
-                    *=https://s3.${AWSRegion}.amazonaws.com
-            EOL
-            
-            chown -R frontend-app:frontend-app /home/frontend-app/.aws
-            chmod 700 /home/frontend-app/.aws
-            chmod 600 /home/frontend-app/.aws/config
-            
-            # Variables de entorno para AWS SDK
-            cat > /etc/environment << EOL
-            AWS_SDK_LOAD_CONFIG=1
-            AWS_CONFIG_FILE=/home/frontend-app/.aws/config
-            EOL
-            
-            # Recargar variables de entorno
-            source /etc/environment
-            
-            # Instalar dependencias y construir la aplicación
-            chown -R frontend-app:frontend-app /home/frontend-app/Frontend
-            cd /home/frontend-app/Frontend
-            sudo -u frontend-app npm install
-            sudo -u frontend-app npm run build
-            
-            # Configurar un servicio systemd para que node ejecute directamente Astro
-            cat > /etc/systemd/system/astro-frontend.service << 'EOL'
-            [Unit]
-            Description=AgroNet Astro Frontend
-            After=network.target
-
-            [Service]
-            Type=simple
-            User=frontend-app
-            WorkingDirectory=/home/frontend-app/Frontend
-            Environment="HOST=0.0.0.0"
-            Environment="PORT=4321"
-            Environment="NODE_OPTIONS=--dns-result-order=ipv4first --no-warnings"
-            ExecStart=/usr/bin/node ./dist/server/entry.mjs
-            Restart=always
-            RestartSec=10
-            # Limitar acceso a recursos del sistema
-            MemoryLimit=512M
-            CPUQuota=80%
-            # Seguridad adicional
-            NoNewPrivileges=true
-            ProtectSystem=full
-            ProtectHome=read-only
-            ReadWriteDirectories=/home/frontend-app/Frontend
-            PrivateTmp=true
-
-            [Install]
-            WantedBy=multi-user.target
-            EOL
-            
-            # Activar y iniciar el servicio
-            systemctl daemon-reload
-            systemctl enable astro-frontend
-            systemctl start astro-frontend
-            
-            # Crear un script para verificar logs y estado con permisos adecuados
-            cat > /usr/local/bin/check-astro << 'EOL'
-            #!/bin/bash
-            # Script para facilitar la revisión de logs
-            echo "===== Astro Frontend Status ====="
-            systemctl status astro-frontend
-            echo ""
-            echo "===== Astro Frontend Logs ====="
-            journalctl -u astro-frontend -n 50
-            EOL
-            chmod 755 /usr/local/bin/check-astro
-            
-            # Limpiar credenciales después del despliegue
-            rm /home/frontend-app/.git-credentials
-            rm -rf /etc/frontend-secure
+              dnf install -y nodejs npm certbot aws-cli jq git gcc-c++ make python3-devel python3-pip cronie
+              pip3 install --ignore-installed certbot-dns-route53
+              
+              # Configurar AWS
+              mkdir -p /root/.aws
+              cat > /root/.aws/credentials << EOL
+              [default]
+              aws_access_key_id = $AWS_ACCESS_KEY
+              aws_secret_access_key = $AWS_SECRET_KEY
+              region = $AWS_REGION
+              EOL
+              chmod 600 /root/.aws/credentials
+              
+              # Configurar git y clonar repositorio
+              cd /home/ec2-user
+              sudo -u ec2-user git config --global credential.helper store
+              
+              echo "https://$GITHUB_TOKEN:x-oauth-basic@github.com" > /home/ec2-user/.git-credentials
+              chown ec2-user:ec2-user /home/ec2-user/.git-credentials
+              chmod 600 /home/ec2-user/.git-credentials
+              
+              sudo -u ec2-user git clone https://$GITHUB_TOKEN:x-oauth-basic@github.com/STW-24-25/Frontend.git
+              
+              # Obtener NLB DNS
+              INSTANCE_AZ=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)
+              AZ_ID=$(echo $INSTANCE_AZ | sed 's/.*\(.\)$/\1/')
+              
+              if [ "$AZ_ID" == "1" ] || [ "$AZ_ID" == "a" ]; then
+                NLB_DNS=$(aws cloudformation describe-stacks --stack-name "${EnvironmentName}-network-stack" --region $AWS_REGION --query "Stacks[0].Outputs[?ExportName=='${EnvironmentName}-NLB1-DNS'].OutputValue" --output text)
+              elif [ "$AZ_ID" == "2" ] || [ "$AZ_ID" == "b" ]; then
+                NLB_DNS=$(aws cloudformation describe-stacks --stack-name "${EnvironmentName}-network-stack" --region $AWS_REGION --query "Stacks[0].Outputs[?ExportName=='${EnvironmentName}-NLB2-DNS'].OutputValue" --output text)
+              else
+                NLB_DNS=$(aws cloudformation describe-stacks --stack-name "${EnvironmentName}-network-stack" --region $AWS_REGION --query "Stacks[0].Outputs[?ExportName=='${EnvironmentName}-NLB3-DNS'].OutputValue" --output text)
+              fi
+              
+              # Comprobar si se obtuvo el DNS correctamente, si no, intentar con los parámetros SSM como fallback
+              if [ -z "$NLB_DNS" ]; then
+                echo "No se pudo obtener el DNS del NLB mediante CloudFormation exports, intentando con SSM..."
+                if [ "$AZ_ID" == "1" ] || [ "$AZ_ID" == "a" ]; then
+                  NLB_DNS=$(aws ssm get-parameter --name /${EnvironmentName}/network/nlb1-dns --region $AWS_REGION --query "Parameter.Value" --output text)
+                elif [ "$AZ_ID" == "2" ] || [ "$AZ_ID" == "b" ]; then
+                  NLB_DNS=$(aws ssm get-parameter --name /${EnvironmentName}/network/nlb2-dns --region $AWS_REGION --query "Parameter.Value" --output text)
+                else
+                  NLB_DNS=$(aws ssm get-parameter --name /${EnvironmentName}/network/nlb3-dns --region $AWS_REGION --query "Parameter.Value" --output text)
+                fi
+              fi
+              
+              # Configurar .env
+              cat > /home/ec2-user/Frontend/.env << EOL
+              API_URL=http://$NLB_DNS:3000/api/
+              PUBLIC_API_URL=http://$NLB_DNS:3000/api/
+              PORT=4321
+              HOST=0.0.0.0
+              SITE_URL=https://www.agronet.are-dev.es
+              PUBLIC_SITE_URL=https://www.agronet.are-dev.es
+              ALLOW_DIRECT_IP_ACCESS=true
+              INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
+              INSTANCE_IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
+              AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY
+              AWS_SECRET_ACCESS_KEY=$AWS_SECRET_KEY
+              AWS_REGION=$AWS_REGION
+              S3_BUCKET_NAME=$S3_BUCKET
+              AUTH_SECRET="348df432d0c9952fbfe0c0373a8f06cc"
+              AUTH_TRUST_HOST=true
+              GITHUB_CLIENT_ID="Ov23linoU2XJT4muQVfZ"
+              GITHUB_CLIENT_SECRET="6c1f454d7a0a1f81d542ba631be39cd3e96bfed1"
+              GOOGLE_CLIENT_ID="451497636244-bsd2hdr98f0te5su1hoiloneh18kkep0.apps.googleusercontent.com"
+              GOOGLE_CLIENT_SECRET="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"
+              RECAPTCHA_SITE="6LcVlUMrAAAAACmcKMjwDVRMw_mX1Fh2mSwk6yxd"
+              RECAPTCHA_SECRET="6LcVlUMrAAAAAO_GPP2MMy7pFK7fqHf968ZGiQN4"
+              DEV_MODE=true
+              DEV_SKIP_OAUTH=true
+              DEV_AUTO_LOGIN_EMAIL=admin@agronet.are-dev.es
+              EOL
+              
+              chown ec2-user:ec2-user /home/ec2-user/Frontend/.env
+              chmod 600 /home/ec2-user/Frontend/.env
+              
+              # Obtener certificados con Certbot
+              echo "Intentando obtener certificados con Certbot..."
+              USE_HTTPS=false
+              
+              certbot certonly --dns-route53 \
+                --non-interactive \
+                --agree-tos \
+                -m admin@agronet.are-dev.es \
+                -d are-dev.es \
+                -d www.agronet.are-dev.es \
+                --server https://acme-v02.api.letsencrypt.org/directory || echo "No se pudieron obtener los certificados SSL"
+                
+              # Configurar certificados si existen
+              if [ -d "/etc/letsencrypt/live/are-dev.es" ]; then
+                USE_HTTPS=true
+                mkdir -p /home/ec2-user/Frontend/certs
+                cp /etc/letsencrypt/live/are-dev.es/fullchain.pem /home/ec2-user/Frontend/certs/
+                cp /etc/letsencrypt/live/are-dev.es/privkey.pem /home/ec2-user/Frontend/certs/
+                chown -R ec2-user:ec2-user /home/ec2-user/Frontend/certs
+                chmod 700 /home/ec2-user/Frontend/certs
+                chmod 600 /home/ec2-user/Frontend/certs/*.pem
+                sudo systemctl enable crond
+                sudo systemctl start crond
+                
+                # Script para renovación
+                cat > /usr/local/bin/renew-certs.sh << EOL2
+              #!/bin/bash
+              cp /etc/letsencrypt/live/www.agronet.are-dev.es/fullchain.pem /home/ec2-user/Frontend/certs/
+              cp /etc/letsencrypt/live/www.agronet.are-dev.es/privkey.pem /home/ec2-user/Frontend/certs/
+              chown -R ec2-user:ec2-user /home/ec2-user/Frontend/certs
+              chmod 700 /home/ec2-user/Frontend/certs
+              chmod 600 /home/ec2-user/Frontend/certs/*.pem
+              systemctl restart astro-frontend
+              EOL2
+                chmod +x /usr/local/bin/renew-certs.sh
+                
+                # Configurar cron
+                mkdir -p /etc/cron.d
+                echo "0 0,12 * * * root certbot renew --quiet --deploy-hook /usr/local/bin/renew-certs.sh" > /etc/cron.d/certbot-renew
+                chmod 644 /etc/cron.d/certbot-renew
+              fi
+              
+              # Instalar dependencias y compilar
+              cd /home/ec2-user/Frontend
+              sudo -u ec2-user npm install --platform=linux --arch=x64 @rollup/rollup-linux-x64-gnu lightningcss-linux-x64-gnu --force
+              sudo -u ec2-user npm install || echo "Error en npm install"
+              sudo -u ec2-user npm run build || USE_DEV_MODE=true
+              
+              # Configurar servicio
+              if [ "$USE_DEV_MODE" = "true" ]; then
+                cat > /etc/systemd/system/astro-frontend.service << EOL
+              [Unit]
+              Description=AgroNet Astro Frontend (Dev Mode)
+              After=network.target
+              
+              [Service]
+              Type=simple
+              User=ec2-user
+              WorkingDirectory=/home/ec2-user/Frontend
+              Environment="HOST=0.0.0.0"
+              Environment="PORT=4321"
+              Environment="NODE_OPTIONS=--dns-result-order=ipv4first --no-warnings"
+              ExecStart=/usr/bin/npm run dev
+              Restart=always
+              RestartSec=10
+              MemoryLimit=512M
+              CPUQuota=80%
+              
+              [Install]
+              WantedBy=multi-user.target
+              EOL
+              else
+                if [ "$USE_HTTPS" = "true" ]; then
+                  cat > /etc/systemd/system/astro-frontend.service << EOL
+              [Unit]
+              Description=AgroNet Astro Frontend (HTTPS)
+              After=network.target
+              
+              [Service]
+              Type=simple
+              User=ec2-user
+              WorkingDirectory=/home/ec2-user/Frontend
+              Environment="HOST=0.0.0.0"
+              Environment="PORT=4321"
+              Environment="SITE_URL=https://www.agronet.are-dev.es"
+              Environment="PUBLIC_SITE_URL=https://www.agronet.are-dev.es"
+              Environment="NODE_OPTIONS=--dns-result-order=ipv4first --no-warnings"
+              ExecStart=/usr/bin/node ./dist/server/entry.mjs
+              Restart=always
+              RestartSec=10
+              MemoryLimit=512M
+              CPUQuota=80%
+              
+              [Install]
+              WantedBy=multi-user.target
+              EOL
+                else
+                  cat > /etc/systemd/system/astro-frontend.service << EOL
+              [Unit]
+              Description=AgroNet Astro Frontend (HTTP)
+              After=network.target
+              
+              [Service]
+              Type=simple
+              User=ec2-user
+              WorkingDirectory=/home/ec2-user/Frontend
+              Environment="HOST=0.0.0.0"
+              Environment="PORT=4321"
+              Environment="SITE_URL=http://www.agronet.are-dev.es"
+              Environment="PUBLIC_SITE_URL=http://www.agronet.are-dev.es"
+              Environment="NODE_OPTIONS=--dns-result-order=ipv4first --no-warnings"
+              ExecStart=/usr/bin/node ./dist/server/entry.mjs
+              Restart=always
+              RestartSec=10
+              MemoryLimit=512M
+              CPUQuota=80%
+              
+              [Install]
+              WantedBy=multi-user.target
+              EOL
+                fi
+              fi
+              
+              # Iniciar servicio
+              systemctl daemon-reload
+              systemctl enable astro-frontend
+              systemctl start astro-frontend
+              
+              # Scripts de utilidad
+              cat > /usr/local/bin/check-astro << EOL
+              #!/bin/bash
+              echo "===== Astro Frontend Status ====="
+              systemctl status astro-frontend
+              echo ""
+              
+              echo "===== Servicio activo? ====="
+              if systemctl is-active --quiet astro-frontend; then
+                echo "El servicio está ACTIVO"
+              else
+                echo "El servicio está INACTIVO"
+              fi
+              echo ""
+              
+              echo "===== Astro Frontend Logs ====="
+              journalctl -u astro-frontend -n 50
+              echo ""
+              
+              echo "===== Verificando puertos en uso ====="
+              ss -tulpn | grep 4321
+              echo ""
+              
+              echo "===== Verificando certificados SSL ====="
+              if [ -d "/etc/letsencrypt/live/www.agronet.are-dev.es" ]; then
+                echo "Certificados encontrados en /etc/letsencrypt/live/www.agronet.are-dev.es"
+                ls -la /etc/letsencrypt/live/www.agronet.are-dev.es
+                echo ""
+                echo "Fecha de vencimiento:"
+                openssl x509 -in /etc/letsencrypt/live/www.agronet.are-dev.es/cert.pem -noout -dates
+              else
+                echo "No se encontraron certificados SSL"
+              fi
+              echo ""
+              
+              echo "===== Variables de entorno ====="
+              grep -v "SECRET\|KEY\|PASS" /home/ec2-user/Frontend/.env
+              echo ""
+              
+              echo "===== Información del sistema ====="
+              free -h
+              df -h
+              EOL
+              chmod 755 /usr/local/bin/check-astro
+              
+              # Limpiar credenciales
+              rm -f /home/ec2-user/.git-credentials
+              rm -f /root/.aws/credentials
+              EOFSCRIPT
+              
+              # Guardar variables en archivos temporales
+              echo "${GitHubToken}" > /tmp/github_token
+              echo "${AWSAccessKeyId}" > /tmp/aws_access_key
+              echo "${AWSSecretAccessKey}" > /tmp/aws_secret_key
+              echo "${AWSRegion}" > /tmp/aws_region
+              echo "${S3BucketName}" > /tmp/s3_bucket
+              echo "${EnvironmentName}" > /tmp/environment_name
+              
+              # Ejecutar script
+              chmod +x /tmp/setup.sh
+              /tmp/setup.sh
+              
+              # Limpiar
+              rm -f /tmp/setup.sh /tmp/github_token /tmp/aws_access_key /tmp/aws_secret_key /tmp/aws_region /tmp/s3_bucket /tmp/environment_name
         TagSpecifications:
           - ResourceType: instance
             Tags:
@@ -339,7 +453,7 @@ Resources:
               - Key: Environment
                 Value: !Ref EnvironmentName
 
-  # Crear 3 ASG, uno para cada zona de disponibilidad
+  # Auto Scaling Groups
   FrontendASG1:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
@@ -409,7 +523,7 @@ Resources:
           Value: !Sub ${EnvironmentName}-Frontend-ASG-3
           PropagateAtLaunch: true
 
-  # Alarmas y políticas de Auto Scaling - Scale Out (Alto uso)
+  # Alarmas y políticas de Auto Scaling - Scale Out
   HighCPUAlarm1:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -464,7 +578,7 @@ Resources:
       AlarmActions:
         - !Ref FrontendScaleOutPolicy3
 
-  # Alarmas de CloudWatch para monitorizar CPU - Scale In (Bajo uso)
+  # Alarmas - Scale In
   LowCPUAlarm1:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -519,7 +633,7 @@ Resources:
       AlarmActions:
         - !Ref FrontendScaleInPolicy3
 
-  # Políticas de Scale Out
+  # Políticas de escalado
   FrontendScaleOutPolicy1:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:
@@ -547,7 +661,6 @@ Resources:
       ScalingAdjustment: 1
       Cooldown: !Ref ScaleOutCooldown
 
-  # Políticas de Scale In
   FrontendScaleInPolicy1:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:
