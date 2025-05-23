@@ -33,7 +33,7 @@ Los detalles de arquitectura y despliegue se pueden encontrar en los ficheros de
 
 ## URLs de Acceso
 
-El sistema está accesible en la dirección **[https://agronet.are-dev.es](https://agronet.are-dev.es)**, con la documentación de la API REST en **[https://agronet.are-dev.es/swagger](https://agronet.are-dev.es/swagger)**
+El sistema desplegado en AWS está accesible en la dirección **[https://agronet.are-dev.es](https://agronet.are-dev.es)**, con la documentación de la API REST en **[https://agronet.are-dev.es/swagger](https://agronet.are-dev.es/swagger)**. SIn embargo este no es completamente funcional. Por lo tanto, hemos desplegado en vercel y render: **[Frontentd](https://agro-net-front.vercel.app/)** y **[API](https://agronet-back.onrender.com/api/docs/)**.
 
 ## Credenciales de Acceso
 
