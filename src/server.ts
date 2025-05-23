@@ -14,8 +14,8 @@ const SSL_KEY_PATH = process.env.SSL_KEY_PATH;
 const SSL_CERT_PATH = process.env.SSL_CERT_PATH;
 
 // Configuraciones de timeout en segundos
-const KEEP_ALIVE_TIMEOUT = 65000; // 65 segundos
-const HEADERS_TIMEOUT = 66000; // 66 segundos (debe ser mayor que KEEP_ALIVE_TIMEOUT)
+const KEEP_ALIVE_TIMEOUT = 240000; // 240 segundos (aumentado desde 65 segundos)
+const HEADERS_TIMEOUT = 241000; // 241 segundos (debe ser mayor que KEEP_ALIVE_TIMEOUT)
 
 connectDB().then(() => {
   let server: http.Server | https.Server = http.createServer(app);
