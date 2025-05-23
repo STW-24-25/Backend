@@ -27,7 +27,16 @@ app.get('/api/docs/json', (_req, res): void => {
   res.send(swaggerSpec);
 });
 
-app.use(cors());
+// Configuración más específica de CORS
+const corsOptions = {
+  origin: ['*'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  credentials: true,
+  maxAge: 86400, // 24 horas en segundos
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use('/api', router);
 
