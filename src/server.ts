@@ -61,10 +61,6 @@ connectDB().then(() => {
 
   // Configuración mejorada de Socket.IO con opciones de ping
   const io: Server = new Server(server, {
-    cors: {
-      origin: '*',
-      methods: ['GET', 'POST'],
-    },
     // Configuración para mantener conexiones
     pingTimeout: 60000, // 60 segundos para timeout después del último ping
     pingInterval: 25000, // Intervalo de ping cada 25 segundos
