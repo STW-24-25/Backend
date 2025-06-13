@@ -29,7 +29,7 @@ Parameters:
   GitHubToken:
     Description: GitHub personal access token para acceder a repositorios
     Type: String
-    Default: "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"
+    Default: ""
     NoEcho: true
 
   AWSAccessKeyId:
@@ -41,7 +41,7 @@ Parameters:
   AWSSecretAccessKey:
     Description: Secret Access Key para AWS
     Type: String
-    Default: "EHbrAZxu1XwvzSy+h4Y3WuvEG3vp59f/gl7Iweb/"
+    Default: ""
     NoEcho: true
 
   AWSRegion:
