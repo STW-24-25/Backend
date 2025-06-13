@@ -35,7 +35,7 @@ Parameters:
   AWSAccessKeyId:
     Description: Access Key ID para AWS
     Type: String
-    Default: "AKIA33FMH3JPRUIB4URW"
+    Default: ""
     NoEcho: true
 
   AWSSecretAccessKey:
