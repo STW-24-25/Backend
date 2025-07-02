@@ -29,7 +29,7 @@ Parameters:
   GitHubToken:
     Description: GitHub fine-grained personal access token para acceder a repositorios
     Type: String
-    Default: "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"
+    Default: ""
     NoEcho: true
 
 Resources:
