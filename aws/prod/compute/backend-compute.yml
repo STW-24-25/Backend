@@ -29,13 +29,13 @@ Parameters:
   MongoDBConnectionString:
     Description: Connection string para MongoDB Atlas
     Type: String
-    Default: "mongodb+srv://user:password@cluster.mongodb.net/agronet?retryWrites=true&w=majority"
+    Default: ""
     NoEcho: true
 
   GitHubToken:
     Description: GitHub fine-grained personal access token para acceder a repositorios
     Type: String
-    Default: "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"
+    Default: ""
     NoEcho: true
     
 
